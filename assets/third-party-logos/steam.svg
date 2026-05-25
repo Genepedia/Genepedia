@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="124" height="38" viewBox="0 0 124 38" role="img" aria-label="Steam Store">
+  <rect x="0.5" y="0.5" width="123" height="37" rx="4.5" fill="#111111" stroke="#8b8b8b"/>
+  <g transform="translate(8 8)" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="14" r="5.5" stroke-width="1.6"/>
+    <circle cx="19.5" cy="7" r="3.1" stroke-width="1.6"/>
+    <path d="M13.6 11.6l3.9-2.2" stroke-width="1.6"/>
+    <circle cx="19.5" cy="7" r="1.4" fill="#ffffff" stroke="none"/>
+  </g>
+  <text x="31" y="13" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="5.3" letter-spacing="0.7">DOWNLOAD ON</text>
+  <text x="31" y="25.5" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="10.2" font-weight="700">Steam</text>
+</svg>
