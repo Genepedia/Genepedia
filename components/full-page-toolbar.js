@@ -1,6 +1,14 @@
 const FULL_PAGE_TOOLBAR_BASE_URL = new URL('.', document.currentScript.src);
 const FULL_PAGE_TOOLBAR_STYLE_ELEMENT_ID = 'genipedia-full-page-toolbar-styles';
 const FULL_PAGE_TOOLBAR_STYLES = String.raw`
+/*
+ * Make the <full-page-toolbar> custom element transparent to layout so it
+ * doesn't break grid/flex parents. Mirrors what full-header and full-footer do.
+ */
+full-page-toolbar {
+    display: contents;
+}
+
 .vector-page-tools-pinned-container {
     width: 100%;
     pointer-events: auto;
@@ -206,7 +214,7 @@ const FULL_PAGE_TOOLBAR_STYLES = String.raw`
     font-weight: inherit;
 }
 
-.vector-page-toolbar-container .vector-page-tools-dropdown .vector-icon {
+.vector-page-toolbar-container .vector-page-tools-dropdown .vector-icon:not(.bi) {
     width: 1rem;
     height: 1rem;
     min-width: 1rem;
@@ -215,6 +223,32 @@ const FULL_PAGE_TOOLBAR_STYLES = String.raw`
     -webkit-mask-size: 1rem 1rem;
     flex: none;
     align-self: center;
+}
+
+/* vector-page.css masks .vector-icon with a 1px image, hiding Bootstrap font icons */
+.vector-page-toolbar-container .vector-icon.bi,
+#vector-page-titlebar-toc-label .vector-icon.bi {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    background: none !important;
+    background-color: transparent !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+    font-size: 1.25rem;
+    color: var(--vector-text, currentColor);
+    vertical-align: middle;
+    flex: none;
+    align-self: center;
+}
+
+.vector-page-toolbar-container .vector-icon.bi::before {
+    display: inline-block;
+    line-height: 1;
 }
 
 .vector-dropdown-label-text-visible {
@@ -608,8 +642,8 @@ function buildPageToolLinks(pageTitle) {
         editInterlanguageLinks: wikidataSearchUrl.href,
         downloadPdf: buildArticleHref(`/w/index.php?title=Special:DownloadAsPdf&page=${encodedTitle}&action=show-download-screen`),
         printableVersion: buildArticleHref(`/w/index.php?title=${encodedTitle}&printable=yes`),
-        commons: buildOtherProjectHref('commons.wikimedia.org', `/wiki/${articleTitle}`),
-        wikinews: buildOtherProjectHref('en.wikinews.org', `/wiki/Category:${articleTitle}`),
+        commons: buildOtherProjectHref('gravepedia.org', `/wiki/${articleTitle}`),
+        wikinews: buildOtherProjectHref('geni.com', `/`),
         wikiquote: buildOtherProjectHref('en.wikiquote.org', `/wiki/${articleTitle}`),
         wikisource: buildOtherProjectHref('en.wikisource.org', `/wiki/Author:${articleTitle}`),
         wikidataItem: wikidataSearchUrl.href
@@ -645,11 +679,8 @@ function buildPageToolsMarkup(pageTitle) {
         <div class="vector-menu-content">
             <ul class="vector-menu-content-list">
                 <li id="t-whatlinkshere" class="mw-list-item"><a href="${pageToolLinks.whatLinksHere}"><span>What links here</span></a></li>
-                <li id="t-recentchangeslinked" class="mw-list-item"><a href="${pageToolLinks.relatedChanges}"><span>Related changes</span></a></li>
-                <li id="t-upload" class="mw-list-item"><a href="${pageToolLinks.uploadFile}"><span>Upload file</span></a></li>
-                <li id="t-permalink" class="mw-list-item"><a href="${pageToolLinks.permanentLink}"><span>Permanent link</span></a></li>
+                
                 <li id="t-info" class="mw-list-item"><a href="${pageToolLinks.pageInformation}"><span>Page information</span></a></li>
-                <li id="t-cite" class="mw-list-item"><a href="${pageToolLinks.citePage}"><span>Cite this page</span></a></li>
                 <li id="t-urlshortener" class="mw-list-item"><a href="${pageToolLinks.shortUrl}"><span>Get shortened URL</span></a></li>
                 
             </ul>
@@ -661,7 +692,6 @@ function buildPageToolsMarkup(pageTitle) {
         <div class="vector-menu-content">
             <ul class="vector-menu-content-list">
                 <li id="coll-download-as-rl" class="mw-list-item"><a href="${pageToolLinks.downloadPdf}"><span>Download as PDF</span></a></li>
-                <li id="t-print" class="mw-list-item"><a href="${pageToolLinks.printableVersion}"><span>Printable version</span></a></li>
             </ul>
         </div>
     </div>
@@ -670,11 +700,8 @@ function buildPageToolsMarkup(pageTitle) {
         <div class="vector-menu-heading">In other projects</div>
         <div class="vector-menu-content">
             <ul class="vector-menu-content-list">
-                <li class="wb-otherproject-link wb-otherproject-commons mw-list-item"><a href="${pageToolLinks.commons}"><span>Wikimedia Commons</span></a></li>
-                <li class="wb-otherproject-link wb-otherproject-wikinews mw-list-item"><a href="${pageToolLinks.wikinews}"><span>Wikinews</span></a></li>
-                <li class="wb-otherproject-link wb-otherproject-wikiquote mw-list-item"><a href="${pageToolLinks.wikiquote}"><span>Wikiquote</span></a></li>
-                <li class="wb-otherproject-link wb-otherproject-wikisource mw-list-item"><a href="${pageToolLinks.wikisource}"><span>Wikisource</span></a></li>
-                <li id="t-wikibase" class="wb-otherproject-link wb-otherproject-wikibase-dataitem mw-list-item"><a href="${pageToolLinks.wikidataItem}"><span>Wikidata item</span></a></li>
+                <li class="wb-otherproject-link wb-otherproject-commons mw-list-item"><a href="${pageToolLinks.commons}"><span>Gravepedia</span></a></li>
+                <li class="wb-otherproject-link wb-otherproject-geni mw-list-item"><a href="${pageToolLinks.wikinews}"><span>Geni.com</span></a></li>
             </ul>
         </div>
     </div>

@@ -252,7 +252,7 @@ full-header,
     font-size: 1em;
     font-weight: 400;
     vertical-align: middle;
-    margin: 0;
+    margin: -3px 0 0 0;
     min-width: 0;
 }
 
@@ -315,6 +315,7 @@ full-header,
     font-size: 0.875rem;
     flex-grow: 1;
     min-width: 0;
+    justify-content: flex-end;
 }
 
 .vector-typeahead-search-container,
@@ -396,8 +397,11 @@ full-header,
     opacity: 1;
     pointer-events: auto;
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1rem;
-    float: right;
+    float: none;
+    flex: none;
 }
 
 .vector-header .vector-typeahead-search-container {
@@ -452,7 +456,26 @@ full-header,
     flex: none;
 }
 
-.vector-icon.bi::before {
+/* vector-page.css masks .vector-icon with a 1px image, hiding Bootstrap font icons */
+.vector-header .vector-icon.bi {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+    background: none !important;
+    background-color: transparent !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+    font-size: 1.25rem;
+    color: var(--vector-text, currentColor);
+    vertical-align: middle;
+}
+
+.vector-header .vector-icon.bi::before {
+    display: inline-block;
     line-height: 1;
 }
 
@@ -603,10 +626,14 @@ full-header,
 
 .cdx-radio__input {
     position: absolute;
+    left: 0;
+    top: 0;
     opacity: 0;
-    width: 1px;
-    height: 1px;
-    pointer-events: none;
+    width: calc(1.1rem + 0.6rem);
+    height: 1.1rem;
+    margin: 0;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .cdx-radio__icon {
@@ -627,6 +654,20 @@ full-header,
 .cdx-label__label__text {
     color: var(--vector-text);
     cursor: pointer;
+}
+
+.vector-appearance .cdx-radio:not(.cdx-radio--inline) {
+    display: grid !important;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.6rem;
+    margin: 0.7rem 0;
+    position: relative;
+}
+
+.vector-appearance .cdx-radio__label,
+.vector-appearance .cdx-radio__label.cdx-label {
+    display: inline-flex;
 }
 
 .skin-client-pref-exclusion-notice {
@@ -761,8 +802,20 @@ html.vector-feature-appearance-pinned-clientpref-1 .vector-user-links .vector-ap
         display: none !important;
     }
 
-    .vector-search-box {
-        max-width: 20rem;
+    .vector-header .vector-header-end {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        width: 100%;
+        margin-left: auto;
+    }
+
+    .vector-header .vector-search-box {
+        flex-grow: 0 !important;
+        flex-shrink: 0;
+        width: auto;
+        max-width: none;
+        margin-left: 0;
     }
 }
 
@@ -791,11 +844,11 @@ html.vector-feature-appearance-pinned-clientpref-1 .vector-user-links .vector-ap
         justify-content: end;
     }
 
-    .vector-search-box {
+    .vector-header .vector-search-box {
         width: auto;
         max-width: none;
-        flex-grow: 0;
-        margin-left: auto;
+        flex-grow: 0 !important;
+        margin-left: 0;
     }
 
     #p-vector-user-menu-overflow {
@@ -1332,7 +1385,7 @@ class FullHeader extends HTMLElement {
                 <nav class="vector-main-menu-landmark" aria-label="Site">
                     <div id="vector-main-menu-dropdown" class="vector-dropdown vector-main-menu-dropdown vector-button-flush-left vector-button-flush-right" title="Main menu">
                         <input type="checkbox" id="vector-main-menu-dropdown-checkbox" role="button" aria-haspopup="true" class="vector-dropdown-checkbox" aria-label="Main menu">
-                        <label id="vector-main-menu-dropdown-label" for="vector-main-menu-dropdown-checkbox" class="vector-dropdown-label cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only" aria-hidden="true"><i class="vector-icon bi bi-justify" aria-hidden="true"></i>
+                        <label id="vector-main-menu-dropdown-label" for="vector-main-menu-dropdown-checkbox" class="vector-dropdown-label cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only" aria-hidden="true"><i class="vector-icon bi bi-list" aria-hidden="true"></i>
 <span class="vector-dropdown-label-text">Main menu</span>
                         </label>
                         <div class="vector-dropdown-content">
@@ -1358,19 +1411,7 @@ class FullHeader extends HTMLElement {
                                             </ul>
                                         </div>
                                     </div>
-                                    <div id="p-interaction" class="vector-menu mw-portlet mw-portlet-interaction">
-                                        <div class="vector-menu-heading">Contribute</div>
-                                        <div class="vector-menu-content">
-                                            <ul class="vector-menu-content-list">
-                                                <li id="n-help" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="Guidance on how to use and edit Genipedia"><span>Help</span></a></li>
-                                                <li id="n-introduction" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="Learn how to edit Genipedia"><span>Learn to edit</span></a></li>
-                                                <li id="n-portal" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="The hub for editors"><span>Community portal</span></a></li>
-                                                <li id="n-recentchanges" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="A list of recent changes to Genipedia"><span>Recent changes</span></a></li>
-                                                <li id="n-upload" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="Add images or other media for use on Genipedia"><span>Upload file</span></a></li>
-                                                <li id="n-specialpages" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="A list of all special pages"><span>Special pages</span></a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
+                                    
                                 </div>
                             </div>
                         </div>

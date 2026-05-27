@@ -1,25 +1,62 @@
 const FULL_FOOTER_BASE_URL = new URL('.', document.currentScript.src);
 const FULL_FOOTER_STYLE_ELEMENT_ID = 'genipedia-full-footer-styles';
 const FULL_FOOTER_STYLES = String.raw`
-.mw-footer-container {
-    border-top: 1px solid var(--vector-border, #c8ccd1);
+/*
+ * Footer lives as a direct child of .mw-page-container (relocated in JS), below
+ * the grid in .mw-page-container-inner. That avoids grid column sizing and the
+ * inner max-width/padding that kept the footer as narrow as the article column.
+ */
+.mw-page-container > full-footer {
+    display: block;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
     margin-top: 2rem;
-    margin-left: calc(-1 * var(--vector-page-side-left, 0px));
-    margin-right: calc(-1 * var(--vector-page-side-right, 0px));
-    padding-left: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-left));
-    padding-right: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-right));
-    padding-top: 1.5rem;
+    clear: both;
 }
 
-.mw-footer {
+.mw-page-container {
+    overflow-x: clip;
+}
+
+.mw-page-container > full-footer .mw-footer-container {
     box-sizing: border-box;
+    /* Break the footer out of the centered page gutter and span the
+       full viewport width while keeping the inner content centered. */
+    width: 100vw;
+    max-width: none;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    border-top: 1px solid var(--vector-border, #c8ccd1);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.mw-page-container > full-footer .mw-footer {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: var(--vector-page-max-width, 99.75rem);
     margin: 0 auto;
-    padding-bottom: 2rem;
+    padding-left: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-left));
+    padding-right: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-right));
+    padding-bottom: 1rem;
     font-size: 0.8125rem;
     color: var(--vector-muted, #54595d);
     line-height: 1.5;
+    border-top: 0;
+}
+
+/* Constrain immediate footer children (lists) so the content is centered
+   within the full-bleed footer background. */
+.mw-page-container > full-footer .mw-footer > * {
+    box-sizing: border-box;
+    width: auto;
     max-width: var(--vector-page-max-width, 99.75rem);
-    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .mw-footer a {
@@ -126,6 +163,16 @@ function ensureLocalFooterShell() {
     }
 }
 
+function relocateFooterToPageContainer(footer) {
+    const pageContainer = footer.closest('.mw-page-container');
+    if (!pageContainer || footer.parentElement === pageContainer) {
+        return;
+    }
+
+    pageContainer.appendChild(footer);
+    window.dispatchEvent(new Event('resize'));
+}
+
 class FullFooter extends HTMLElement {
     connectedCallback() {
         if (this.__rendered) return;
@@ -153,6 +200,7 @@ class FullFooter extends HTMLElement {
 		</ul>
 	</footer>
 </div>`;
+        relocateFooterToPageContainer(this);
     }
 }
 
