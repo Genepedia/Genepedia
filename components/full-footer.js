@@ -1,209 +1,452 @@
-const FULL_FOOTER_BASE_URL = new URL('.', document.currentScript.src);
-const FULL_FOOTER_STYLE_ELEMENT_ID = 'genipedia-full-footer-styles';
-const FULL_FOOTER_STYLES = String.raw`
-/*
- * Footer lives as a direct child of .mw-page-container (relocated in JS), below
- * the grid in .mw-page-container-inner. That avoids grid column sizing and the
- * inner max-width/padding that kept the footer as narrow as the article column.
- */
-.mw-page-container > full-footer {
-    display: block;
-    width: 100%;
-    max-width: none;
-    box-sizing: border-box;
-    margin-top: 2rem;
-    clear: both;
+const FULL_FOOTER_SCRIPT_URL = document.currentScript?.src || '';
+const FULL_FOOTER_SLOGAN = 'Free Geneology Encyclopedia';
+
+const FULL_FOOTER_TEMPLATE = String.raw`
+<style>
+html {
+  height: 100%;
+  overflow-x: clip;
 }
 
-.mw-page-container {
-    overflow-x: clip;
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow-x: clip;
 }
 
-.mw-page-container > full-footer .mw-footer-container {
-    box-sizing: border-box;
-    /* Break the footer out of the centered page gutter and span the
-       full viewport width while keeping the inner content centered. */
-    width: 100vw;
-    max-width: none;
-    position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
-    border-top: 1px solid var(--vector-border, #c8ccd1);
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+body > full-header {
+  flex-shrink: 0;
 }
 
-.mw-page-container > full-footer .mw-footer {
-    box-sizing: border-box;
-    width: 100%;
-    max-width: var(--vector-page-max-width, 99.75rem);
-    margin: 0 auto;
-    padding-left: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-left));
-    padding-right: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-right));
-    padding-bottom: 1rem;
-    font-size: 0.8125rem;
-    color: var(--vector-muted, #54595d);
-    line-height: 1.5;
-    border-top: 0;
+body > article {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
-/* Constrain immediate footer children (lists) so the content is centered
-   within the full-bleed footer background. */
-.mw-page-container > full-footer .mw-footer > * {
-    box-sizing: border-box;
-    width: auto;
-    max-width: var(--vector-page-max-width, 99.75rem);
-    margin-left: auto;
-    margin-right: auto;
+body > article > people-page,
+body > article > full-footer {
+  max-width: 100%;
+  min-width: 0;
 }
 
-.mw-footer a {
-    color: var(--vector-link, #3366cc);
-    text-decoration: none;
+body > article > full-footer {
+  margin-top: auto;
 }
 
-.mw-footer a:hover {
-    text-decoration: underline;
+full-footer {
+  display: block;
+  --page-footer-bg: #27292d;
+  --page-footer-fg: #eaecf0;
+  --page-footer-muted: #a7adb4;
+  --page-footer-border: rgba(255, 255, 255, 0.1);
+  --page-footer-link: #6b9eff;
+  --page-footer-hover: rgba(255, 255, 255, 0.06);
 }
 
-#footer-info,
-#footer-places,
-#footer-icons {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+body:not(.theme-dark) full-footer {
+  --page-footer-bg: #ffffff;
+  --page-footer-fg: #202122;
+  --page-footer-muted: #54595d;
+  --page-footer-border: rgba(0, 0, 0, 0.12);
+  --page-footer-link: #3366cc;
+  --page-footer-hover: rgba(0, 0, 0, 0.04);
 }
 
-#footer-places li + li,
-#footer-info li + li {
-    margin-top: 0.5rem;
+.page-footer {
+  width: 100%;
+  max-width: 100%;
+  color: var(--page-footer-fg);
+  background: var(--page-footer-bg);
+  border-top: 1px solid var(--page-footer-border);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
 }
 
-#footer-places,
-#footer-icons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 1.25rem;
-    margin-top: 1rem;
+body:not(.theme-dark) .page-footer {
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.08);
 }
 
-#footer-icons {
-    align-items: center;
-    margin-top: 1.5rem;
+.page-footer__inner {
+  width: 100%;
+  max-width: 90rem;
+  margin: 0 auto;
+  padding: 0 1rem 2rem;
+  box-sizing: border-box;
 }
 
-#footer-icons a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+.page-footer a {
+  color: var(--page-footer-link);
+  text-decoration: none;
 }
 
-#footer-icons img,
-#footer-icons source {
-    display: block;
+.page-footer a:hover {
+  text-decoration: underline;
+}
+
+.page-footer__last-edited {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--page-footer-border);
+  background: transparent;
+  color: var(--page-footer-fg);
+  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.page-footer__last-edited:hover {
+  text-decoration: none;
+  background: var(--page-footer-hover);
+}
+
+.page-footer__last-edited span {
+  flex: 1 1 auto;
+}
+
+.page-footer__last-edited i:last-child {
+  opacity: 0.75;
+}
+
+.page-footer__branding {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--page-footer-border);
+}
+
+.page-footer__brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.page-footer__brand mini-header {
+  display: block;
+  min-width: 0;
+}
+
+.page-footer__brand mini-header .central-textlogo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  width: auto;
+  max-width: none;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  text-indent: 0;
+  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
+  font-size: 1rem;
+  line-height: 1.1;
+  color: var(--page-footer-fg) !important;
+}
+
+.page-footer__brand mini-header .central-textlogo__logo {
+  display: block !important;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: transparent;
+  filter: none !important;
+}
+
+body:not(.theme-dark) .page-footer__brand mini-header .central-textlogo__logo,
+body.theme-dark .page-footer__brand mini-header .central-textlogo__logo {
+  filter: none !important;
+}
+
+body.theme-dark .page-footer__brand mini-header .central-textlogo,
+body.theme-dark .page-footer__brand mini-header .central-textlogo__home-link,
+body.theme-dark .page-footer__brand mini-header .localized-slogan {
+  color: #ffffff !important;
+}
+
+body.theme-dark .page-footer__brand mini-header .localized-slogan {
+  opacity: 1;
+}
+
+body:not(.theme-dark) .page-footer__brand mini-header .central-textlogo,
+body:not(.theme-dark) .page-footer__brand mini-header .central-textlogo__home-link,
+body:not(.theme-dark) .page-footer__brand mini-header .localized-slogan {
+  color: var(--page-footer-fg) !important;
+}
+
+.page-footer__brand mini-header .central-textlogo-wrapper {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+.page-footer__brand mini-header .central-textlogo__wordmark {
+  font-size: 1em;
+  line-height: 1.05;
+}
+
+.page-footer__brand mini-header .central-textlogo__home-link,
+.page-footer__brand mini-header .localized-slogan {
+  color: var(--page-footer-fg) !important;
+}
+
+.page-footer__brand mini-header .localized-slogan {
+  display: block;
+  margin-top: 0;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.15;
+  opacity: 0.88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-footer__social {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-footer__social a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--page-footer-border);
+  border-radius: 0.125rem;
+  color: var(--page-footer-fg);
+  text-decoration: none;
+}
+
+.page-footer__social a:hover {
+  background: var(--page-footer-hover);
+  color: var(--page-footer-fg);
+  text-decoration: none;
+}
+
+.page-footer__social i {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 @media (max-width: 640px) {
-    #footer-places,
-    #footer-icons {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+  .page-footer__branding {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .page-footer__social {
+    justify-content: flex-start;
+  }
+
+  .page-footer__brand mini-header .localized-slogan {
+    white-space: normal;
+  }
 }
+
+.page-footer__meta {
+  padding-top: 1rem;
+  font: 0.8125rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+  color: var(--page-footer-muted);
+}
+
+.page-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-footer__links li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.page-footer__links li + li::before {
+  content: "•";
+  margin: 0 0.45rem;
+  color: var(--page-footer-muted);
+}
+
+</style>
+<footer class="page-footer" aria-label="Page footer">
+  <div class="page-footer__inner">
+    <a class="page-footer__last-edited" href="#">
+      <i class="bi bi-clock-history" aria-hidden="true"></i>
+      <span class="page-footer__last-edited-text"></span>
+      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </a>
+
+    <div class="page-footer__branding">
+      <div class="page-footer__brand">
+        <mini-header></mini-header>
+      </div>
+      <ul class="page-footer__social">
+        <li>
+          <a href="#" aria-label="YouTube" title="YouTube">
+            <i class="bi bi-youtube" aria-hidden="true"></i>
+          </a>
+        </li>
+        <li>
+          <a href="#" aria-label="Facebook" title="Facebook">
+            <i class="bi bi-facebook" aria-hidden="true"></i>
+          </a>
+        </li>
+        <li>
+          <a href="#" aria-label="Instagram" title="Instagram">
+            <i class="bi bi-instagram" aria-hidden="true"></i>
+          </a>
+        </li>
+        <li>
+          <a href="#" aria-label="TikTok" title="TikTok">
+            <i class="bi bi-tiktok" aria-hidden="true"></i>
+          </a>
+        </li>
+        <li>
+          <a href="#" aria-label="X" title="X">
+            <i class="bi bi-twitter-x" aria-hidden="true"></i>
+          </a>
+        </li>
+        <li>
+          <a href="#" aria-label="GitHub" title="GitHub">
+            <i class="bi bi-github" aria-hidden="true"></i>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="page-footer__meta">
+      <ul class="page-footer__links">
+        <li><a href="#">Contact Genipedia</a></li>
+        <li><a href="#">Privacy policy</a></li>
+        <li><a href="#">Terms of Use</a></li>
+        <li><a href="#">Cookie statement</a></li>
+        <li><a href="#">Code of Conduct</a></li>
+        <li><a href="#">Legal &amp; safety contacts</a></li>
+        <li><a href="#">Statistics</a></li>
+        <li><a href="#">Developers</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
 `;
 
-const OFFLINE_FOOTER_NOOP_URL = '#';
-const OFFLINE_FOOTER_PRIVACY_URL = new URL('../pages/privacy_policy.html', FULL_FOOTER_BASE_URL).href;
-const OFFLINE_FOOTER_TERMS_URL = new URL('../pages/terms_of_use.html', FULL_FOOTER_BASE_URL).href;
-
-function ensureLocalFooterShell() {
-    const html = document.documentElement;
-    const { body } = document;
-
-    if (html) {
-        html.lang = 'en';
-        html.dir = 'ltr';
-        html.classList.add(
-            'vector-feature-language-in-header-enabled',
-            'vector-feature-language-in-main-menu-disabled',
-            'vector-feature-language-in-main-page-header-disabled',
-            'vector-feature-page-tools-pinned-disabled',
-            'vector-sticky-header-enabled',
-            'vector-toc-available',
-            'skin-thumbsize-clientpref-standard'
-        );
-    }
-
-    if (body) {
-        body.classList.add(
-            'skin--responsive',
-            'skin-vector',
-            'skin-vector-search-vue',
-            'mediawiki',
-            'ltr',
-            'sitedir-ltr',
-            'mw-hide-empty-elt',
-            'ns-0',
-            'ns-subject',
-            'page-Nelson_Mandela',
-            'rootpage-Nelson_Mandela',
-            'skin-vector-2022',
-            'action-view'
-        );
-    }
-
-    if (!document.getElementById(FULL_FOOTER_STYLE_ELEMENT_ID)) {
-        const shellStyles = document.createElement('style');
-        shellStyles.id = FULL_FOOTER_STYLE_ELEMENT_ID;
-        shellStyles.textContent = FULL_FOOTER_STYLES;
-        document.head.appendChild(shellStyles);
-    }
-}
-
-function relocateFooterToPageContainer(footer) {
-    const pageContainer = footer.closest('.mw-page-container');
-    if (!pageContainer || footer.parentElement === pageContainer) {
-        return;
-    }
-
-    pageContainer.appendChild(footer);
-    window.dispatchEvent(new Event('resize'));
+function resolveFromComponent(relativePath) {
+  try {
+    return new URL(relativePath, FULL_FOOTER_SCRIPT_URL || window.location.href).href;
+  } catch {
+    return relativePath;
+  }
 }
 
 class FullFooter extends HTMLElement {
-    connectedCallback() {
-        if (this.__rendered) return;
-        this.__rendered = true;
+  static get observedAttributes() {
+    return ['last-edited', 'last-editor', 'last-edited-days'];
+  }
 
-        ensureLocalFooterShell();
-        this.innerHTML = `
-<div class="mw-footer-container">
-	<footer id="footer" class="mw-footer">
-		<ul id="footer-info">
-			<li id="footer-info-lastmod">This page was last edited on 21 May 2026, at 07:06<span class="anonymous-show">&nbsp;(UTC)</span>.</li>
-            <li id="footer-info-copyright">Text is available under the <a href="${OFFLINE_FOOTER_NOOP_URL}" title="Genipedia:Text of the Creative Commons Attribution-ShareAlike 4.0 International License">Creative Commons Attribution-ShareAlike 4.0 License</a>; additional terms may apply. By using this site, you agree to the <a href="${OFFLINE_FOOTER_TERMS_URL}" class="extiw" title="foundation:Special:MyLanguage/Policy:Terms of Use">Terms of Use</a> and <a href="${OFFLINE_FOOTER_PRIVACY_URL}" class="extiw" title="foundation:Special:MyLanguage/Policy:Privacy policy">Privacy Policy</a>. Genipedia is a registered trademark of the <a rel="nofollow" class="external text" href="${OFFLINE_FOOTER_NOOP_URL}">Wikimedia Foundation, Inc.</a>, a non-profit organization.</li>
-		</ul>
+  connectedCallback() {
+    if (this.__rendered) return;
+    this.__rendered = true;
+    this.innerHTML = FULL_FOOTER_TEMPLATE;
+    this.#syncLastEdited();
 
-		<ul id="footer-places">
-            <li id="footer-places-privacy"><a href="${OFFLINE_FOOTER_PRIVACY_URL}">Privacy policy</a></li>
-            <li id="footer-places-about"><a href="${OFFLINE_FOOTER_NOOP_URL}">About Genipedia</a></li>
-            <li id="footer-places-disclaimers"><a href="${OFFLINE_FOOTER_NOOP_URL}">Disclaimers</a></li>
-            <li id="footer-places-contact"><a href="${OFFLINE_FOOTER_NOOP_URL}">Contact Genipedia</a></li>
-            <li id="footer-places-legal-safety-contacts"><a href="${OFFLINE_FOOTER_NOOP_URL}">Legal &amp; safety contacts</a></li>
-            <li id="footer-places-wm-codeofconduct"><a href="${OFFLINE_FOOTER_NOOP_URL}">Code of Conduct</a></li>
-            <li id="footer-places-developers"><a href="${OFFLINE_FOOTER_NOOP_URL}">Developers</a></li>
-            <li id="footer-places-statslink"><a href="${OFFLINE_FOOTER_NOOP_URL}">Statistics</a></li>
-            <li id="footer-places-cookiestatement"><a href="${OFFLINE_FOOTER_NOOP_URL}">Cookie statement</a></li>
-		</ul>
-	</footer>
-</div>`;
-        relocateFooterToPageContainer(this);
+    const runBrandSync = () => {
+      requestAnimationFrame(() => {
+        this.#syncMiniHeader();
+        requestAnimationFrame(() => this.#syncMiniHeader());
+      });
+    };
+
+    if (customElements.get('mini-header')) {
+      runBrandSync();
+    } else {
+      customElements.whenDefined('mini-header').then(runBrandSync);
     }
+  }
+
+  attributeChangedCallback() {
+    if (this.__rendered) {
+      this.#syncLastEdited();
+    }
+  }
+
+  #syncLastEdited() {
+    const textEl = this.querySelector('.page-footer__last-edited-text');
+    if (!textEl) {
+      return;
+    }
+
+    const custom = this.getAttribute('last-edited')?.trim();
+    if (custom) {
+      textEl.textContent = custom;
+      return;
+    }
+
+    const days = this.getAttribute('last-edited-days')?.trim() || '7';
+    const editor = this.getAttribute('last-editor')?.trim() || 'Shaun Roselt';
+    textEl.textContent = `Last edited ${days} days ago by ${editor}`;
+  }
+
+  #syncMiniHeader() {
+    const miniHeader = this.querySelector('.page-footer__brand mini-header');
+    const logo = miniHeader?.querySelector('.central-textlogo__logo');
+    const homeLink = miniHeader?.querySelector('.central-textlogo__home-link');
+    const slogan = miniHeader?.querySelector('.localized-slogan');
+
+    if (logo) {
+      logo.src = resolveFromComponent('../assets/Logo.png');
+      logo.alt = '';
+    }
+
+    if (homeLink) {
+      homeLink.href = resolveFromComponent('../index.html');
+    }
+
+    if (!slogan) {
+      return;
+    }
+
+    if (slogan.textContent !== FULL_FOOTER_SLOGAN) {
+      slogan.textContent = FULL_FOOTER_SLOGAN;
+    }
+
+    if (!slogan.dataset.fullFooterSlogan) {
+      slogan.dataset.fullFooterSlogan = 'true';
+      new MutationObserver(() => {
+        if (slogan.textContent !== FULL_FOOTER_SLOGAN) {
+          slogan.textContent = FULL_FOOTER_SLOGAN;
+        }
+      }).observe(slogan, { characterData: true, childList: true, subtree: true });
+    }
+  }
 }
 
 if (!customElements.get('full-footer')) {
-    customElements.define('full-footer', FullFooter);
+  customElements.define('full-footer', FullFooter);
 }

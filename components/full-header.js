@@ -1,1793 +1,1298 @@
-const FULL_HEADER_BASE_URL = new URL('.', document.currentScript.src);
-const FULL_HEADER_ASSET_ROOT = new URL('../assets/', FULL_HEADER_BASE_URL);
-const FULL_HEADER_STYLE_ELEMENT_ID = 'genipedia-full-header-styles';
-
-const FULL_HEADER_STYLES = String.raw`
-.vector-main-menu-landmark,
-.vector-appearance-landmark {
-    display: block !important;
+const FULL_HEADER_TEMPLATE = String.raw`
+<style>
+:root {
+  --header-chrome-sidebar-width: 280px;
 }
 
-nav#mw-panel-toc a.vector-toc-link[href="#mw-content-text"],
-nav#mw-panel-toc li#toc-mw-content-text {
-    display: none;
+full-header {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 110;
+  --header-chrome-height: 55px;
+  --header-chrome-control-height: 2.375rem;
+  --header-chrome-avatar-size: calc(var(--header-chrome-control-height) - 0.4rem);
+  --header-chrome-toolbar-gap: 0.5rem;
+  --header-chrome-bg: #27292d;
+  --header-chrome-fg: #eaecf0;
+  --header-chrome-search-bg: #1e2125;
+  --header-chrome-search-border: rgba(255, 255, 255, 0.08);
+  --header-chrome-menu-bg: #242629;
+  --header-chrome-menu-border: rgba(255, 255, 255, 0.1);
+  --header-chrome-dropdown-bg: #313438;
 }
 
-html.skin-theme-clientpref-day,
-html.skin-theme-clientpref-os {
-    --vector-page-bg: #f8f9fa;
-    --vector-surface: #ffffff;
-    --vector-surface-subtle: #eaecf0;
-    --vector-border: #c8ccd1;
-    --vector-border-strong: #a2a9b1;
-    --vector-text: #202122;
-    --vector-muted: #54595d;
-    --vector-link: #3366cc;
-    --vector-accent: #3366cc;
-    --vector-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.2);
-    --vector-hover: rgba(0, 0, 0, 0.05);
-    --vector-page-max-width: 99.75rem;
-    --vector-page-padding: 2.75rem;
-    --vector-content-max-width: 99.75rem;
+body:not(.theme-dark) full-header {
+  --header-chrome-bg: #ffffff;
+  --header-chrome-fg: #202122;
+  --header-chrome-search-bg: #f8f9fa;
+  --header-chrome-search-border: rgba(0, 0, 0, 0.12);
+  --header-chrome-menu-bg: #ffffff;
+  --header-chrome-menu-border: rgba(0, 0, 0, 0.12);
+  --header-chrome-dropdown-bg: #ffffff;
 }
 
-html.skin-theme-clientpref-night {
-    --vector-page-bg: #101418;
-    --vector-surface: #16191d;
-    --vector-surface-subtle: #202122;
-    --vector-border: #3a3f44;
-    --vector-border-strong: #54595d;
-    --vector-text: #eaecf0;
-    --vector-muted: #a2a9b1;
-    --vector-link: #88b3e6;
-    --vector-accent: #4d8eff;
-    --vector-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.45);
-    --vector-hover: rgba(255, 255, 255, 0.08);
-    --vector-page-max-width: 99.75rem;
-    --vector-page-padding: 2.75rem;
-    --vector-content-max-width: 99.75rem;
+body:not(.theme-dark) {
+  background: #f8f9fa;
+  color: #202122;
 }
 
-@media (prefers-color-scheme: dark) {
-    html.skin-theme-clientpref-os {
-        --vector-page-bg: #101418;
-        --vector-surface: #16191d;
-        --vector-surface-subtle: #202122;
-        --vector-border: #3a3f44;
-        --vector-border-strong: #54595d;
-        --vector-text: #eaecf0;
-        --vector-muted: #a2a9b1;
-        --vector-link: #88b3e6;
-        --vector-accent: #4d8eff;
-        --vector-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.45);
-        --vector-hover: rgba(255, 255, 255, 0.08);
-    }
+body.theme-dark {
+  background: #101418;
+  color: #eaecf0;
 }
 
-html.vector-width-wide {
-    --vector-page-max-width: min(100%, 120rem);
-    --vector-content-max-width: min(100%, 120rem);
-}
-
-html.vector-width-standard {
-    --vector-page-max-width: 99.75rem;
-    --vector-content-max-width: 99.75rem;
-}
-
-html.vector-font-size-0 body.skin-vector-2022 {
-    font-size: 0.875rem;
-}
-
-html.vector-font-size-1 body.skin-vector-2022 {
-    font-size: 1rem;
-}
-
-html.vector-font-size-2 body.skin-vector-2022 {
-    font-size: 1.125rem;
-}
-
-html {
-    --vector-pinned-left-width: 0px;
-    --vector-pinned-right-width: 0px;
-}
-
-body.skin-vector-2022 {
-    margin: 0;
-    background: var(--vector-page-bg);
-    color: var(--vector-text);
-    font-family: sans-serif;
-    line-height: 1.6;
-}
-
-body.skin-vector-2022 a {
-    color: var(--vector-link);
-    text-decoration: none;
-}
-
-body.skin-vector-2022 a:hover {
-    text-decoration: underline;
-}
-
-full-header,
-.vector-shell {
-    display: contents;
-}
-
-.vector-shell * {
+@media (min-width: 992px) {
+  body.header-chrome-content-offset > article {
+    margin-left: var(--header-chrome-sidebar-width);
+    width: calc(100% - var(--header-chrome-sidebar-width));
+    max-width: calc(100% - var(--header-chrome-sidebar-width));
     box-sizing: border-box;
+    transition: margin-left 0.2s ease, width 0.2s ease, max-width 0.2s ease;
+  }
 }
 
-.vector-header-container {
-    position: sticky;
-    top: 0;
-    z-index: 3;
-    background: var(--vector-surface);
-    border-bottom: 1px solid var(--vector-border);
-    transition: top 160ms ease;
+.header-container.header-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  min-height: 55px;
+  background: var(--header-chrome-bg);
+  color: var(--header-chrome-fg);
+  box-shadow: inset 0 -1px 3px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
 }
 
-.vector-header-container.vector-header-container-hidden {
-    top: calc(-1 * (var(--vector-header-height, 4.2rem) + 1px));
-    pointer-events: none;
+body:not(.theme-dark) .header-container.header-chrome {
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
 }
 
-.vector-header {
-    width: 100%;
-    max-width: var(--vector-page-max-width);
-    margin: 0 auto;
-    min-height: 3.125rem;
-    min-width: 18.75em;
-    padding: 0.5rem var(--vector-page-padding);
-    display: grid;
-    column-gap: 1.5rem;
-    row-gap: 1rem;
-    grid-template: auto / max-content minmax(0, 1fr);
-    grid-template-areas: 'headerStart headerEnd';
-    align-items: center;
-    box-sizing: border-box;
+.header-chrome__row {
+  width: 100%;
+  min-height: 55px;
+  display: flex;
+  align-items: center;
+  gap: var(--header-chrome-toolbar-gap);
+  padding: 0 0.5rem;
+  box-sizing: border-box;
 }
 
-.vector-header-start,
-.vector-header-end,
-.vector-user-links-main,
-.vector-inline-links,
-.vector-header .mw-logo,
-.vector-search-box,
-.cdx-search-input,
-.cdx-text-input,
-.vector-pinnable-header-actions,
-.vector-pinnable-header,
-.vector-user-menu .vector-menu-content-list a {
-    display: flex;
-    align-items: center;
+.header-chrome__start,
+.header-chrome__tools,
+.header-chrome__search,
+.header-chrome__end {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
-.vector-header-start {
-    grid-area: headerStart;
-    gap: 1.25rem;
-    min-width: 0;
+.header-chrome__start {
+  flex: 0 1 auto;
+  gap: 0.25rem;
 }
 
-.vector-header-end {
-    grid-area: headerEnd;
-    gap: 0.75rem;
-    justify-content: flex-end;
-    min-width: 0;
+.header-chrome__tools {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  gap: var(--header-chrome-toolbar-gap);
 }
 
-@media (min-width: 1120px) {
-    .vector-header-end {
-        display: grid;
-        grid-template-columns: minmax(18rem, 31.25rem) auto;
-        align-items: center;
-        justify-content: start;
-        column-gap: 0.5rem;
-    }
+.header-chrome__search {
+  flex: 0 1 auto;
+  justify-content: flex-end;
 }
 
-.vector-main-menu-landmark,
-.vector-user-links,
-.vector-appearance-landmark {
-    position: relative;
+.header-chrome__end {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: var(--header-chrome-toolbar-gap);
 }
 
-.vector-user-links {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-shrink: 1;
+.header-chrome__menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0.125rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
 }
 
-.vector-user-links .mw-list-item,
-.vector-user-links .vector-dropdown-label {
-    margin: 0 0.25rem;
+.header-chrome__menu:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.vector-user-links .vector-dropdown-content .mw-list-item {
-    margin: 0;
+.header-chrome__menu-icon {
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
-.mw-logo {
-    height: 100%;
-    gap: 0;
-    color: inherit;
-    flex-shrink: 0;
+.header-chrome__menu-icon--close {
+  display: none;
 }
 
-.mw-logo-icon {
-    margin-right: 0.625rem;
-    width: 3.125rem;
-    height: 3.125rem;
-    display: block;
-    flex: none;
+full-header.sidebar-open .header-chrome__menu-icon--open {
+  display: none;
 }
 
-.vector-header-mini-logo {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin: 6px 0 6px 25px;
-    flex-shrink: 0;
-    position: static;
-    width: auto;
-    max-width: 100%;
-    min-width: 0;
-    font-size: 1.3rem;
-    line-height: 1.25;
-    text-align: left;
-    font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
-    font-weight: 400;
-    color: inherit;
+full-header.sidebar-open .header-chrome__menu-icon--close {
+  display: inline-block;
 }
 
-.vector-header-mini-logo .central-textlogo__logo {
-    display: block;
-    width: auto;
-    height: 3rem;
-    flex-shrink: 0;
+.header-chrome__brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
 }
 
-.vector-header-mini-logo .central-textlogo-wrapper {
-    display: inline-block;
-    font-size: 1em;
-    font-weight: 400;
-    vertical-align: middle;
-    margin: -3px 0 0 0;
-    min-width: 0;
+.header-chrome__brand mini-header {
+  display: block;
+  min-width: 0;
 }
 
-.vector-header-mini-logo .central-textlogo__wordmark {
-    display: block;
-    font-family: inherit;
-    font-size: 1em;
-    font-weight: 400;
-    line-height: 1.1;
+.header-chrome__brand mini-header .central-textlogo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  width: auto;
+  max-width: none;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  text-indent: 0;
+  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
+  font-size: 1rem;
+  line-height: 1.1;
+  color: #eaecf0 !important;
 }
 
-.vector-header-mini-logo .central-textlogo__wordmark-accent {
-    display: inline-block;
-    font-size: 1.42em;
-    line-height: 0.84;
-    vertical-align: baseline;
+.header-chrome__brand mini-header .central-textlogo__logo {
+  display: block !important;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  flex-shrink: 0;
+  object-fit: contain;
+  background: transparent;
+  filter: none !important;
 }
 
-.vector-header-mini-logo .central-textlogo__home-link {
-    color: inherit;
-    text-decoration: none;
+body:not(.theme-dark) .header-chrome__brand mini-header .central-textlogo__logo,
+body.theme-dark .header-chrome__brand mini-header .central-textlogo__logo {
+  filter: none !important;
 }
 
-.vector-header-mini-logo .central-textlogo__home-link:hover,
-.vector-header-mini-logo .central-textlogo__home-link:focus {
-    text-decoration: none;
+body.theme-dark .header-chrome__brand mini-header .central-textlogo,
+body.theme-dark .header-chrome__brand mini-header .central-textlogo__home-link,
+body.theme-dark .header-chrome__brand mini-header .localized-slogan {
+  color: #ffffff !important;
 }
 
-.vector-header-mini-logo .localized-slogan {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 400;
-    margin-top: 0.05em;
-    font-family: inherit;
+body.theme-dark .header-chrome__brand mini-header .localized-slogan {
+  opacity: 1;
 }
 
-.mw-logo-container {
-    display: grid;
-    gap: 0.2rem;
-    max-width: none;
+body:not(.theme-dark) .header-chrome__brand mini-header .central-textlogo,
+body:not(.theme-dark) .header-chrome__brand mini-header .central-textlogo__home-link,
+body:not(.theme-dark) .header-chrome__brand mini-header .localized-slogan {
+  color: #202122 !important;
 }
 
-.skin-invert img {
-    filter: invert(1) hue-rotate(180deg);
+body:not(.theme-dark) .header-chrome__login,
+body:not(.theme-dark) .header-chrome__user-trigger {
+  border-color: rgba(0, 0, 0, 0.14);
+  background: rgba(0, 0, 0, 0.03);
+  color: #202122;
 }
 
-.mw-logo-wordmark {
-    display: block;
-    width: 8.75em;
-    height: 1.375em;
+.header-chrome__brand mini-header .central-textlogo-wrapper {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  min-width: 0;
 }
 
-.mw-logo-tagline {
-    display: block;
-    width: 8.75em;
-    height: 0.6875em;
+.header-chrome__brand mini-header .central-textlogo__wordmark {
+  font-size: 1em;
+  line-height: 1.05;
 }
 
-.vector-search-box {
-    font-size: 0.875rem;
-    flex-grow: 1;
-    min-width: 0;
-    justify-content: flex-end;
+.header-chrome__brand mini-header .central-textlogo__home-link,
+.header-chrome__brand mini-header .localized-slogan {
+  color: #eaecf0 !important;
 }
 
-.vector-typeahead-search-container,
-.cdx-typeahead-search,
-.cdx-search-input,
-.cdx-search-input__input-wrapper {
-    width: 100%;
+.header-chrome__brand mini-header .localized-slogan {
+  display: block;
+  margin-top: 0;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.15;
+  opacity: 0.88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.vector-search-box .vector-typeahead-search-container {
-    width: 100%;
-    max-width: 31.25rem;
-    margin-right: 0.75rem;
+.header-chrome__search-form {
+  width: 100%;
+  max-width: 18rem;
+  display: flex;
+  align-items: center;
+  min-height: var(--header-chrome-control-height);
+  height: var(--header-chrome-control-height);
+  background: var(--header-chrome-search-bg);
+  border: 1px solid var(--header-chrome-search-border);
+  border-radius: 0.125rem;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.cdx-text-input {
-    position: relative;
-    width: 100%;
-    background: var(--vector-page-bg);
-    border: 1px solid var(--vector-border-strong);
-    border-radius: 2px 0 0 2px;
-    min-height: 2rem;
+.header-chrome__search-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 0 0 0.75rem;
+  color: #c8ccd1;
+  pointer-events: none;
 }
 
-.cdx-text-input__input {
-    width: 100%;
-    border: 0;
-    background: transparent;
-    color: var(--vector-text);
-    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
-    font: inherit;
-    outline: 0;
+.header-chrome__search-icon i {
+  font-size: 1rem;
+  line-height: 1;
 }
 
-.cdx-text-input__input::placeholder {
-    color: var(--vector-muted);
+.header-chrome__search-input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--header-chrome-fg);
+  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  padding: 0 0.75rem 0 0.5rem;
 }
 
-.cdx-text-input__icon {
-    position: absolute;
-    left: 0.65rem;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
+.header-chrome__search-input::placeholder {
+  color: color-mix(in srgb, var(--header-chrome-fg) 55%, transparent);
 }
 
-.cdx-search-input__end-button {
-    min-height: 2rem;
-    padding: 0.5rem 0.9rem;
-    border: 1px solid var(--vector-border-strong);
-    border-left: 0;
-    border-radius: 0 2px 2px 0;
-    background: var(--vector-surface);
-    color: var(--vector-text);
-    font: inherit;
-    cursor: pointer;
+.header-chrome__search-input:focus {
+  outline: none;
 }
 
-.cdx-search-input__end-button:hover,
-.vector-dropdown-label:hover,
-.vector-pinnable-header-toggle-button:hover,
-.vector-user-menu .vector-menu-content-list a:hover,
-.vector-inline-links a:hover {
-    background: var(--vector-hover);
-    text-decoration: none;
+.header-chrome__search-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--header-chrome-control-height);
+  height: var(--header-chrome-control-height);
+  min-height: var(--header-chrome-control-height);
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.125rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
-.search-toggle,
-.vector-dropdown-checkbox {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-    width: 1px;
-    height: 1px;
+body:not(.theme-dark) .header-chrome__search-toggle {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.03);
 }
 
-.vector-header .search-toggle {
-    position: static;
-    opacity: 1;
-    pointer-events: auto;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    float: none;
-    flex: none;
+.header-chrome__search-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.vector-header .vector-typeahead-search-container {
+body:not(.theme-dark) .header-chrome__search-toggle:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.header-chrome__search-toggle i {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.header-chrome__search-toggle-icon--close {
+  display: none;
+}
+
+full-header.search-open .header-chrome__search-toggle-icon--open {
+  display: none;
+}
+
+full-header.search-open .header-chrome__search-toggle-icon--close {
+  display: inline-block;
+}
+
+.header-chrome__login {
+  min-width: 4.75rem;
+  min-height: var(--header-chrome-control-height);
+  height: var(--header-chrome-control-height);
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.125rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--header-chrome-fg);
+  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  padding: 0 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.header-chrome__login:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.header-chrome__auth {
+  position: relative;
+}
+
+.header-chrome__auth[data-logged-in="true"] .header-chrome__login {
+  display: none;
+}
+
+.header-chrome__auth[data-logged-in="false"] .header-chrome__user-menu {
+  display: none;
+}
+
+.header-chrome__user-menu {
+  position: relative;
+}
+
+.header-chrome__user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 14rem;
+  min-height: var(--header-chrome-control-height);
+  height: var(--header-chrome-control-height);
+  margin: 0;
+  padding: 0 0.55rem 0 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.125rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--header-chrome-fg);
+  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.header-chrome__user-trigger:hover,
+.header-chrome__user-menu.is-open .header-chrome__user-trigger {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.header-chrome__user-avatar {
+  width: var(--header-chrome-avatar-size);
+  height: var(--header-chrome-avatar-size);
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #4c8ee3;
+  overflow: hidden;
+}
+
+.header-chrome__user-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.header-chrome__user-avatar--placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+}
+
+.header-chrome__user-avatar--placeholder i {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+body:not(.theme-dark) .header-chrome__user-avatar--placeholder {
+  color: #ffffff;
+}
+
+.header-chrome__user-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.header-chrome__user-given,
+.header-chrome__user-family {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-chrome__user-family {
+  opacity: 0.92;
+}
+
+.header-chrome__user-caret {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  opacity: 0.85;
+  transition: transform 0.15s ease;
+}
+
+.header-chrome__user-menu.is-open .header-chrome__user-caret {
+  transform: rotate(180deg);
+}
+
+.header-chrome__user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 20;
+  min-width: 14.5rem;
+  padding: 0.35rem 0;
+  border: 1px solid var(--header-chrome-menu-border);
+  border-radius: 0.125rem;
+  background: var(--header-chrome-dropdown-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+body:not(.theme-dark) .header-chrome__user-dropdown {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.header-chrome__user-dropdown[hidden] {
+  display: none !important;
+}
+
+.header-chrome__user-dropdown a,
+.header-chrome__user-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--header-chrome-fg);
+  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.header-chrome__user-dropdown i {
+  flex-shrink: 0;
+  width: 1.1rem;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.header-chrome__user-dropdown a:hover,
+.header-chrome__user-dropdown button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.header-chrome__user-divider {
+  height: 1px;
+  margin: 0.35rem 0;
+  background: var(--header-chrome-menu-border);
+}
+
+.header-chrome__sidebar {
+  position: fixed;
+  top: var(--header-chrome-height);
+  left: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  width: var(--header-chrome-sidebar-width);
+  height: calc(100vh - var(--header-chrome-height));
+  height: calc(100dvh - var(--header-chrome-height));
+  background: var(--header-chrome-menu-bg);
+  color: var(--header-chrome-fg);
+  border-right: 1px solid var(--header-chrome-menu-border);
+  box-sizing: border-box;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+  overflow: hidden;
+}
+
+full-header.sidebar-open .header-chrome__sidebar {
+  transform: translateX(0);
+}
+
+.header-chrome__sidebar-nav {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-content: flex-start;
+  gap: 0.15rem;
+  min-height: 0;
+  padding: 0.75rem;
+  overflow-y: auto;
+}
+
+.header-chrome__sidebar-footer {
+  flex-shrink: 0;
+  padding: 0.75rem;
+  border-top: 1px solid var(--header-chrome-menu-border);
+}
+
+.header-chrome__theme-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.header-chrome__theme-switch-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font: 0.8125rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  color: var(--header-chrome-fg);
+  opacity: 0.88;
+  white-space: nowrap;
+}
+
+.header-chrome__theme-switch-label i {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.header-chrome__theme-switch-control {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 1.5rem;
+}
+
+.header-chrome__theme-input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.header-chrome__theme-switch-slider {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 0.2s ease;
+}
+
+body:not(.theme-dark) .header-chrome__theme-switch-slider {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.header-chrome__theme-switch-slider::after {
+  content: "";
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  transition: transform 0.2s ease;
+}
+
+.header-chrome__theme-input:checked + .header-chrome__theme-switch-slider {
+  background: #6b9eff;
+}
+
+body:not(.theme-dark) .header-chrome__theme-input:checked + .header-chrome__theme-switch-slider {
+  background: #3366cc;
+}
+
+.header-chrome__theme-input:checked + .header-chrome__theme-switch-slider::after {
+  transform: translateX(1.25rem);
+}
+
+.header-chrome__theme-input:focus-visible + .header-chrome__theme-switch-slider {
+  outline: 2px solid #6b9eff;
+  outline-offset: 2px;
+}
+
+.header-chrome__sidebar-link {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.125rem;
+  color: inherit;
+  text-decoration: none;
+  font: 0.9rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+.header-chrome__sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+body:not(.theme-dark) .header-chrome__sidebar-link:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.header-chrome__backdrop {
+  position: fixed;
+  top: var(--header-chrome-height);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 95;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+full-header.sidebar-open .header-chrome__backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (min-width: 992px) {
+  .header-chrome__sidebar {
+    transform: translateX(0);
+  }
+
+  full-header:not(.sidebar-open) .header-chrome__sidebar {
+    transform: translateX(-100%);
+  }
+
+  .header-chrome__backdrop {
     display: none;
+  }
 }
 
-.vector-dropdown {
-    position: relative;
-}
-
-.vector-dropdown-label,
-.cdx-button--fake-button {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 2rem;
-    padding: 0.35rem 0.5rem;
-    border-radius: 2px;
-    color: var(--vector-text);
-    cursor: pointer;
-    gap: 0.4rem;
-    background: transparent;
-    border: 0;
-    font: inherit;
-}
-
-.vector-dropdown .vector-dropdown-label-text {
-    font-size: 0.875rem;
-}
-
-.cdx-button--icon-only .vector-dropdown-label-text,
-.search-toggle span:last-child {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-.vector-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: currentColor;
-    flex: none;
-}
-
-/* vector-page.css masks .vector-icon with a 1px image, hiding Bootstrap font icons */
-.vector-header .vector-icon.bi {
-    -webkit-mask-image: none !important;
-    mask-image: none !important;
-    background: none !important;
-    background-color: transparent !important;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 1.25rem;
-    height: 1.25rem;
-    min-width: 1.25rem;
-    min-height: 1.25rem;
-    font-size: 1.25rem;
-    color: var(--vector-text, currentColor);
-    vertical-align: middle;
-}
-
-.vector-header .vector-icon.bi::before {
-    display: inline-block;
-    line-height: 1;
-}
-
-.vector-dropdown .vector-dropdown-content {
-    position: absolute;
-    top: calc(100% + 0.25rem);
-    left: -1px;
-    opacity: 0;
-    height: 0;
-    visibility: hidden;
-    overflow: hidden auto;
-    z-index: 50;
-    background-color: var(--vector-surface);
-    padding: 1rem;
-    font-size: 0.875rem;
-    box-shadow: var(--vector-shadow);
-    transition: opacity 100ms ease;
-    width: max-content;
-    max-width: 17rem;
-    max-height: 75vh;
-    border: 1px solid var(--vector-border);
-    border-radius: 2px;
-}
-
-.vector-dropdown .vector-dropdown-checkbox:checked ~ .vector-dropdown-content {
-    opacity: 1;
-    visibility: visible;
-    height: auto;
-}
-
-#vector-appearance-dropdown .vector-dropdown-content,
-#vector-user-links-dropdown .vector-dropdown-content {
-    left: auto;
-    right: 0;
-}
-
-#vector-appearance-dropdown .vector-dropdown-content {
-    width: 12.1rem;
-    max-width: 12.5rem;
-}
-
-.vector-main-menu-dropdown .vector-dropdown-content {
-    min-width: 15rem;
-}
-
-.vector-menu-heading,
-.vector-pinnable-header-label {
-    font-weight: 600;
-    color: var(--vector-text);
-}
-
-.vector-menu-content-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.vector-menu-content-list .mw-list-item + .mw-list-item,
-.vector-inline-links .mw-list-item + .mw-list-item {
-    margin-top: 0.5rem;
-}
-
-.vector-main-menu .vector-menu + .vector-menu,
-.vector-appearance .vector-menu + .vector-menu {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--vector-border);
-}
-
-.vector-main-menu .mw-list-item a,
-.vector-user-menu .mw-list-item a,
-.vector-inline-links a {
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    padding: 0.1rem 0;
-    color: var(--vector-text);
-    border-radius: 2px;
-}
-
-.vector-inline-links {
-    gap: 1rem;
+@media (max-width: 720px) {
+  .header-chrome__row {
     flex-wrap: wrap;
-    margin: 0;
-    font-size: 0.875rem;
-}
+    align-items: stretch;
+    gap: var(--header-chrome-toolbar-gap);
+    padding: 0.35rem 0.5rem 0.5rem;
+    min-height: auto;
+  }
 
-.vector-user-links-main .vector-menu-content {
-    display: flex;
-}
-
-.vector-user-links-main .vector-menu-content-list {
-    display: flex;
-    align-items: center;
-    font-size: 0.875rem;
-}
-
-.vector-inline-links .mw-list-item + .mw-list-item {
-    margin-top: 0;
-}
-
-.vector-pinnable-header {
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding-bottom: 0.75rem;
-    margin-bottom: 0.75rem;
-    border-bottom: 1px solid var(--vector-border);
-}
-
-.vector-pinnable-header-actions {
-    gap: 0.4rem;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-}
-
-.vector-pinnable-header-toggle-button {
-    border: 1px solid var(--vector-border);
-    background: transparent;
-    color: var(--vector-text);
-    padding: 0.2rem 0.45rem;
-    border-radius: 2px;
-    font-size: 0.75rem;
-    cursor: pointer;
-}
-
-.vector-main-menu .vector-pinnable-header-unpinned .vector-pinnable-header-pin-button,
-.vector-main-menu .vector-pinnable-header-pinned .vector-pinnable-header-unpin-button,
-.vector-appearance .vector-pinnable-header-unpinned .vector-pinnable-header-pin-button,
-.vector-appearance .vector-pinnable-header-pinned .vector-pinnable-header-unpin-button {
-    display: inline-flex;
-}
-
-.vector-main-menu .vector-pinnable-header-pinned .vector-pinnable-header-pin-button,
-.vector-main-menu .vector-pinnable-header-unpinned .vector-pinnable-header-unpin-button,
-.vector-appearance .vector-pinnable-header-pinned .vector-pinnable-header-pin-button,
-.vector-appearance .vector-pinnable-header-unpinned .vector-pinnable-header-unpin-button {
-    display: none;
-}
-
-.cdx-radio {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    column-gap: 0.6rem;
-    margin: 0.7rem 0;
-    position: relative;
-}
-
-.cdx-radio__input {
-    position: absolute;
-    left: 0;
-    top: 0;
-    opacity: 0;
-    width: calc(1.1rem + 0.6rem);
-    height: 1.1rem;
-    margin: 0;
-    pointer-events: auto;
-    cursor: pointer;
-}
-
-.cdx-radio__icon {
-    width: 1.1rem;
-    height: 1.1rem;
-    border: 1px solid var(--vector-border-strong);
-    border-radius: 50%;
-    position: relative;
-    background: transparent;
-}
-
-.cdx-radio__input:checked + .cdx-radio__icon {
-    border-color: var(--vector-accent);
-    box-shadow: inset 0 0 0 0.2rem var(--vector-surface), inset 0 0 0 0.45rem var(--vector-accent);
-}
-
-.cdx-radio__label,
-.cdx-label__label__text {
-    color: var(--vector-text);
-    cursor: pointer;
-}
-
-.vector-appearance .cdx-radio:not(.cdx-radio--inline) {
-    display: grid !important;
-    grid-template-columns: auto 1fr;
-    align-items: center;
-    column-gap: 0.6rem;
-    margin: 0.7rem 0;
-    position: relative;
-}
-
-.vector-appearance .cdx-radio__label,
-.vector-appearance .cdx-radio__label.cdx-label {
-    display: inline-flex;
-}
-
-.skin-client-pref-exclusion-notice {
-    display: block;
-    margin-top: 0.75rem;
-    font-size: 0.75rem;
-    color: var(--vector-muted);
-    line-height: 1.45;
-}
-
-.vector-main-menu-sidebar-shell {
-    position: fixed;
-    top: var(--vector-sidebar-top, var(--vector-header-height, 4.2rem));
-    bottom: var(--vector-sidebar-bottom, 0px);
-    left: 0;
-    width: 13rem;
-    z-index: 2;
-    background: var(--vector-surface);
-    border-right: 1px solid var(--vector-border);
-    overflow-y: auto;
-    padding: 1rem;
-    pointer-events: auto;
-    display: none;
-    box-sizing: border-box;
-}
-
-.vector-main-menu-pinned-container {
-    width: 100%;
-    pointer-events: auto;
-}
-
-html.vector-feature-main-menu-pinned-enabled .vector-header-start .vector-main-menu-landmark {
-    display: none;
-}
-
-.vector-main-menu--pinned {
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    padding: 0;
-    box-shadow: none;
-}
-
-.vector-main-menu--pinned .vector-pinnable-header {
-    padding-bottom: 0.375rem;
-    margin-bottom: 0.375rem;
-}
-
-.vector-main-menu--pinned .vector-pinnable-header-actions {
-    display: none;
-}
-
-.vector-main-menu--pinned .vector-menu + .vector-menu {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-}
-
-.vector-main-menu--pinned .mw-list-item a {
-    gap: 0;
-    padding: 0.375rem 0;
-    line-height: normal;
-}
-
-.vector-main-menu--pinned .vector-menu-content-list .mw-list-item + .mw-list-item {
-    margin-top: 0;
-}
-
-.vector-main-menu--pinned #p-navigation .vector-menu-heading {
-    display: none;
-}
-
-.vector-appearance-sidebar-shell {
-    position: fixed;
-    top: var(--vector-sidebar-top, var(--vector-header-height, 4.2rem));
-    bottom: var(--vector-sidebar-bottom, 0px);
-    right: 0;
-    width: 14rem;
-    z-index: 2;
-    background: var(--vector-surface);
-    border-left: 1px solid var(--vector-border);
-    overflow-y: auto;
-    padding: 1rem;
-    pointer-events: auto;
-    display: none;
-    box-sizing: border-box;
-}
-
-.vector-appearance-pinned-container {
-    width: 100%;
-    pointer-events: auto;
-}
-
-.vector-appearance-sidebar-shell .vector-appearance--pinned .vector-pinnable-header-actions {
-    display: none;
-}
-
-html.vector-feature-appearance-pinned-clientpref-1 .vector-user-links .vector-appearance-landmark {
-    display: none;
-}
-
-@media (min-width: 1120px) {
-    html.vector-feature-main-menu-pinned-enabled .vector-main-menu-sidebar-shell {
-        display: block;
-    }
-
-    html.vector-feature-main-menu-pinned-enabled {
-        --vector-pinned-left-width: 13rem;
-    }
-
-    html.vector-feature-appearance-pinned-clientpref-1 .vector-appearance-sidebar-shell,
-    html.vector-feature-page-tools-pinned-enabled .vector-appearance-sidebar-shell {
-        display: block;
-    }
-
-    html.vector-feature-appearance-pinned-clientpref-1 {
-        --vector-pinned-right-width: 14rem;
-    }
-}
-
-@media (max-width: calc(1120px - 1px)) {
-    html.vector-feature-appearance-pinned-clientpref-1 .vector-user-links .vector-appearance-landmark {
-        display: block;
-    }
-
-    html.vector-feature-main-menu-pinned-enabled .vector-header-start .vector-main-menu-landmark {
-        display: block;
-    }
-
-    .vector-main-menu-sidebar-shell,
-    .vector-appearance-sidebar-shell {
-        display: none !important;
-    }
-
-    .vector-header .vector-header-end {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        width: 100%;
-        margin-left: auto;
-    }
-
-    .vector-header .vector-search-box {
-        flex-grow: 0 !important;
-        flex-shrink: 0;
-        width: auto;
-        max-width: none;
-        margin-left: 0;
-    }
-}
-
-@media (max-width: 900px) {
-    html.skin-theme-clientpref-day,
-    html.skin-theme-clientpref-night,
-    html.skin-theme-clientpref-os {
-        --vector-page-padding: 1.5rem;
-    }
-
-    .vector-header {
-        display: grid;
-        grid-template-columns: max-content 1fr;
-        grid-template-areas: 'headerStart headerEnd';
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
-    }
-
-    .vector-header-start {
-        min-width: 0;
-    }
-
-    .vector-header-end {
-        width: 100%;
-        max-width: none;
-        justify-content: end;
-    }
-
-    .vector-header .vector-search-box {
-        width: auto;
-        max-width: none;
-        flex-grow: 0 !important;
-        margin-left: 0;
-    }
-
-    #p-vector-user-menu-overflow {
-        display: none;
-    }
-}
-
-@media (min-width: 1120px) {
-    .vector-header .search-toggle {
-        display: none !important;
-    }
-
-    .vector-header .vector-typeahead-search-container {
-        display: block;
-    }
-
-    .vector-search-box .vector-typeahead-search-container {
-        margin-right: 0;
-    }
-}
-
-.vector-dropdown-content nav#mw-panel-toc .vector-toc-list-item,
-.vector-main-menu-toc-container .vector-toc-list-item {
-    position: relative;
-}
-
-.vector-dropdown-content nav#mw-panel-toc .vector-toc-entry,
-.vector-main-menu-toc-container .vector-toc-entry {
-    position: relative;
-    padding-left: 1.75rem;
-    display: flex;
-    align-items: center;
-}
-
-.vector-dropdown-content nav#mw-panel-toc .vector-toc-link,
-.vector-main-menu-toc-container .vector-toc-link {
-    display: block;
-    padding: 0.15rem 0;
+  .header-chrome__start {
     flex: 1 1 auto;
-}
+    min-width: 0;
+  }
 
-.vector-dropdown-content nav#mw-panel-toc .vector-toc-toggle,
-.vector-main-menu-toc-container .vector-toc-toggle {
-    position: absolute;
-    left: 0.35rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 22px;
-    height: 22px;
+  .header-chrome__tools {
+    flex: 0 0 auto;
+  }
+
+  .header-chrome__search {
+    flex: 0 0 auto;
+  }
+
+  .header-chrome__search-toggle {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  }
+
+  .header-chrome__search-form {
+    display: none;
+  }
+
+  full-header.search-open .header-chrome__search-form {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    max-width: none;
+    z-index: 111;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+  }
+
+  body:not(.theme-dark) full-header.search-open .header-chrome__search-form {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  .header-chrome__brand mini-header .localized-slogan {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 420px) {
+  .header-chrome__brand mini-header .central-textlogo {
+    gap: 0.4rem;
+    font-size: 0.92rem;
+  }
+
+  .header-chrome__brand mini-header .central-textlogo__logo {
+    width: 1.75rem;
+    height: 1.75rem;
+    min-width: 1.75rem;
+  }
+
+  .header-chrome__brand mini-header .localized-slogan {
+    font-size: 0.66rem;
+  }
+
+  .header-chrome__user-name {
+    display: none;
+  }
+
+  .header-chrome__user-trigger {
+    min-width: var(--header-chrome-control-height);
+    width: var(--header-chrome-control-height);
     padding: 0;
-    border: 0;
-    background: transparent;
+    justify-content: center;
+  }
 }
-
-.client-js body.ltr .vector-dropdown-content nav#mw-panel-toc .vector-toc-toggle,
-.client-js body.ltr .vector-main-menu-toc-container .vector-toc-toggle {
-    transform: translateY(-50%) rotate(-90deg);
-}
-
-.client-js .vector-dropdown-content nav#mw-panel-toc .vector-toc-list-item.vector-toc-list-item-expanded .vector-toc-entry > .vector-toc-toggle,
-.client-js .vector-main-menu-toc-container .vector-toc-list-item.vector-toc-list-item-expanded .vector-toc-entry > .vector-toc-toggle {
-    transform: translateY(-50%) rotate(0deg);
-}
-
-.client-js body.rtl .vector-dropdown-content nav#mw-panel-toc .vector-toc-toggle,
-.client-js body.rtl .vector-main-menu-toc-container .vector-toc-toggle {
-    transform: translateY(-50%) rotate(90deg);
-}
-
-.vector-dropdown-content nav#mw-panel-toc .vector-toc-text,
-.vector-main-menu-toc-container .vector-toc-text {
-    padding: 2px 0;
-    line-height: 1.25;
-}
-
-.vector-dropdown-content nav#mw-panel-toc .vector-toc-list-item,
-.vector-main-menu-toc-container .vector-toc-list-item {
-    margin: 0 0 0.2rem 0;
-}
-
-@media (max-width: 640px) {
-    html.skin-theme-clientpref-day,
-    html.skin-theme-clientpref-night,
-    html.skin-theme-clientpref-os {
-        --vector-page-padding: 1rem;
-    }
-
-    .vector-header-start {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .mw-logo-icon {
-        display: block;
-    }
-
-    .mw-logo-wordmark,
-    .mw-logo-tagline {
-        width: 7.5em;
-    }
-
-    #vector-user-links-dropdown {
-        display: none;
-    }
-}
+</style>
+<header class="header-container header-chrome" role="banner">
+  <div class="header-chrome__row">
+    <div class="header-chrome__start">
+      <button
+        class="header-chrome__menu"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="header-chrome-sidebar"
+      >
+        <i class="bi bi-list header-chrome__menu-icon header-chrome__menu-icon--open" aria-hidden="true"></i>
+        <i class="bi bi-x-lg header-chrome__menu-icon header-chrome__menu-icon--close" aria-hidden="true"></i>
+      </button>
+      <div class="header-chrome__brand">
+        <mini-header></mini-header>
+      </div>
+    </div>
+    <div class="header-chrome__tools">
+      <div class="header-chrome__search">
+        <button
+          class="header-chrome__search-toggle"
+          type="button"
+          aria-label="Open search"
+          aria-expanded="false"
+          aria-controls="header-chrome-search-form"
+        >
+          <i class="bi bi-search header-chrome__search-toggle-icon--open" aria-hidden="true"></i>
+          <i class="bi bi-x-lg header-chrome__search-toggle-icon--close" aria-hidden="true"></i>
+        </button>
+        <form
+          id="header-chrome-search-form"
+          class="header-chrome__search-form"
+          role="search"
+          action="#"
+          method="get"
+        >
+          <span class="header-chrome__search-icon" aria-hidden="true">
+            <i class="bi bi-search"></i>
+          </span>
+          <input
+            class="header-chrome__search-input"
+            type="search"
+            name="search"
+            placeholder="Search Genipedia..."
+            aria-label="Search Genipedia"
+            autocomplete="off"
+          >
+        </form>
+      </div>
+      <div class="header-chrome__end">
+        <div class="header-chrome__auth" data-logged-in="false">
+        <button class="header-chrome__login" type="button">Log In</button>
+        <div class="header-chrome__user-menu">
+          <button
+            class="header-chrome__user-trigger"
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded="false"
+            aria-controls="header-chrome-user-menu"
+          >
+            <span class="header-chrome__user-avatar header-chrome__user-avatar--placeholder" aria-hidden="true">
+              <i class="bi bi-person-fill" aria-hidden="true"></i>
+            </span>
+            <span class="header-chrome__user-name">
+              <span class="header-chrome__user-given"></span>
+              <span class="header-chrome__user-family"></span>
+            </span>
+            <i class="bi bi-chevron-down header-chrome__user-caret" aria-hidden="true"></i>
+          </button>
+          <div
+            id="header-chrome-user-menu"
+            class="header-chrome__user-dropdown"
+            role="menu"
+            hidden
+          >
+            <a href="#" role="menuitem"><i class="bi bi-person" aria-hidden="true"></i><span>View Your Profile</span></a>
+            <a href="#" role="menuitem"><i class="bi bi-diagram-3" aria-hidden="true"></i><span>View Your Tree</span></a>
+            <a href="#" role="menuitem"><i class="bi bi-pencil-square" aria-hidden="true"></i><span>Edit Your Profile</span></a>
+            <div class="header-chrome__user-divider" role="separator"></div>
+            <a href="#" role="menuitem"><i class="bi bi-people" aria-hidden="true"></i><span>Invite Your Family</span></a>
+            <a href="#" role="menuitem"><i class="bi bi-gear" aria-hidden="true"></i><span>App Settings</span></a>
+            <div class="header-chrome__user-divider" role="separator"></div>
+            <button type="button" class="header-chrome__user-logout" role="menuitem"><i class="bi bi-box-arrow-right" aria-hidden="true"></i><span>Log Out</span></button>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</header>
+<button class="header-chrome__backdrop" type="button" aria-label="Close menu" hidden></button>
+<aside id="header-chrome-sidebar" class="header-chrome__sidebar" aria-label="Site navigation">
+  <nav class="header-chrome__sidebar-nav">
+    <a class="header-chrome__sidebar-link" href="#"><i class="bi bi-house" aria-hidden="true"></i><span>Home</span></a>
+    <a class="header-chrome__sidebar-link" href="#"><i class="bi bi-search" aria-hidden="true"></i><span>Search</span></a>
+    <a class="header-chrome__sidebar-link" href="#"><i class="bi bi-book" aria-hidden="true"></i><span>Browse</span></a>
+    <a class="header-chrome__sidebar-link" href="#"><i class="bi bi-question-circle" aria-hidden="true"></i><span>Help</span></a>
+  </nav>
+  <div class="header-chrome__sidebar-footer">
+    <div class="header-chrome__theme-switch">
+      <span class="header-chrome__theme-switch-label">
+        <i class="bi bi-sun" aria-hidden="true"></i>
+        <span>Light</span>
+      </span>
+      <label class="header-chrome__theme-switch-control">
+        <input
+          type="checkbox"
+          class="header-chrome__theme-input"
+          role="switch"
+          aria-label="Dark mode"
+        >
+        <span class="header-chrome__theme-switch-slider" aria-hidden="true"></span>
+      </label>
+      <span class="header-chrome__theme-switch-label">
+        <i class="bi bi-moon-stars" aria-hidden="true"></i>
+        <span>Dark</span>
+      </span>
+    </div>
+  </div>
+</aside>
 `;
 
-function ensureFullHeaderStyles() {
-    if (document.getElementById(FULL_HEADER_STYLE_ELEMENT_ID)) {
-        return;
-    }
+const FULL_HEADER_SCRIPT_URL = document.currentScript?.src || '';
+const FULL_HEADER_SLOGAN = 'Free Geneology Encyclopedia';
+const FULL_HEADER_SESSION_KEY = 'genipedia-header-session';
 
-    const shellStyles = document.createElement('style');
-    shellStyles.id = FULL_HEADER_STYLE_ELEMENT_ID;
-    shellStyles.textContent = FULL_HEADER_STYLES;
-    document.head.appendChild(shellStyles);
-}
-
-const VECTOR_STORAGE_KEYS = {
-    theme: 'genipedia-vector-theme',
-    width: 'genipedia-vector-width',
-    fontSize: 'genipedia-vector-font-size',
-    headerMode: 'genipedia-vector-header-mode',
-    mainMenuPinned: 'genipedia-vector-main-menu-pinned-v1',
-    appearancePinned: 'genipedia-vector-appearance-pinned-v2'
+const FULL_HEADER_DEMO_USER = {
+  givenName: 'Shaun',
+  familyName: 'Roselt',
+  photoUrl: '',
 };
 
-function getHeaderAssetUrl(fileName) {
-    return new URL(fileName, FULL_HEADER_ASSET_ROOT).href;
+function resolveFromComponent(relativePath) {
+  try {
+    return new URL(relativePath, FULL_HEADER_SCRIPT_URL || window.location.href).href;
+  } catch {
+    return relativePath;
+  }
 }
 
-const OFFLINE_SHELL_HOME_URL = new URL('../index.html', FULL_HEADER_BASE_URL).href;
-const OFFLINE_SHELL_NOOP_URL = '#';
-const GENIPEDIA_LOGO_URL = new URL('../assets/Logo.png', FULL_HEADER_BASE_URL).href;
-const VECTOR_PINNED_SIDEBAR_MIN_WIDTH = 1120;
+const THEME_STORAGE_KEY = 'genipedia-theme';
 
-function shouldUsePersistentVectorSidebars() {
-    return window.innerWidth >= VECTOR_PINNED_SIDEBAR_MIN_WIDTH;
-}
-
-function ensureLocalVectorShell() {
-    const html = document.documentElement;
-    const { body } = document;
-
-    if (html) {
-        html.lang = 'en';
-        html.dir = 'ltr';
-        html.classList.add(
-            'vector-feature-language-in-header-enabled',
-            'vector-feature-language-in-main-menu-disabled',
-            'vector-feature-language-in-main-page-header-disabled',
-            'vector-feature-page-tools-pinned-disabled',
-            'vector-sticky-header-enabled',
-            'vector-toc-available',
-            'skin-thumbsize-clientpref-standard'
-        );
-        html.classList.remove('client-nojs');
+function readStoredTheme() {
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (theme === 'dark' || theme === 'light') {
+      return theme;
     }
+  } catch {
+    // ignore storage errors
+  }
 
-    if (body) {
-        body.classList.add(
-            'skin--responsive',
-            'skin-vector',
-            'skin-vector-search-vue',
-            'mediawiki',
-            'ltr',
-            'sitedir-ltr',
-            'mw-hide-empty-elt',
-            'ns-0',
-            'ns-subject',
-            'page-Nelson_Mandela',
-            'rootpage-Nelson_Mandela',
-            'skin-vector-2022',
-            'action-view'
-        );
-    }
-
-    ensureFullHeaderStyles();
-
-    applyVectorAppearanceState(readVectorAppearanceState());
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-function readVectorAppearanceState() {
-    return {
-        theme: readVectorPreference(VECTOR_STORAGE_KEYS.theme, 'night', ['os', 'day', 'night']),
-        width: 'wide',
-        fontSize: readVectorPreference(VECTOR_STORAGE_KEYS.fontSize, '1', ['0', '1', '2']),
-        headerMode: readVectorPreference(VECTOR_STORAGE_KEYS.headerMode, 'sticky', ['sticky', 'auto-hide']),
-        mainMenuPinned: shouldUsePersistentVectorSidebars(),
-        appearancePinned: shouldUsePersistentVectorSidebars()
-    };
-}
+function applyDocumentTheme(theme = readStoredTheme()) {
+  const isDark = theme === 'dark';
+  document.body.classList.toggle('theme-dark', isDark);
 
-function readVectorPreference(key, fallback, allowedValues) {
-    try {
-        const storedValue = window.localStorage.getItem(key);
-        if (storedValue && allowedValues.includes(storedValue)) {
-            return storedValue;
-        }
-    } catch {
-        return fallback;
-    }
+  document.querySelectorAll('.header-chrome__theme-input').forEach((input) => {
+    input.checked = isDark;
+    input.setAttribute('aria-checked', isDark ? 'true' : 'false');
+  });
 
-    return fallback;
-}
-
-function persistVectorAppearanceState(state) {
-    state.width = 'wide';
-    try {
-        window.localStorage.setItem(VECTOR_STORAGE_KEYS.theme, state.theme);
-        window.localStorage.setItem(VECTOR_STORAGE_KEYS.width, 'wide');
-        window.localStorage.setItem(VECTOR_STORAGE_KEYS.fontSize, state.fontSize);
-        window.localStorage.setItem(VECTOR_STORAGE_KEYS.headerMode, state.headerMode);
-    } catch { }
-}
-
-function applyVectorAppearanceState(state) {
-    state.width = 'wide';
-    state.mainMenuPinned = shouldUsePersistentVectorSidebars();
-    state.appearancePinned = shouldUsePersistentVectorSidebars();
-    const html = document.documentElement;
-    if (!html) {
-        return;
-    }
-
-    html.classList.remove(
-        'skin-theme-clientpref-os',
-        'skin-theme-clientpref-day',
-        'skin-theme-clientpref-night',
-        'vector-feature-limited-width-clientpref-0',
-        'vector-feature-limited-width-clientpref-1',
-        'vector-feature-limited-width-content-enabled',
-        'vector-feature-custom-font-size-clientpref-0',
-        'vector-feature-custom-font-size-clientpref-1',
-        'vector-feature-custom-font-size-clientpref-2',
-        'vector-feature-main-menu-pinned-enabled',
-        'vector-feature-main-menu-pinned-disabled',
-        'vector-feature-appearance-pinned-clientpref-0',
-        'vector-feature-appearance-pinned-clientpref-1',
-        'vector-header-mode-sticky',
-        'vector-header-mode-auto-hide',
-        'vector-width-standard',
-        'vector-width-wide',
-        'vector-font-size-0',
-        'vector-font-size-1',
-        'vector-font-size-2'
-    );
-
-    html.classList.add(`skin-theme-clientpref-${state.theme}`);
-    html.classList.add(`vector-feature-custom-font-size-clientpref-${state.fontSize}`);
-    html.classList.add(`vector-font-size-${state.fontSize}`);
-    html.classList.add(`vector-header-mode-${state.headerMode}`);
-    html.classList.add(
-        state.width === 'wide'
-            ? 'vector-feature-limited-width-clientpref-0'
-            : 'vector-feature-limited-width-clientpref-1'
-    );
-    html.classList.add(
-        state.width === 'wide' ? 'vector-width-wide' : 'vector-width-standard',
-        'vector-feature-limited-width-content-enabled',
-        state.mainMenuPinned
-            ? 'vector-feature-main-menu-pinned-enabled'
-            : 'vector-feature-main-menu-pinned-disabled',
-        state.appearancePinned
-            ? 'vector-feature-appearance-pinned-clientpref-1'
-            : 'vector-feature-appearance-pinned-clientpref-0'
-    );
-
-    if (document.body) {
-        document.body.dataset.vectorTheme = state.theme;
-        document.body.dataset.vectorWidth = state.width;
-        document.body.dataset.vectorFontSize = state.fontSize;
-        document.body.dataset.vectorHeaderMode = state.headerMode;
-        document.body.dataset.vectorMainMenuPinned = state.mainMenuPinned ? 'true' : 'false';
-        document.body.dataset.vectorAppearancePinned = state.appearancePinned ? 'true' : 'false';
-        document.body.dispatchEvent(
-            new CustomEvent('genipedia:vector-appearance-change', {
-                detail: state
-            })
-        );
-    }
-
-    window.__genipediaVectorAppearanceState = state;
-}
-
-function getCurrentVectorAppearanceState() {
-    return window.__genipediaVectorAppearanceState || readVectorAppearanceState();
-}
-
-function buildAppearancePanelMarkup() {
-    return `
-<div id="vector-appearance" class="vector-appearance vector-pinnable-element">
-    <div class="vector-pinnable-header vector-appearance-pinnable-header vector-pinnable-header-unpinned" data-feature-name="appearance-pinned">
-        <div class="vector-pinnable-header-label">Appearance</div>
-        <div class="vector-pinnable-header-actions">
-            <button type="button" class="vector-pinnable-header-toggle-button vector-pinnable-header-pin-button" data-vector-action="pin-appearance">move to sidebar</button>
-            <button type="button" class="vector-pinnable-header-toggle-button vector-pinnable-header-unpin-button" data-vector-action="hide-appearance">hide</button>
-        </div>
-    </div>
-    <div class="mw-portlet mw-portlet-skin-client-prefs-vector-feature-custom-font-size vector-menu">
-        <div class="vector-menu-heading">Text</div>
-        <div class="vector-menu-content">
-            <ul class="vector-menu-content-list">
-                <li class="mw-list-item mw-list-item-js">
-                    <div>
-                        <form>
-                            <div class="cdx-radio">
-                                <input name="skin-client-pref-vector-feature-custom-font-size-group" id="skin-client-pref-vector-feature-custom-font-size-value-0" type="radio" value="0" class="cdx-radio__input" data-vector-setting="fontSize">
-                                <span class="cdx-radio__icon"></span>
-                                <label class="cdx-label cdx-radio__label" for="skin-client-pref-vector-feature-custom-font-size-value-0"><span class="cdx-label__label__text">Small</span></label>
-                            </div>
-                            <div class="cdx-radio">
-                                <input name="skin-client-pref-vector-feature-custom-font-size-group" id="skin-client-pref-vector-feature-custom-font-size-value-1" type="radio" value="1" class="cdx-radio__input" data-vector-setting="fontSize">
-                                <span class="cdx-radio__icon"></span>
-                                <label class="cdx-label cdx-radio__label" for="skin-client-pref-vector-feature-custom-font-size-value-1"><span class="cdx-label__label__text">Standard</span></label>
-                            </div>
-                            <div class="cdx-radio">
-                                <input name="skin-client-pref-vector-feature-custom-font-size-group" id="skin-client-pref-vector-feature-custom-font-size-value-2" type="radio" value="2" class="cdx-radio__input" data-vector-setting="fontSize">
-                                <span class="cdx-radio__icon"></span>
-                                <label class="cdx-label cdx-radio__label" for="skin-client-pref-vector-feature-custom-font-size-value-2"><span class="cdx-label__label__text">Large</span></label>
-                            </div>
-                        </form>
-                    </div>
-                </li>
-            </ul>
-            <span class="skin-client-pref-exclusion-notice">Saved for this browser.</span>
-        </div>
-    </div>
-    <div class="mw-portlet mw-portlet-skin-client-prefs-vector-feature-header-mode vector-menu">
-        <div class="vector-menu-heading">Header</div>
-        <div class="vector-menu-content">
-            <ul class="vector-menu-content-list">
-                <li class="mw-list-item mw-list-item-js">
-                    <div>
-                        <form>
-                            <div class="cdx-radio">
-                                <input name="skin-client-pref-vector-feature-header-mode-group" id="skin-client-pref-vector-feature-header-mode-value-sticky" type="radio" value="sticky" class="cdx-radio__input" data-vector-setting="headerMode">
-                                <span class="cdx-radio__icon"></span>
-                                <label class="cdx-label cdx-radio__label" for="skin-client-pref-vector-feature-header-mode-value-sticky"><span class="cdx-label__label__text">Always show</span></label>
-                            </div>
-                            <div class="cdx-radio">
-                                <input name="skin-client-pref-vector-feature-header-mode-group" id="skin-client-pref-vector-feature-header-mode-value-auto-hide" type="radio" value="auto-hide" class="cdx-radio__input" data-vector-setting="headerMode">
-                                <span class="cdx-radio__icon"></span>
-                                <label class="cdx-label cdx-radio__label" for="skin-client-pref-vector-feature-header-mode-value-auto-hide"><span class="cdx-label__label__text">Hide on scroll</span></label>
-                            </div>
-                        </form>
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <div class="mw-portlet mw-portlet-skin-client-prefs-skin-theme vector-menu">
-        <div class="vector-menu-heading">Theme <span><span></span></span></div>
-        <div class="vector-menu-content">
-            <ul class="vector-menu-content-list">
-                <li class="mw-list-item mw-list-item-js">
-                    <div>
-                        <form>
-                            <div class="cdx-radio">
-                                <input name="skin-client-pref-skin-theme-group" id="skin-client-pref-skin-theme-value-os" type="radio" value="os" class="cdx-radio__input" data-vector-setting="theme">
-                                <span class="cdx-radio__icon"></span>
-                                <label class="cdx-label cdx-radio__label" for="skin-client-pref-skin-theme-value-os"><span class="cdx-label__label__text">Automatic</span></label>
-                            </div>
-                            <div class="cdx-radio">
-                                <input name="skin-client-pref-skin-theme-group" id="skin-client-pref-skin-theme-value-day" type="radio" value="day" class="cdx-radio__input" data-vector-setting="theme">
-                                <span class="cdx-radio__icon"></span>
-                                <label class="cdx-label cdx-radio__label" for="skin-client-pref-skin-theme-value-day"><span class="cdx-label__label__text">Light</span></label>
-                            </div>
-                            <div class="cdx-radio">
-                                <input name="skin-client-pref-skin-theme-group" id="skin-client-pref-skin-theme-value-night" type="radio" value="night" class="cdx-radio__input" data-vector-setting="theme">
-                                <span class="cdx-radio__icon"></span>
-                                <label class="cdx-label cdx-radio__label" for="skin-client-pref-skin-theme-value-night"><span class="cdx-label__label__text">Dark</span></label>
-                            </div>
-                        </form>
-                        <span id="skin-theme-beta-notice" class="skin-client-pref-exclusion-notice">Automatic follows your system preference.</span>
-                    </div>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>`;
+  return theme;
 }
 
 class FullHeader extends HTMLElement {
-    connectedCallback() {
-        if (this.__rendered) return;
-        this.__rendered = true;
+  connectedCallback() {
+    if (this.__rendered) return;
+    this.__rendered = true;
+    applyDocumentTheme();
+    this.innerHTML = FULL_HEADER_TEMPLATE;
 
-        ensureLocalVectorShell();
-        this.state = getCurrentVectorAppearanceState();
-        this.render();
-        this.installMainMenuSidebarTarget();
-        this.installAppearanceSidebarTarget();
-        this.cacheElements();
-        this.installAppearancePanel();
-        this.bindEvents();
-        this.installSidebarOffsetSync();
-        this.syncSidebarOffsets();
-        this.syncUi();
-        this.updateHeaderVisibility(true);
-    }
+    const syncBrand = () => {
+      const miniHeader = this.querySelector('mini-header');
+      const logo = miniHeader?.querySelector('.central-textlogo__logo');
+      const homeLink = miniHeader?.querySelector('.central-textlogo__home-link');
+      const slogan = miniHeader?.querySelector('.localized-slogan');
 
-    syncSidebarOffsets() {
-        const headerContainer = this.querySelector('.vector-header-container');
-        const height = headerContainer
-            ? headerContainer.offsetHeight || headerContainer.getBoundingClientRect().height
-            : 0;
+      if (logo) {
+        logo.src = resolveFromComponent('../assets/Logo.png');
+        logo.alt = '';
+      }
 
-        if (height > 0) {
-            document.documentElement.style.setProperty('--vector-header-height', `${height}px`);
+      if (homeLink) {
+        homeLink.href = resolveFromComponent('../index.html');
+      }
+
+      if (slogan) {
+        if (slogan.textContent !== FULL_HEADER_SLOGAN) {
+          slogan.textContent = FULL_HEADER_SLOGAN;
         }
 
-        document.documentElement.style.setProperty(
-            '--vector-sidebar-top',
-            headerContainer?.classList.contains('vector-header-container-hidden') ? '0px' : `${Math.max(0, height)}px`
-        );
-
-        const footerContainer = document.querySelector('.mw-footer-container');
-        let footerOverlap = 0;
-
-        if (footerContainer) {
-            const footerTop = footerContainer.getBoundingClientRect().top;
-            if (footerTop < window.innerHeight) {
-                footerOverlap = Math.max(0, window.innerHeight - Math.max(0, footerTop));
+        if (!slogan.dataset.fullHeaderSlogan) {
+          slogan.dataset.fullHeaderSlogan = 'true';
+          new MutationObserver(() => {
+            if (slogan.textContent !== FULL_HEADER_SLOGAN) {
+              slogan.textContent = FULL_HEADER_SLOGAN;
             }
+          }).observe(slogan, { characterData: true, childList: true, subtree: true });
         }
+      }
+    };
 
-        document.documentElement.style.setProperty('--vector-sidebar-bottom', `${footerOverlap}px`);
+    const runSync = () => {
+      requestAnimationFrame(() => {
+        syncBrand();
+        requestAnimationFrame(syncBrand);
+      });
+    };
+
+    if (customElements.get('mini-header')) {
+      runSync();
+    } else {
+      customElements.whenDefined('mini-header').then(runSync);
     }
 
-    installSidebarOffsetSync() {
-        const headerContainer = this.querySelector('.vector-header-container');
+    this.#syncHeaderHeight();
+    this.#initTheme();
+    this.#initSidebar();
+    this.#initSearch();
+    this.#initAuth();
+  }
 
-        this.sidebarOffsetResizeObserver = typeof ResizeObserver === 'function'
-            ? new ResizeObserver(() => this.syncSidebarOffsets())
-            : null;
-
-        if (headerContainer && this.sidebarOffsetResizeObserver) {
-            this.sidebarOffsetResizeObserver.observe(headerContainer);
-        }
-
-        this.handleScroll = () => this.updateHeaderVisibility();
-        this.syncHeaderScrollListener();
-
-        this.handleSidebarScroll = () => {
-            if (this.sidebarOffsetFrame) {
-                return;
-            }
-
-            this.sidebarOffsetFrame = requestAnimationFrame(() => {
-                this.sidebarOffsetFrame = 0;
-                this.syncSidebarOffsets();
-            });
-        };
-        window.addEventListener('scroll', this.handleSidebarScroll, { passive: true });
-
-        this.handleLoad = () => this.updateHeaderVisibility(true);
-        window.addEventListener('load', this.handleLoad);
-
-        requestAnimationFrame(() => this.updateHeaderVisibility(true));
+  #syncHeaderHeight() {
+    const header = this.querySelector('.header-container');
+    if (!header) {
+      return;
     }
 
-    syncHeaderScrollListener() {
-        if (!this.handleScroll) {
-            return;
-        }
+    const update = () => {
+      this.style.setProperty('--header-chrome-height', `${header.offsetHeight}px`);
+    };
 
-        const shouldAutoHide = this.state?.headerMode === 'auto-hide';
-        if (shouldAutoHide) {
-            if (!this.isScrollListenerAttached) {
-                this.lastScrollY = Math.max(0, window.scrollY || window.pageYOffset || 0);
-                window.addEventListener('scroll', this.handleScroll, { passive: true });
-                this.isScrollListenerAttached = true;
-            }
-            return;
-        }
+    update();
+    this._headerResizeObserver = new ResizeObserver(update);
+    this._headerResizeObserver.observe(header);
+  }
 
-        if (this.isScrollListenerAttached) {
-            window.removeEventListener('scroll', this.handleScroll);
-            this.isScrollListenerAttached = false;
-        }
-
-        this.headerHidden = false;
-        this.lastScrollY = Math.max(0, window.scrollY || window.pageYOffset || 0);
+  #initTheme() {
+    const themeInput = this.querySelector('.header-chrome__theme-input');
+    if (!themeInput) {
+      return;
     }
 
-    updateHeaderVisibility(force = false) {
-        const headerContainer = this.querySelector('.vector-header-container');
-        if (!headerContainer) {
-            return;
-        }
+    applyDocumentTheme();
 
-        const currentScrollY = Math.max(0, window.scrollY || window.pageYOffset || 0);
-        const previousScrollY = typeof this.lastScrollY === 'number' ? this.lastScrollY : currentScrollY;
-        const delta = currentScrollY - previousScrollY;
-        const shouldAutoHide = this.state?.headerMode === 'auto-hide';
+    themeInput.addEventListener('change', () => {
+      const nextTheme = themeInput.checked ? 'dark' : 'light';
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+      } catch {
+        // ignore storage errors
+      }
+      applyDocumentTheme(nextTheme);
+    });
+  }
 
-        let nextHidden = Boolean(this.headerHidden);
-        if (!shouldAutoHide) {
-            nextHidden = false;
-        } else if (currentScrollY <= 16) {
-            nextHidden = false;
-        } else if (delta > 4) {
-            nextHidden = true;
-        } else if (delta < -4 || force) {
-            nextHidden = false;
-        }
+  #initSearch() {
+    const searchToggle = this.querySelector('.header-chrome__search-toggle');
+    const searchInput = this.querySelector('.header-chrome__search-input');
+    const mobileQuery = window.matchMedia('(max-width: 720px)');
 
-        this.lastScrollY = currentScrollY;
-
-        const changed = nextHidden !== Boolean(this.headerHidden);
-        this.headerHidden = nextHidden;
-        headerContainer.classList.toggle('vector-header-container-hidden', nextHidden);
-        document.body?.classList.toggle('vector-header-hidden', nextHidden);
-
-        if (changed) {
-            this.syncSidebarOffsets();
-            requestAnimationFrame(() => this.syncSidebarOffsets());
-            return;
-        }
-
-        this.syncSidebarOffsets();
+    if (!searchToggle) {
+      return;
     }
 
-    render() {
-        this.innerHTML = `
-<div class="vector-shell">
-    <div class="vector-header-container">
-        <header class="vector-header mw-header no-font-mode-scale">
-            <div class="vector-header-start">
-                <nav class="vector-main-menu-landmark" aria-label="Site">
-                    <div id="vector-main-menu-dropdown" class="vector-dropdown vector-main-menu-dropdown vector-button-flush-left vector-button-flush-right" title="Main menu">
-                        <input type="checkbox" id="vector-main-menu-dropdown-checkbox" role="button" aria-haspopup="true" class="vector-dropdown-checkbox" aria-label="Main menu">
-                        <label id="vector-main-menu-dropdown-label" for="vector-main-menu-dropdown-checkbox" class="vector-dropdown-label cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only" aria-hidden="true"><i class="vector-icon bi bi-list" aria-hidden="true"></i>
-<span class="vector-dropdown-label-text">Main menu</span>
-                        </label>
-                        <div class="vector-dropdown-content">
-                            <div id="vector-main-menu-unpinned-container" class="vector-unpinned-container">
-                                <div id="vector-main-menu" class="vector-main-menu vector-pinnable-element">
-                                    <div class="vector-pinnable-header vector-main-menu-pinnable-header vector-pinnable-header-unpinned">
-                                        <div class="vector-pinnable-header-label">Main menu</div>
-                                        <div class="vector-pinnable-header-actions">
-                                            <button type="button" class="vector-pinnable-header-toggle-button vector-pinnable-header-pin-button" data-vector-action="pin-main-menu">move to sidebar</button>
-                                            <button type="button" class="vector-pinnable-header-toggle-button vector-pinnable-header-unpin-button" data-vector-action="hide-main-menu">hide</button>
-                                        </div>
-                                    </div>
-                                    <div id="p-navigation" class="vector-menu mw-portlet mw-portlet-navigation">
-                                        <div class="vector-menu-heading">Navigation</div>
-                                        <div class="vector-menu-content">
-                                            <ul class="vector-menu-content-list">
-                                                <li id="n-mainpage-description" class="mw-list-item"><a href="${OFFLINE_SHELL_HOME_URL}" title="Visit the main page"><span>Main page</span></a></li>
-                                                <li id="n-contents" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="Guides to browsing Genipedia"><span>Contents</span></a></li>
-                                                <li id="n-currentevents" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="Articles related to current events"><span>Current events</span></a></li>
-                                                <li id="n-randompage" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="Visit a randomly selected article"><span>Random article</span></a></li>
-                                                <li id="n-aboutsite" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="Learn about Genipedia and how it works"><span>About Genipedia</span></a></li>
-                                                <li id="n-contactpage" class="mw-list-item"><a href="${OFFLINE_SHELL_NOOP_URL}" title="How to contact Genipedia"><span>Contact us</span></a></li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                    
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-                <div class="central-textlogo vector-header-mini-logo">
-                    <img class="central-textlogo__logo" src="${GENIPEDIA_LOGO_URL}" alt="" aria-hidden="true">
-                    <h1 class="central-textlogo-wrapper">
-                        <span class="central-textlogo__wordmark">
-                            <a href="${OFFLINE_SHELL_HOME_URL}" class="central-textlogo__home-link" aria-label="Home">
-                                <span class="central-textlogo__wordmark-accent">G</span>ENIPEDI<span class="central-textlogo__wordmark-accent">A</span>
-                            </a>
-                        </span>
-                        <strong class="localized-slogan">The Free Geneology Encyclopedia</strong>
-                    </h1>
-                </div>
-            </div>
-            <div class="vector-header-end">
-                <div id="p-search" role="search" class="vector-search-box-vue vector-search-box-collapses vector-search-box-show-thumbnail vector-search-box-auto-expand-width vector-search-box">
-                    <a href="${OFFLINE_SHELL_NOOP_URL}" class="cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only search-toggle" title="Search Genipedia"><i class="vector-icon bi bi-search" aria-hidden="true"></i>
-<span>Search</span>
-                    </a>
-                    <div class="vector-typeahead-search-container">
-                        <div class="cdx-typeahead-search cdx-typeahead-search--show-thumbnail cdx-typeahead-search--auto-expand-width">
-                            <form action="${OFFLINE_SHELL_NOOP_URL}" id="searchform" class="cdx-search-input cdx-search-input--has-end-button">
-                                <div id="simpleSearch" class="cdx-search-input__input-wrapper" data-search-loc="header-moved">
-                                    <div class="cdx-text-input cdx-text-input--has-start-icon">
-                                        <input class="cdx-text-input__input mw-searchInput" autocomplete="off" type="search" name="search" placeholder="Search Genipedia" aria-label="Search Genipedia" autocapitalize="none" spellcheck="false" title="Search Genipedia" id="searchInput">
-                                        <i class="cdx-text-input__icon cdx-text-input__start-icon vector-icon bi bi-search" aria-hidden="true"></i>
-                                    </div>
-                                    <input type="hidden" name="title" value="Special:Search">
-                                </div>
-                                <button class="cdx-button cdx-search-input__end-button" type="submit">Search</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                <nav class="vector-user-links vector-user-links-wide" aria-label="Personal tools">
-                    <div class="vector-user-links-main">
-                        <div id="p-vector-user-menu-preferences" class="vector-menu mw-portlet emptyPortlet"><div class="vector-menu-content"><ul class="vector-menu-content-list"></ul></div></div>
-                        <div id="p-vector-user-menu-userpage" class="vector-menu mw-portlet emptyPortlet"><div class="vector-menu-content"><ul class="vector-menu-content-list"></ul></div></div>
-                        <nav class="vector-appearance-landmark" aria-label="Appearance">
-                            <div id="vector-appearance-dropdown" class="vector-dropdown" title="Change the appearance of the page's font size, width, and color">
-                                <input type="checkbox" id="vector-appearance-dropdown-checkbox" role="button" aria-haspopup="true" class="vector-dropdown-checkbox" aria-label="Appearance">
-                                <label id="vector-appearance-dropdown-label" for="vector-appearance-dropdown-checkbox" class="vector-dropdown-label cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only" aria-hidden="true"><i class="vector-icon bi bi-gear" aria-hidden="true"></i>
-<span class="vector-dropdown-label-text">Appearance</span>
-                                </label>
-                                <div class="vector-dropdown-content">
-                                    <div id="vector-appearance-unpinned-container" class="vector-unpinned-container"></div>
-                                </div>
-                            </div>
-                        </nav>
-                        <div id="p-vector-user-menu-notifications" class="vector-menu mw-portlet emptyPortlet"><div class="vector-menu-content"><ul class="vector-menu-content-list"></ul></div></div>
-                        <div id="p-vector-user-menu-overflow" class="vector-menu mw-portlet">
-                            <div class="vector-menu-content">
-                                <ul class="vector-menu-content-list vector-inline-links">
-                                    <li id="pt-login-2" class="mw-list-item user-links-collapsible-item"><a href="${OFFLINE_SHELL_NOOP_URL}"><span>Log in</span></a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="vector-user-links-dropdown" class="vector-dropdown vector-user-menu vector-button-flush-right vector-user-menu-logged-out user-links-collapsible-item" title="Log in and more options">
-                        <input type="checkbox" id="vector-user-links-dropdown-checkbox" role="button" aria-haspopup="true" class="vector-dropdown-checkbox" aria-label="Personal tools">
-                        <label id="vector-user-links-dropdown-label" for="vector-user-links-dropdown-checkbox" class="vector-dropdown-label cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only" aria-hidden="true"><i class="vector-icon bi bi-three-dots" aria-hidden="true"></i>
-<span class="vector-dropdown-label-text">Personal tools</span>
-                        </label>
-                        <div class="vector-dropdown-content">
-                            <div id="p-personal" class="vector-menu mw-portlet mw-portlet-personal user-links-collapsible-item" title="User menu">
-                                <div class="vector-menu-content">
-                                    <ul class="vector-menu-content-list">
-                                        <li id="pt-login" class="mw-list-item user-links-collapsible-item"><a href="${OFFLINE_SHELL_NOOP_URL}"><i class="vector-icon bi bi-box-arrow-in-right" aria-hidden="true"></i>
-<span>Log in</span></a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </nav>
-            </div>
-        </header>
-    </div>
-</div>`;
+    const closeSearch = () => {
+      this.classList.remove('search-open');
+      searchToggle.setAttribute('aria-expanded', 'false');
+      searchToggle.setAttribute('aria-label', 'Open search');
+      this.#syncHeaderHeight();
+    };
+
+    const openSearch = () => {
+      this.classList.add('search-open');
+      searchToggle.setAttribute('aria-expanded', 'true');
+      searchToggle.setAttribute('aria-label', 'Close search');
+      requestAnimationFrame(() => searchInput?.focus());
+      this.#syncHeaderHeight();
+    };
+
+    searchToggle.addEventListener('click', () => {
+      if (this.classList.contains('search-open')) {
+        closeSearch();
+        return;
+      }
+
+      openSearch();
+    });
+
+    const handleBreakpointChange = (event) => {
+      if (!event.matches) {
+        closeSearch();
+      }
+    };
+
+    mobileQuery.addEventListener('change', handleBreakpointChange);
+    this._searchMobileQuery = mobileQuery;
+    this._searchBreakpointHandler = handleBreakpointChange;
+    this._closeSearch = closeSearch;
+  }
+
+  #initSidebar() {
+    const menuButton = this.querySelector('.header-chrome__menu');
+    const backdrop = this.querySelector('.header-chrome__backdrop');
+    const desktopQuery = window.matchMedia('(min-width: 992px)');
+
+    if (!menuButton || !backdrop) {
+      return;
     }
 
-    installMainMenuSidebarTarget() {
-        let shell = document.querySelector('aside[data-genipedia-main-menu-sidebar="true"]');
-        if (!shell) {
-            shell = document.createElement('aside');
-            shell.className = 'vector-main-menu-sidebar-shell';
-            shell.setAttribute('aria-label', 'Main menu sidebar');
-            shell.dataset.genipediaMainMenuSidebar = 'true';
+    const isDesktop = () => desktopQuery.matches;
 
-            const inner = document.createElement('div');
-            inner.id = 'vector-main-menu-pinned-container';
-            inner.className = 'vector-main-menu-pinned-container';
-            shell.appendChild(inner);
+    const setSidebarOpen = (open) => {
+      this.classList.toggle('sidebar-open', open);
+      document.body.classList.toggle('header-chrome-content-offset', open && isDesktop());
+      menuButton.setAttribute('aria-expanded', String(open));
+      menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      backdrop.hidden = !open || isDesktop();
+    };
 
-            document.body.appendChild(shell);
-        }
+    const openSidebar = () => setSidebarOpen(true);
+    const closeSidebar = () => setSidebarOpen(false);
+    const toggleSidebar = () => setSidebarOpen(!this.classList.contains('sidebar-open'));
 
-        this.mainMenuSidebarHost = shell;
-        this.pinnedMainMenuContainer = shell.querySelector('#vector-main-menu-pinned-container');
+    menuButton.addEventListener('click', toggleSidebar);
+    backdrop.addEventListener('click', closeSidebar);
+
+    const handleBreakpointChange = () => {
+      if (isDesktop()) {
+        openSidebar();
+        return;
+      }
+
+      closeSidebar();
+    };
+
+    desktopQuery.addEventListener('change', handleBreakpointChange);
+
+    if (isDesktop()) {
+      openSidebar();
+    } else {
+      closeSidebar();
     }
 
-    installAppearanceSidebarTarget() {
-        let shell = document.querySelector('aside[data-genipedia-appearance-sidebar="true"]');
-        if (!shell) {
-            shell = document.createElement('aside');
-            shell.className = 'vector-appearance-sidebar-shell';
-            shell.setAttribute('aria-label', 'Appearance sidebar');
-            shell.dataset.genipediaAppearanceSidebar = 'true';
+    this._sidebarDesktopQuery = desktopQuery;
+    this._sidebarBreakpointHandler = handleBreakpointChange;
+    this._closeSidebar = closeSidebar;
+  }
 
-            const inner = document.createElement('div');
-            inner.id = 'vector-appearance-pinned-container';
-            inner.className = 'vector-appearance-pinned-container';
-            shell.appendChild(inner);
+  #initAuth() {
+    const auth = this.querySelector('.header-chrome__auth');
+    const loginButton = this.querySelector('.header-chrome__login');
+    const userMenu = this.querySelector('.header-chrome__user-menu');
+    const userTrigger = this.querySelector('.header-chrome__user-trigger');
+    const userDropdown = this.querySelector('.header-chrome__user-dropdown');
+    const logoutButton = this.querySelector('.header-chrome__user-logout');
+    const avatar = this.querySelector('.header-chrome__user-avatar');
+    const givenNameEl = this.querySelector('.header-chrome__user-given');
+    const familyNameEl = this.querySelector('.header-chrome__user-family');
 
-            document.body.appendChild(shell);
-        }
-
-        this.appearanceSidebarHost = shell;
-        this.pinnedAppearanceContainer = shell.querySelector('#vector-appearance-pinned-container');
+    if (!auth || !loginButton || !userMenu || !userTrigger || !userDropdown) {
+      return;
     }
 
-    cacheElements() {
-        this.dropdownCheckboxes = [...this.querySelectorAll('.vector-dropdown-checkbox')];
-        this.mainMenuDropdownCheckbox = this.querySelector('#vector-main-menu-dropdown-checkbox');
-        this.mainMenuPanel = this.querySelector('#vector-main-menu');
-        this.unpinnedMainMenuContainer = this.querySelector('#vector-main-menu-unpinned-container');
-        this.appearanceDropdownCheckbox = this.querySelector('#vector-appearance-dropdown-checkbox');
-        this.unpinnedAppearanceContainer = this.querySelector('#vector-appearance-unpinned-container');
+    const readSession = () => {
+      try {
+        const raw = localStorage.getItem(FULL_HEADER_SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const writeSession = (user) => {
+      try {
+        if (user) {
+          localStorage.setItem(FULL_HEADER_SESSION_KEY, JSON.stringify(user));
+        } else {
+          localStorage.removeItem(FULL_HEADER_SESSION_KEY);
+        }
+      } catch {
+        // ignore storage errors
+      }
+    };
+
+    const setAvatar = (user) => {
+      if (!avatar) return;
+
+      const label = `${user.givenName || ''} ${user.familyName || ''}`.trim();
+
+      if (user.photoUrl) {
+        const photo = document.createElement('img');
+        photo.src = user.photoUrl;
+        photo.alt = label;
+        photo.width = 32;
+        photo.height = 32;
+        avatar.className = 'header-chrome__user-avatar';
+        avatar.replaceChildren(photo);
+      } else {
+        avatar.className = 'header-chrome__user-avatar header-chrome__user-avatar--placeholder';
+        avatar.replaceChildren();
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-person-fill';
+        icon.setAttribute('aria-hidden', 'true');
+        avatar.appendChild(icon);
+        avatar.setAttribute('aria-label', label);
+      }
+
+      userTrigger.setAttribute('aria-label', `${label}, account menu`);
+    };
+
+    const closeUserMenu = () => {
+      userMenu.classList.remove('is-open');
+      userDropdown.hidden = true;
+      userTrigger.setAttribute('aria-expanded', 'false');
+    };
+
+    const openUserMenu = () => {
+      userMenu.classList.add('is-open');
+      userDropdown.hidden = false;
+      userTrigger.setAttribute('aria-expanded', 'true');
+    };
+
+    const setLoggedIn = (loggedIn, user = null) => {
+      const sessionUser = user || FULL_HEADER_DEMO_USER;
+      auth.dataset.loggedIn = loggedIn ? 'true' : 'false';
+      closeUserMenu();
+
+      if (loggedIn) {
+        if (givenNameEl) givenNameEl.textContent = sessionUser.givenName || '';
+        if (familyNameEl) familyNameEl.textContent = sessionUser.familyName || '';
+        setAvatar(sessionUser);
+        writeSession(sessionUser);
+      } else {
+        writeSession(null);
+      }
+    };
+
+    loginButton.addEventListener('click', () => {
+      setLoggedIn(true, FULL_HEADER_DEMO_USER);
+    });
+
+    userTrigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (userMenu.classList.contains('is-open')) {
+        closeUserMenu();
+      } else {
+        openUserMenu();
+      }
+    });
+
+    logoutButton?.addEventListener('click', () => {
+      setLoggedIn(false);
+    });
+
+    userDropdown.querySelectorAll('a[role="menuitem"]').forEach((item) => {
+      item.addEventListener('click', () => {
+        closeUserMenu();
+      });
+    });
+
+    this._authDocumentClickHandler = (event) => {
+      if (!userMenu.contains(event.target)) {
+        closeUserMenu();
+      }
+    };
+    document.addEventListener('click', this._authDocumentClickHandler);
+
+    this._authEscapeHandler = (event) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      closeUserMenu();
+      this._closeSearch?.();
+
+      if (this.classList.contains('sidebar-open') && !window.matchMedia('(min-width: 992px)').matches) {
+        this._closeSidebar?.();
+      }
+    };
+    document.addEventListener('keydown', this._authEscapeHandler);
+
+    const existingSession = readSession();
+    if (existingSession) {
+      setLoggedIn(true, { ...FULL_HEADER_DEMO_USER, ...existingSession });
+    }
+  }
+
+  disconnectedCallback() {
+    if (this._authDocumentClickHandler) {
+      document.removeEventListener('click', this._authDocumentClickHandler);
+      this._authDocumentClickHandler = null;
     }
 
-    installAppearancePanel() {
-        const template = document.createElement('template');
-        template.innerHTML = buildAppearancePanelMarkup().trim();
-        this.appearancePanel = template.content.firstElementChild;
-        this.moveAppearancePanel();
+    if (this._authEscapeHandler) {
+      document.removeEventListener('keydown', this._authEscapeHandler);
+      this._authEscapeHandler = null;
     }
 
-    bindEvents() {
-        this.handleDocumentClick = (event) => {
-            if (!this.contains(event.target)) {
-                this.closeAllDropdowns();
-            }
-        };
-        document.addEventListener('click', this.handleDocumentClick);
-
-        this.handleActionClick = (event) => {
-            const actionButton = event.target.closest('[data-vector-action]');
-            if (!actionButton) {
-                return;
-            }
-
-            const isInsideHeader = this.contains(actionButton);
-            const isInsideMovedMainMenu = this.mainMenuPanel?.contains(actionButton)
-                || this.mainMenuSidebarHost?.contains(actionButton);
-            const isInsideMovedAppearance = this.appearancePanel?.contains(actionButton)
-                || this.appearanceSidebarHost?.contains(actionButton);
-
-            if (!isInsideHeader && !isInsideMovedMainMenu && !isInsideMovedAppearance) {
-                return;
-            }
-
-            const action = actionButton.getAttribute('data-vector-action');
-            if (action === 'pin-main-menu') {
-                event.preventDefault();
-                this.state.mainMenuPinned = true;
-            } else if (action === 'hide-main-menu') {
-                event.preventDefault();
-                this.state.mainMenuPinned = false;
-            } else if (action === 'pin-appearance') {
-                event.preventDefault();
-                this.state.appearancePinned = true;
-            } else if (action === 'hide-appearance') {
-                event.preventDefault();
-                this.state.appearancePinned = false;
-            } else {
-                return;
-            }
-
-            this.commitState();
-            this.closeAllDropdowns();
-        };
-        document.addEventListener('click', this.handleActionClick);
-
-        this.handleSettingChange = (event) => {
-            const input = event.target;
-            if (!(input instanceof HTMLInputElement) || !input.dataset.vectorSetting) {
-                return;
-            }
-
-            const isInsideHeader = this.contains(input);
-            const isInsideAppearancePanel = this.appearancePanel?.contains(input)
-                || this.appearanceSidebarHost?.contains(input);
-
-            if (!isInsideHeader && !isInsideAppearancePanel) {
-                return;
-            }
-
-            if (input.dataset.vectorSetting === 'width') {
-                this.state.width = 'wide';
-                this.commitState();
-                return;
-            }
-
-            this.state[input.dataset.vectorSetting] = input.value;
-            this.commitState();
-        };
-        document.addEventListener('change', this.handleSettingChange);
-
-        this.handleMediaQueryChange = () => {
-            if (this.state.theme === 'os') {
-                this.syncUi();
-            }
-        };
-
-        this.colorSchemeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        this.colorSchemeMediaQuery.addEventListener('change', this.handleMediaQueryChange);
-
-        this.handleResize = () => {
-            applyVectorAppearanceState(this.state);
-            this.updateHeaderVisibility(true);
-            this.moveMainMenuPanel();
-            this.moveAppearancePanel();
-        };
-        window.addEventListener('resize', this.handleResize);
+    if (this._sidebarDesktopQuery && this._sidebarBreakpointHandler) {
+      this._sidebarDesktopQuery.removeEventListener('change', this._sidebarBreakpointHandler);
     }
 
-    closeAllDropdowns() {
-        this.dropdownCheckboxes.forEach((checkbox) => {
-            checkbox.checked = false;
-        });
+    if (this._searchMobileQuery && this._searchBreakpointHandler) {
+      this._searchMobileQuery.removeEventListener('change', this._searchBreakpointHandler);
     }
 
-    syncPinnableHeader(panel, pinned) {
-        const header = panel?.querySelector('.vector-pinnable-header');
-        if (!header) {
-            return;
-        }
-
-        header.classList.toggle('vector-pinnable-header-pinned', pinned);
-        header.classList.toggle('vector-pinnable-header-unpinned', !pinned);
-    }
-
-    moveMainMenuPanel() {
-        if (!this.mainMenuPanel) {
-            return;
-        }
-
-        const shouldPinToSidebar = shouldUsePersistentVectorSidebars();
-        const nextParent = shouldPinToSidebar
-            ? this.pinnedMainMenuContainer
-            : this.unpinnedMainMenuContainer;
-
-        if (nextParent) {
-            if (shouldPinToSidebar) {
-                if (typeof nextParent.prepend === 'function') {
-                    nextParent.prepend(this.mainMenuPanel);
-                } else {
-                    nextParent.insertBefore(this.mainMenuPanel, nextParent.firstChild);
-                }
-            } else if (this.mainMenuPanel.parentElement !== nextParent) {
-                nextParent.appendChild(this.mainMenuPanel);
-            }
-        }
-
-        this.mainMenuPanel.classList.toggle('vector-main-menu--pinned', shouldPinToSidebar);
-        this.mainMenuPanel.classList.toggle('vector-main-menu--dropdown', !shouldPinToSidebar);
-        this.syncPinnableHeader(this.mainMenuPanel, shouldPinToSidebar);
-
-        if (this.mainMenuDropdownCheckbox) {
-            this.mainMenuDropdownCheckbox.checked = false;
-            this.mainMenuDropdownCheckbox.disabled = shouldPinToSidebar;
-        }
-    }
-
-    moveAppearancePanel() {
-        if (!this.appearancePanel) {
-            return;
-        }
-
-        const shouldPinToSidebar = shouldUsePersistentVectorSidebars();
-        const nextParent = shouldPinToSidebar
-            ? this.pinnedAppearanceContainer
-            : this.unpinnedAppearanceContainer;
-
-        if (nextParent && this.appearancePanel.parentElement !== nextParent) {
-            nextParent.appendChild(this.appearancePanel);
-        }
-
-        this.appearancePanel.classList.toggle('vector-appearance--pinned', shouldPinToSidebar);
-        this.appearancePanel.classList.toggle('vector-appearance--dropdown', !shouldPinToSidebar);
-        this.syncPinnableHeader(this.appearancePanel, shouldPinToSidebar);
-
-        if (this.appearanceDropdownCheckbox) {
-            if (shouldPinToSidebar) {
-                this.appearanceDropdownCheckbox.checked = false;
-            }
-            this.appearanceDropdownCheckbox.disabled = shouldPinToSidebar;
-        }
-    }
-
-    commitState() {
-        persistVectorAppearanceState(this.state);
-        applyVectorAppearanceState(this.state);
-        this.syncHeaderScrollListener();
-        this.updateHeaderVisibility(true);
-        this.moveMainMenuPanel();
-        this.moveAppearancePanel();
-        this.syncUi();
-    }
-
-    syncUi() {
-        const state = this.state;
-        const panel = this.appearancePanel;
-        if (!panel) {
-            return;
-        }
-
-        const syncSetting = (setting, value) => {
-            panel.querySelectorAll(`[data-vector-setting="${setting}"]`).forEach((input) => {
-                input.checked = input.value === value;
-            });
-        };
-
-        syncSetting('theme', state.theme);
-        syncSetting('fontSize', state.fontSize);
-        syncSetting('headerMode', state.headerMode);
-
-        this.moveMainMenuPanel();
-        this.moveAppearancePanel();
-    }
-
-    disconnectedCallback() {
-        if (this.handleDocumentClick) {
-            document.removeEventListener('click', this.handleDocumentClick);
-        }
-        if (this.handleActionClick) {
-            document.removeEventListener('click', this.handleActionClick);
-        }
-        if (this.handleSettingChange) {
-            document.removeEventListener('change', this.handleSettingChange);
-        }
-        if (this.handleResize) {
-            window.removeEventListener('resize', this.handleResize);
-        }
-        if (this.handleScroll) {
-            window.removeEventListener('scroll', this.handleScroll);
-        }
-        if (this.handleSidebarScroll) {
-            window.removeEventListener('scroll', this.handleSidebarScroll);
-        }
-        this.isScrollListenerAttached = false;
-        if (this.handleLoad) {
-            window.removeEventListener('load', this.handleLoad);
-        }
-        if (this.sidebarOffsetFrame) {
-            cancelAnimationFrame(this.sidebarOffsetFrame);
-            this.sidebarOffsetFrame = 0;
-        }
-        if (this.sidebarOffsetResizeObserver) {
-            this.sidebarOffsetResizeObserver.disconnect();
-        }
-        if (this.colorSchemeMediaQuery) {
-            this.colorSchemeMediaQuery.removeEventListener('change', this.handleMediaQueryChange);
-        }
-        if (this.mainMenuSidebarHost?.dataset?.genipediaMainMenuSidebar === 'true') {
-            this.mainMenuSidebarHost.remove();
-        }
-        if (this.appearanceSidebarHost?.dataset?.genipediaAppearanceSidebar === 'true') {
-            this.appearanceSidebarHost.remove();
-        }
-    }
+    this._headerResizeObserver?.disconnect();
+    this._headerResizeObserver = null;
+    document.body.classList.remove('header-chrome-content-offset');
+    this.classList.remove('sidebar-open', 'search-open');
+  }
 }
 
 if (!customElements.get('full-header')) {
-    customElements.define('full-header', FullHeader);
+  customElements.define('full-header', FullHeader);
 }
