@@ -215,7 +215,12 @@ body.theme-dark .people-page__gallery img {
   .people-page__content aside {
     float: none;
     width: 100%;
+    max-width: none;
     margin: 0 0 1rem;
+  }
+
+  .people-page__content aside table {
+    width: 100%;
   }
 }
 
@@ -279,35 +284,43 @@ body.theme-dark .people-page__gallery img {
 
 .people-page__tabs-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.5rem 1rem;
   border-bottom: 1px solid var(--page-toolbar-border);
 }
 
 .people-page__tabs {
-  flex: 1 1 auto;
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
 .people-page__tab-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 1rem;
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .people-page__tabs-actions {
   display: flex;
   align-items: stretch;
+  flex: 1 1 100%;
   flex-shrink: 0;
+  justify-content: flex-end;
   gap: 0.35rem;
   margin-bottom: -1px;
 }
 
 .people-page__tab-item {
+  flex-shrink: 0;
   margin: 0;
   padding: 0;
   border-bottom: 2px solid transparent;
@@ -476,13 +489,7 @@ body.theme-dark .people-page__gallery img {
     padding: 0.75rem 0.5rem 0;
   }
 
-  .people-page__tabs-row {
-    flex-wrap: wrap;
-  }
-
   .people-page__tabs-actions {
-    width: 100%;
-    justify-content: flex-end;
     margin-bottom: 0;
     padding-bottom: 0.25rem;
   }

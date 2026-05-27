@@ -697,6 +697,30 @@ full-header.sidebar-open .header-chrome__backdrop {
   }
 }
 
+@media (min-width: 721px) {
+  .header-chrome__search {
+    display: none;
+  }
+
+  .header-chrome__start {
+    order: 1;
+  }
+
+  .header-chrome__search-form {
+    order: 2;
+    flex: 0 1 18rem;
+    width: auto;
+    max-width: 18rem;
+    margin-left: auto;
+    margin-right: var(--header-chrome-toolbar-gap);
+  }
+
+  .header-chrome__tools {
+    order: 3;
+    flex: 0 0 auto;
+  }
+}
+
 @media (max-width: 720px) {
   .header-chrome__row {
     flex-wrap: wrap;
@@ -725,22 +749,15 @@ full-header.sidebar-open .header-chrome__backdrop {
 
   .header-chrome__search-form {
     display: none;
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    box-sizing: border-box;
   }
 
   full-header.search-open .header-chrome__search-form {
     display: flex;
-    position: absolute;
-    top: 100%;
-    left: 0.5rem;
-    right: 0.5rem;
-    width: auto;
-    max-width: none;
-    z-index: 111;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
-  }
-
-  body:not(.theme-dark) full-header.search-open .header-chrome__search-form {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
   }
 
   .header-chrome__brand mini-header .localized-slogan {
@@ -805,25 +822,6 @@ full-header.sidebar-open .header-chrome__backdrop {
           <i class="bi bi-search header-chrome__search-toggle-icon--open" aria-hidden="true"></i>
           <i class="bi bi-x-lg header-chrome__search-toggle-icon--close" aria-hidden="true"></i>
         </button>
-        <form
-          id="header-chrome-search-form"
-          class="header-chrome__search-form"
-          role="search"
-          action="#"
-          method="get"
-        >
-          <span class="header-chrome__search-icon" aria-hidden="true">
-            <i class="bi bi-search"></i>
-          </span>
-          <input
-            class="header-chrome__search-input"
-            type="search"
-            name="search"
-            placeholder="Search Genipedia..."
-            aria-label="Search Genipedia"
-            autocomplete="off"
-          >
-        </form>
       </div>
       <div class="header-chrome__end">
         <div class="header-chrome__auth" data-logged-in="false">
@@ -864,6 +862,25 @@ full-header.sidebar-open .header-chrome__backdrop {
       </div>
       </div>
     </div>
+    <form
+      id="header-chrome-search-form"
+      class="header-chrome__search-form"
+      role="search"
+      action="#"
+      method="get"
+    >
+      <span class="header-chrome__search-icon" aria-hidden="true">
+        <i class="bi bi-search"></i>
+      </span>
+      <input
+        class="header-chrome__search-input"
+        type="search"
+        name="search"
+        placeholder="Search Genipedia..."
+        aria-label="Search Genipedia"
+        autocomplete="off"
+      >
+    </form>
   </div>
 </header>
 <button class="header-chrome__backdrop" type="button" aria-label="Close menu" hidden></button>
@@ -903,396 +920,396 @@ const FULL_HEADER_SLOGAN = 'Free Geneology Encyclopedia';
 const FULL_HEADER_SESSION_KEY = 'genipedia-header-session';
 
 const FULL_HEADER_DEMO_USER = {
-  givenName: 'Shaun',
-  familyName: 'Roselt',
-  photoUrl: '',
+    givenName: 'Shaun',
+    familyName: 'Roselt',
+    photoUrl: '',
 };
 
 function resolveFromComponent(relativePath) {
-  try {
-    return new URL(relativePath, FULL_HEADER_SCRIPT_URL || window.location.href).href;
-  } catch {
-    return relativePath;
-  }
+    try {
+        return new URL(relativePath, FULL_HEADER_SCRIPT_URL || window.location.href).href;
+    } catch {
+        return relativePath;
+    }
 }
 
 const THEME_STORAGE_KEY = 'genipedia-theme';
 
 function readStoredTheme() {
-  try {
-    const theme = localStorage.getItem(THEME_STORAGE_KEY);
-    if (theme === 'dark' || theme === 'light') {
-      return theme;
+    try {
+        const theme = localStorage.getItem(THEME_STORAGE_KEY);
+        if (theme === 'dark' || theme === 'light') {
+            return theme;
+        }
+    } catch {
+        // ignore storage errors
     }
-  } catch {
-    // ignore storage errors
-  }
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function applyDocumentTheme(theme = readStoredTheme()) {
-  const isDark = theme === 'dark';
-  document.body.classList.toggle('theme-dark', isDark);
+    const isDark = theme === 'dark';
+    document.body.classList.toggle('theme-dark', isDark);
 
-  document.querySelectorAll('.header-chrome__theme-input').forEach((input) => {
-    input.checked = isDark;
-    input.setAttribute('aria-checked', isDark ? 'true' : 'false');
-  });
+    document.querySelectorAll('.header-chrome__theme-input').forEach((input) => {
+        input.checked = isDark;
+        input.setAttribute('aria-checked', isDark ? 'true' : 'false');
+    });
 
-  return theme;
+    return theme;
 }
 
 class FullHeader extends HTMLElement {
-  connectedCallback() {
-    if (this.__rendered) return;
-    this.__rendered = true;
-    applyDocumentTheme();
-    this.innerHTML = FULL_HEADER_TEMPLATE;
+    connectedCallback() {
+        if (this.__rendered) return;
+        this.__rendered = true;
+        applyDocumentTheme();
+        this.innerHTML = FULL_HEADER_TEMPLATE;
 
-    const syncBrand = () => {
-      const miniHeader = this.querySelector('mini-header');
-      const logo = miniHeader?.querySelector('.central-textlogo__logo');
-      const homeLink = miniHeader?.querySelector('.central-textlogo__home-link');
-      const slogan = miniHeader?.querySelector('.localized-slogan');
+        const syncBrand = () => {
+            const miniHeader = this.querySelector('mini-header');
+            const logo = miniHeader?.querySelector('.central-textlogo__logo');
+            const homeLink = miniHeader?.querySelector('.central-textlogo__home-link');
+            const slogan = miniHeader?.querySelector('.localized-slogan');
 
-      if (logo) {
-        logo.src = resolveFromComponent('../assets/Logo.png');
-        logo.alt = '';
-      }
-
-      if (homeLink) {
-        homeLink.href = resolveFromComponent('../index.html');
-      }
-
-      if (slogan) {
-        if (slogan.textContent !== FULL_HEADER_SLOGAN) {
-          slogan.textContent = FULL_HEADER_SLOGAN;
-        }
-
-        if (!slogan.dataset.fullHeaderSlogan) {
-          slogan.dataset.fullHeaderSlogan = 'true';
-          new MutationObserver(() => {
-            if (slogan.textContent !== FULL_HEADER_SLOGAN) {
-              slogan.textContent = FULL_HEADER_SLOGAN;
+            if (logo) {
+                logo.src = resolveFromComponent('../assets/Logo.png');
+                logo.alt = '';
             }
-          }).observe(slogan, { characterData: true, childList: true, subtree: true });
-        }
-      }
-    };
 
-    const runSync = () => {
-      requestAnimationFrame(() => {
-        syncBrand();
-        requestAnimationFrame(syncBrand);
-      });
-    };
+            if (homeLink) {
+                homeLink.href = resolveFromComponent('../index.html');
+            }
 
-    if (customElements.get('mini-header')) {
-      runSync();
-    } else {
-      customElements.whenDefined('mini-header').then(runSync);
-    }
+            if (slogan) {
+                if (slogan.textContent !== FULL_HEADER_SLOGAN) {
+                    slogan.textContent = FULL_HEADER_SLOGAN;
+                }
 
-    this.#syncHeaderHeight();
-    this.#initTheme();
-    this.#initSidebar();
-    this.#initSearch();
-    this.#initAuth();
-  }
+                if (!slogan.dataset.fullHeaderSlogan) {
+                    slogan.dataset.fullHeaderSlogan = 'true';
+                    new MutationObserver(() => {
+                        if (slogan.textContent !== FULL_HEADER_SLOGAN) {
+                            slogan.textContent = FULL_HEADER_SLOGAN;
+                        }
+                    }).observe(slogan, { characterData: true, childList: true, subtree: true });
+                }
+            }
+        };
 
-  #syncHeaderHeight() {
-    const header = this.querySelector('.header-container');
-    if (!header) {
-      return;
-    }
+        const runSync = () => {
+            requestAnimationFrame(() => {
+                syncBrand();
+                requestAnimationFrame(syncBrand);
+            });
+        };
 
-    const update = () => {
-      this.style.setProperty('--header-chrome-height', `${header.offsetHeight}px`);
-    };
-
-    update();
-    this._headerResizeObserver = new ResizeObserver(update);
-    this._headerResizeObserver.observe(header);
-  }
-
-  #initTheme() {
-    const themeInput = this.querySelector('.header-chrome__theme-input');
-    if (!themeInput) {
-      return;
-    }
-
-    applyDocumentTheme();
-
-    themeInput.addEventListener('change', () => {
-      const nextTheme = themeInput.checked ? 'dark' : 'light';
-      try {
-        localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-      } catch {
-        // ignore storage errors
-      }
-      applyDocumentTheme(nextTheme);
-    });
-  }
-
-  #initSearch() {
-    const searchToggle = this.querySelector('.header-chrome__search-toggle');
-    const searchInput = this.querySelector('.header-chrome__search-input');
-    const mobileQuery = window.matchMedia('(max-width: 720px)');
-
-    if (!searchToggle) {
-      return;
-    }
-
-    const closeSearch = () => {
-      this.classList.remove('search-open');
-      searchToggle.setAttribute('aria-expanded', 'false');
-      searchToggle.setAttribute('aria-label', 'Open search');
-      this.#syncHeaderHeight();
-    };
-
-    const openSearch = () => {
-      this.classList.add('search-open');
-      searchToggle.setAttribute('aria-expanded', 'true');
-      searchToggle.setAttribute('aria-label', 'Close search');
-      requestAnimationFrame(() => searchInput?.focus());
-      this.#syncHeaderHeight();
-    };
-
-    searchToggle.addEventListener('click', () => {
-      if (this.classList.contains('search-open')) {
-        closeSearch();
-        return;
-      }
-
-      openSearch();
-    });
-
-    const handleBreakpointChange = (event) => {
-      if (!event.matches) {
-        closeSearch();
-      }
-    };
-
-    mobileQuery.addEventListener('change', handleBreakpointChange);
-    this._searchMobileQuery = mobileQuery;
-    this._searchBreakpointHandler = handleBreakpointChange;
-    this._closeSearch = closeSearch;
-  }
-
-  #initSidebar() {
-    const menuButton = this.querySelector('.header-chrome__menu');
-    const backdrop = this.querySelector('.header-chrome__backdrop');
-    const desktopQuery = window.matchMedia('(min-width: 992px)');
-
-    if (!menuButton || !backdrop) {
-      return;
-    }
-
-    const isDesktop = () => desktopQuery.matches;
-
-    const setSidebarOpen = (open) => {
-      this.classList.toggle('sidebar-open', open);
-      document.body.classList.toggle('header-chrome-content-offset', open && isDesktop());
-      menuButton.setAttribute('aria-expanded', String(open));
-      menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-      backdrop.hidden = !open || isDesktop();
-    };
-
-    const openSidebar = () => setSidebarOpen(true);
-    const closeSidebar = () => setSidebarOpen(false);
-    const toggleSidebar = () => setSidebarOpen(!this.classList.contains('sidebar-open'));
-
-    menuButton.addEventListener('click', toggleSidebar);
-    backdrop.addEventListener('click', closeSidebar);
-
-    const handleBreakpointChange = () => {
-      if (isDesktop()) {
-        openSidebar();
-        return;
-      }
-
-      closeSidebar();
-    };
-
-    desktopQuery.addEventListener('change', handleBreakpointChange);
-
-    if (isDesktop()) {
-      openSidebar();
-    } else {
-      closeSidebar();
-    }
-
-    this._sidebarDesktopQuery = desktopQuery;
-    this._sidebarBreakpointHandler = handleBreakpointChange;
-    this._closeSidebar = closeSidebar;
-  }
-
-  #initAuth() {
-    const auth = this.querySelector('.header-chrome__auth');
-    const loginButton = this.querySelector('.header-chrome__login');
-    const userMenu = this.querySelector('.header-chrome__user-menu');
-    const userTrigger = this.querySelector('.header-chrome__user-trigger');
-    const userDropdown = this.querySelector('.header-chrome__user-dropdown');
-    const logoutButton = this.querySelector('.header-chrome__user-logout');
-    const avatar = this.querySelector('.header-chrome__user-avatar');
-    const givenNameEl = this.querySelector('.header-chrome__user-given');
-    const familyNameEl = this.querySelector('.header-chrome__user-family');
-
-    if (!auth || !loginButton || !userMenu || !userTrigger || !userDropdown) {
-      return;
-    }
-
-    const readSession = () => {
-      try {
-        const raw = localStorage.getItem(FULL_HEADER_SESSION_KEY);
-        return raw ? JSON.parse(raw) : null;
-      } catch {
-        return null;
-      }
-    };
-
-    const writeSession = (user) => {
-      try {
-        if (user) {
-          localStorage.setItem(FULL_HEADER_SESSION_KEY, JSON.stringify(user));
+        if (customElements.get('mini-header')) {
+            runSync();
         } else {
-          localStorage.removeItem(FULL_HEADER_SESSION_KEY);
+            customElements.whenDefined('mini-header').then(runSync);
         }
-      } catch {
-        // ignore storage errors
-      }
-    };
 
-    const setAvatar = (user) => {
-      if (!avatar) return;
-
-      const label = `${user.givenName || ''} ${user.familyName || ''}`.trim();
-
-      if (user.photoUrl) {
-        const photo = document.createElement('img');
-        photo.src = user.photoUrl;
-        photo.alt = label;
-        photo.width = 32;
-        photo.height = 32;
-        avatar.className = 'header-chrome__user-avatar';
-        avatar.replaceChildren(photo);
-      } else {
-        avatar.className = 'header-chrome__user-avatar header-chrome__user-avatar--placeholder';
-        avatar.replaceChildren();
-        const icon = document.createElement('i');
-        icon.className = 'bi bi-person-fill';
-        icon.setAttribute('aria-hidden', 'true');
-        avatar.appendChild(icon);
-        avatar.setAttribute('aria-label', label);
-      }
-
-      userTrigger.setAttribute('aria-label', `${label}, account menu`);
-    };
-
-    const closeUserMenu = () => {
-      userMenu.classList.remove('is-open');
-      userDropdown.hidden = true;
-      userTrigger.setAttribute('aria-expanded', 'false');
-    };
-
-    const openUserMenu = () => {
-      userMenu.classList.add('is-open');
-      userDropdown.hidden = false;
-      userTrigger.setAttribute('aria-expanded', 'true');
-    };
-
-    const setLoggedIn = (loggedIn, user = null) => {
-      const sessionUser = user || FULL_HEADER_DEMO_USER;
-      auth.dataset.loggedIn = loggedIn ? 'true' : 'false';
-      closeUserMenu();
-
-      if (loggedIn) {
-        if (givenNameEl) givenNameEl.textContent = sessionUser.givenName || '';
-        if (familyNameEl) familyNameEl.textContent = sessionUser.familyName || '';
-        setAvatar(sessionUser);
-        writeSession(sessionUser);
-      } else {
-        writeSession(null);
-      }
-    };
-
-    loginButton.addEventListener('click', () => {
-      setLoggedIn(true, FULL_HEADER_DEMO_USER);
-    });
-
-    userTrigger.addEventListener('click', (event) => {
-      event.stopPropagation();
-      if (userMenu.classList.contains('is-open')) {
-        closeUserMenu();
-      } else {
-        openUserMenu();
-      }
-    });
-
-    logoutButton?.addEventListener('click', () => {
-      setLoggedIn(false);
-    });
-
-    userDropdown.querySelectorAll('a[role="menuitem"]').forEach((item) => {
-      item.addEventListener('click', () => {
-        closeUserMenu();
-      });
-    });
-
-    this._authDocumentClickHandler = (event) => {
-      if (!userMenu.contains(event.target)) {
-        closeUserMenu();
-      }
-    };
-    document.addEventListener('click', this._authDocumentClickHandler);
-
-    this._authEscapeHandler = (event) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-
-      closeUserMenu();
-      this._closeSearch?.();
-
-      if (this.classList.contains('sidebar-open') && !window.matchMedia('(min-width: 992px)').matches) {
-        this._closeSidebar?.();
-      }
-    };
-    document.addEventListener('keydown', this._authEscapeHandler);
-
-    const existingSession = readSession();
-    if (existingSession) {
-      setLoggedIn(true, { ...FULL_HEADER_DEMO_USER, ...existingSession });
-    }
-  }
-
-  disconnectedCallback() {
-    if (this._authDocumentClickHandler) {
-      document.removeEventListener('click', this._authDocumentClickHandler);
-      this._authDocumentClickHandler = null;
+        this.#syncHeaderHeight();
+        this.#initTheme();
+        this.#initSidebar();
+        this.#initSearch();
+        this.#initAuth();
     }
 
-    if (this._authEscapeHandler) {
-      document.removeEventListener('keydown', this._authEscapeHandler);
-      this._authEscapeHandler = null;
+    #syncHeaderHeight() {
+        const header = this.querySelector('.header-container');
+        if (!header) {
+            return;
+        }
+
+        const update = () => {
+            this.style.setProperty('--header-chrome-height', `${header.offsetHeight}px`);
+        };
+
+        update();
+        this._headerResizeObserver = new ResizeObserver(update);
+        this._headerResizeObserver.observe(header);
     }
 
-    if (this._sidebarDesktopQuery && this._sidebarBreakpointHandler) {
-      this._sidebarDesktopQuery.removeEventListener('change', this._sidebarBreakpointHandler);
+    #initTheme() {
+        const themeInput = this.querySelector('.header-chrome__theme-input');
+        if (!themeInput) {
+            return;
+        }
+
+        applyDocumentTheme();
+
+        themeInput.addEventListener('change', () => {
+            const nextTheme = themeInput.checked ? 'dark' : 'light';
+            try {
+                localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+            } catch {
+                // ignore storage errors
+            }
+            applyDocumentTheme(nextTheme);
+        });
     }
 
-    if (this._searchMobileQuery && this._searchBreakpointHandler) {
-      this._searchMobileQuery.removeEventListener('change', this._searchBreakpointHandler);
+    #initSearch() {
+        const searchToggle = this.querySelector('.header-chrome__search-toggle');
+        const searchInput = this.querySelector('.header-chrome__search-input');
+        const mobileQuery = window.matchMedia('(max-width: 720px)');
+
+        if (!searchToggle) {
+            return;
+        }
+
+        const closeSearch = () => {
+            this.classList.remove('search-open');
+            searchToggle.setAttribute('aria-expanded', 'false');
+            searchToggle.setAttribute('aria-label', 'Open search');
+            this.#syncHeaderHeight();
+        };
+
+        const openSearch = () => {
+            this.classList.add('search-open');
+            searchToggle.setAttribute('aria-expanded', 'true');
+            searchToggle.setAttribute('aria-label', 'Close search');
+            requestAnimationFrame(() => searchInput?.focus());
+            this.#syncHeaderHeight();
+        };
+
+        searchToggle.addEventListener('click', () => {
+            if (this.classList.contains('search-open')) {
+                closeSearch();
+                return;
+            }
+
+            openSearch();
+        });
+
+        const handleBreakpointChange = (event) => {
+            if (!event.matches) {
+                closeSearch();
+            }
+        };
+
+        mobileQuery.addEventListener('change', handleBreakpointChange);
+        this._searchMobileQuery = mobileQuery;
+        this._searchBreakpointHandler = handleBreakpointChange;
+        this._closeSearch = closeSearch;
     }
 
-    this._headerResizeObserver?.disconnect();
-    this._headerResizeObserver = null;
-    document.body.classList.remove('header-chrome-content-offset');
-    this.classList.remove('sidebar-open', 'search-open');
-  }
+    #initSidebar() {
+        const menuButton = this.querySelector('.header-chrome__menu');
+        const backdrop = this.querySelector('.header-chrome__backdrop');
+        const desktopQuery = window.matchMedia('(min-width: 992px)');
+
+        if (!menuButton || !backdrop) {
+            return;
+        }
+
+        const isDesktop = () => desktopQuery.matches;
+
+        const setSidebarOpen = (open) => {
+            this.classList.toggle('sidebar-open', open);
+            document.body.classList.toggle('header-chrome-content-offset', open && isDesktop());
+            menuButton.setAttribute('aria-expanded', String(open));
+            menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+            backdrop.hidden = !open || isDesktop();
+        };
+
+        const openSidebar = () => setSidebarOpen(true);
+        const closeSidebar = () => setSidebarOpen(false);
+        const toggleSidebar = () => setSidebarOpen(!this.classList.contains('sidebar-open'));
+
+        menuButton.addEventListener('click', toggleSidebar);
+        backdrop.addEventListener('click', closeSidebar);
+
+        const handleBreakpointChange = () => {
+            if (isDesktop()) {
+                openSidebar();
+                return;
+            }
+
+            closeSidebar();
+        };
+
+        desktopQuery.addEventListener('change', handleBreakpointChange);
+
+        if (isDesktop()) {
+            openSidebar();
+        } else {
+            closeSidebar();
+        }
+
+        this._sidebarDesktopQuery = desktopQuery;
+        this._sidebarBreakpointHandler = handleBreakpointChange;
+        this._closeSidebar = closeSidebar;
+    }
+
+    #initAuth() {
+        const auth = this.querySelector('.header-chrome__auth');
+        const loginButton = this.querySelector('.header-chrome__login');
+        const userMenu = this.querySelector('.header-chrome__user-menu');
+        const userTrigger = this.querySelector('.header-chrome__user-trigger');
+        const userDropdown = this.querySelector('.header-chrome__user-dropdown');
+        const logoutButton = this.querySelector('.header-chrome__user-logout');
+        const avatar = this.querySelector('.header-chrome__user-avatar');
+        const givenNameEl = this.querySelector('.header-chrome__user-given');
+        const familyNameEl = this.querySelector('.header-chrome__user-family');
+
+        if (!auth || !loginButton || !userMenu || !userTrigger || !userDropdown) {
+            return;
+        }
+
+        const readSession = () => {
+            try {
+                const raw = localStorage.getItem(FULL_HEADER_SESSION_KEY);
+                return raw ? JSON.parse(raw) : null;
+            } catch {
+                return null;
+            }
+        };
+
+        const writeSession = (user) => {
+            try {
+                if (user) {
+                    localStorage.setItem(FULL_HEADER_SESSION_KEY, JSON.stringify(user));
+                } else {
+                    localStorage.removeItem(FULL_HEADER_SESSION_KEY);
+                }
+            } catch {
+                // ignore storage errors
+            }
+        };
+
+        const setAvatar = (user) => {
+            if (!avatar) return;
+
+            const label = `${user.givenName || ''} ${user.familyName || ''}`.trim();
+
+            if (user.photoUrl) {
+                const photo = document.createElement('img');
+                photo.src = user.photoUrl;
+                photo.alt = label;
+                photo.width = 32;
+                photo.height = 32;
+                avatar.className = 'header-chrome__user-avatar';
+                avatar.replaceChildren(photo);
+            } else {
+                avatar.className = 'header-chrome__user-avatar header-chrome__user-avatar--placeholder';
+                avatar.replaceChildren();
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-person-fill';
+                icon.setAttribute('aria-hidden', 'true');
+                avatar.appendChild(icon);
+                avatar.setAttribute('aria-label', label);
+            }
+
+            userTrigger.setAttribute('aria-label', `${label}, account menu`);
+        };
+
+        const closeUserMenu = () => {
+            userMenu.classList.remove('is-open');
+            userDropdown.hidden = true;
+            userTrigger.setAttribute('aria-expanded', 'false');
+        };
+
+        const openUserMenu = () => {
+            userMenu.classList.add('is-open');
+            userDropdown.hidden = false;
+            userTrigger.setAttribute('aria-expanded', 'true');
+        };
+
+        const setLoggedIn = (loggedIn, user = null) => {
+            const sessionUser = user || FULL_HEADER_DEMO_USER;
+            auth.dataset.loggedIn = loggedIn ? 'true' : 'false';
+            closeUserMenu();
+
+            if (loggedIn) {
+                if (givenNameEl) givenNameEl.textContent = sessionUser.givenName || '';
+                if (familyNameEl) familyNameEl.textContent = sessionUser.familyName || '';
+                setAvatar(sessionUser);
+                writeSession(sessionUser);
+            } else {
+                writeSession(null);
+            }
+        };
+
+        loginButton.addEventListener('click', () => {
+            setLoggedIn(true, FULL_HEADER_DEMO_USER);
+        });
+
+        userTrigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            if (userMenu.classList.contains('is-open')) {
+                closeUserMenu();
+            } else {
+                openUserMenu();
+            }
+        });
+
+        logoutButton?.addEventListener('click', () => {
+            setLoggedIn(false);
+        });
+
+        userDropdown.querySelectorAll('a[role="menuitem"]').forEach((item) => {
+            item.addEventListener('click', () => {
+                closeUserMenu();
+            });
+        });
+
+        this._authDocumentClickHandler = (event) => {
+            if (!userMenu.contains(event.target)) {
+                closeUserMenu();
+            }
+        };
+        document.addEventListener('click', this._authDocumentClickHandler);
+
+        this._authEscapeHandler = (event) => {
+            if (event.key !== 'Escape') {
+                return;
+            }
+
+            closeUserMenu();
+            this._closeSearch?.();
+
+            if (this.classList.contains('sidebar-open') && !window.matchMedia('(min-width: 992px)').matches) {
+                this._closeSidebar?.();
+            }
+        };
+        document.addEventListener('keydown', this._authEscapeHandler);
+
+        const existingSession = readSession();
+        if (existingSession) {
+            setLoggedIn(true, { ...FULL_HEADER_DEMO_USER, ...existingSession });
+        }
+    }
+
+    disconnectedCallback() {
+        if (this._authDocumentClickHandler) {
+            document.removeEventListener('click', this._authDocumentClickHandler);
+            this._authDocumentClickHandler = null;
+        }
+
+        if (this._authEscapeHandler) {
+            document.removeEventListener('keydown', this._authEscapeHandler);
+            this._authEscapeHandler = null;
+        }
+
+        if (this._sidebarDesktopQuery && this._sidebarBreakpointHandler) {
+            this._sidebarDesktopQuery.removeEventListener('change', this._sidebarBreakpointHandler);
+        }
+
+        if (this._searchMobileQuery && this._searchBreakpointHandler) {
+            this._searchMobileQuery.removeEventListener('change', this._searchBreakpointHandler);
+        }
+
+        this._headerResizeObserver?.disconnect();
+        this._headerResizeObserver = null;
+        document.body.classList.remove('header-chrome-content-offset');
+        this.classList.remove('sidebar-open', 'search-open');
+    }
 }
 
 if (!customElements.get('full-header')) {
-  customElements.define('full-header', FullHeader);
+    customElements.define('full-header', FullHeader);
 }
