@@ -1,0 +1,280 @@
+/* Appearance panel visual overrides for offline snapshot */
+
+/*
+ * The captured Wikipedia vector-page.css sets `html, body { height: 100% }`,
+ * which caps the body's box height to the viewport. That breaks the shared
+ * shell's `.vector-header-container { position: sticky; top: 0 }`, because
+ * a sticky element only sticks within its containing-block ancestors — once
+ * scroll passes the body's 100vh box, the sticky header scrolls off-screen.
+ * Restoring auto height (with min-height: 100% so any layouts that rely on
+ * a full-viewport body still get one) lets "Always show" actually stay put.
+ */
+html,
+body {
+  height: auto !important;
+  min-height: 100% !important;
+}
+
+#vector-appearance-dropdown .vector-dropdown-content {
+  width: 193.438px !important;
+  max-width: 200px !important;
+  right: 0 !important;
+  background-color: var(--background-color-base, #101418) !important;
+  color: var(--color-base, #eaecf0) !important;
+  padding: 16px !important;
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.2) !important;
+  font-size: 14px;
+}
+
+#vector-appearance-pinned-container,
+#vector-appearance {
+  color: var(--color-base, #eaecf0);
+}
+
+#vector-appearance-dropdown-label .mw-ui-icon-wikimedia-appearance {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: none !important;
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+
+#vector-appearance-dropdown-label .mw-ui-icon-wikimedia-appearance svg {
+  display: block !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
+#vector-appearance [data-offline-appearance-controls="true"] {
+  display: contents !important;
+}
+
+#vector-appearance {
+  padding-top: 0 !important;
+}
+
+#vector-appearance .vector-pinnable-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin: 0 0 6px !important;
+  padding: 0 0 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  line-height: 22.4px !important;
+}
+
+#vector-appearance .vector-pinnable-header-label {
+  display: block !important;
+  margin: 0 !important;
+  color: var(--color-base, #eaecf0) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 22.4px !important;
+}
+
+#vector-appearance .vector-pinnable-header-toggle-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 18px !important;
+  padding: 0 4px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 2px !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: rgba(234, 236, 240, 0.7) !important;
+  font-size: 10px !important;
+  font-weight: 400 !important;
+  line-height: 16px !important;
+  text-transform: lowercase !important;
+}
+
+#vector-appearance .vector-pinnable-header-toggle-button:hover,
+#vector-appearance .vector-pinnable-header-toggle-button:focus {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(234, 236, 240, 0.82) !important;
+}
+
+#vector-appearance .vector-pinnable-header-pinned .vector-pinnable-header-pin-button {
+  display: none !important;
+}
+
+#vector-appearance .vector-pinnable-header-pinned .vector-pinnable-header-unpin-button {
+  display: inline-flex !important;
+}
+
+#vector-appearance .vector-pinnable-header-unpinned .vector-pinnable-header-pin-button {
+  display: inline-flex !important;
+}
+
+#vector-appearance .vector-pinnable-header-unpinned .vector-pinnable-header-unpin-button {
+  display: none !important;
+}
+
+#vector-appearance .vector-menu {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#vector-appearance .vector-menu+.vector-menu {
+  margin-top: 0 !important;
+}
+
+#vector-appearance .vector-menu-heading {
+  margin: 6px 0 !important;
+  padding: 6px 0 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: rgba(234, 236, 240, 0.72) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+}
+
+#vector-appearance .vector-menu-content,
+#vector-appearance .vector-menu-content-list,
+#vector-appearance .mw-list-item,
+#vector-appearance .mw-list-item>div,
+#vector-appearance form,
+#vector-appearance fieldset {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  list-style: none !important;
+}
+
+#vector-appearance .vector-menu-content-list {
+  display: block !important;
+}
+
+#vector-appearance .cdx-radio,
+#vector-appearance .cdx-radio__wrapper {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  min-height: 24px !important;
+  margin: 0 0 6px !important;
+  padding: 0 !important;
+  position: relative !important;
+}
+
+#vector-appearance .cdx-radio:last-child {
+  margin-bottom: 0 !important;
+}
+
+#vector-appearance .cdx-radio__input {
+  opacity: 0 !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 50% !important;
+  width: calc(18px + 0.6rem) !important;
+  height: 18px !important;
+  margin: -9px 0 0 !important;
+  z-index: 2 !important;
+}
+
+#vector-appearance .cdx-radio__icon {
+  position: relative !important;
+  left: 0 !important;
+  margin: 0 !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 18px !important;
+  box-sizing: border-box !important;
+  border: 1.25px solid rgba(255, 255, 255, 0.32) !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#vector-appearance .cdx-radio__icon::before,
+#vector-appearance .cdx-radio__icon::after {
+  content: none !important;
+}
+
+#vector-appearance .cdx-radio__label,
+#vector-appearance .cdx-radio__label.cdx-label {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-direction: row !important;
+  padding-left: 10px !important;
+  padding-bottom: 0 !important;
+  color: var(--color-base, #eaecf0) !important;
+  white-space: nowrap !important;
+}
+
+#vector-appearance .cdx-label {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+}
+
+#vector-appearance .cdx-radio__label .cdx-label__label {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+}
+
+#vector-appearance .cdx-label__label__text {
+  display: inline !important;
+  color: var(--color-base, #eaecf0) !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 20px !important;
+  white-space: nowrap !important;
+}
+
+#vector-appearance .cdx-radio__input:checked+.cdx-radio__icon {
+  border-color: rgb(51, 102, 204) !important;
+  border-width: 5px !important;
+  background-color: rgb(255, 255, 255) !important;
+}
+
+#vector-appearance .cdx-radio__input:focus+.cdx-radio__icon,
+#vector-appearance .cdx-radio__input:hover+.cdx-radio__icon,
+#vector-appearance .cdx-radio__input:active+.cdx-radio__icon {
+  box-shadow: none !important;
+}
+
+#vector-appearance .skin-client-pref-exclusion-notice,
+#vector-appearance #skin-theme-beta-notice {
+  display: none !important;
+}
+
+#vector-appearance-unpinned-container {
+  padding: 0 !important;
+}
+
+html.skin-theme-clientpref-night #vector-appearance-dropdown .vector-dropdown-content {
+  background-color: #101418 !important;
+}
+
+/* Let the captured footer break out of the article gutter like the shared shell footer. */
+.mw-footer-container {
+  box-sizing: border-box;
+  overflow-x: clip !important;
+  width: 100vw !important;
+  max-width: none !important;
+  position: relative !important;
+  left: 50% !important;
+  right: 50% !important;
+  margin-left: -50vw !important;
+  margin-right: -50vw !important;
+  border-top: 1px solid var(--vector-border, #3a3f44) !important;
+  margin-top: 2rem !important;
+  padding-left: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-left)) !important;
+  padding-right: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-right)) !important;
+  padding-bottom: 24px !important;
+}
+
+.mw-footer {
+  box-sizing: border-box;
+  margin: 0 auto !important;
+  width: 100% !important;
+  max-width: var(--vector-page-max-width, 99.75rem) !important;
+  padding-left: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-left)) !important;
+  padding-right: max(var(--vector-page-padding, 2.75rem), env(safe-area-inset-right)) !important;
+  border-top: 0 !important;
+}
