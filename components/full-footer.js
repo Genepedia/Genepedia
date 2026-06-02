@@ -229,7 +229,7 @@ body:not(.theme-dark) .page-footer__brand mini-header .localized-slogan {
   list-style: none;
 }
 
-.page-footer__social a {
+.page-footer__social action-button .action-button__control {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -241,13 +241,13 @@ body:not(.theme-dark) .page-footer__brand mini-header .localized-slogan {
   text-decoration: none;
 }
 
-.page-footer__social a:hover {
+.page-footer__social action-button .action-button__control:hover {
   background: var(--page-footer-hover);
   color: var(--page-footer-fg);
   text-decoration: none;
 }
 
-.page-footer__social i {
+.page-footer__social action-button .action-button__icon i {
   font-size: 1.1rem;
   line-height: 1;
 }
@@ -309,34 +309,22 @@ body:not(.theme-dark) .page-footer__brand mini-header .localized-slogan {
       </div>
       <ul class="page-footer__social">
         <li>
-          <a href="#" aria-label="YouTube" title="YouTube">
-            <i class="bi bi-youtube" aria-hidden="true"></i>
-          </a>
+          <action-button href="#" icon="bi-youtube" aria-label="YouTube" title="YouTube"></action-button>
         </li>
         <li>
-          <a href="#" aria-label="Facebook" title="Facebook">
-            <i class="bi bi-facebook" aria-hidden="true"></i>
-          </a>
+          <action-button href="#" icon="bi-facebook" aria-label="Facebook" title="Facebook"></action-button>
         </li>
         <li>
-          <a href="#" aria-label="Instagram" title="Instagram">
-            <i class="bi bi-instagram" aria-hidden="true"></i>
-          </a>
+          <action-button href="#" icon="bi-instagram" aria-label="Instagram" title="Instagram"></action-button>
         </li>
         <li>
-          <a href="#" aria-label="TikTok" title="TikTok">
-            <i class="bi bi-tiktok" aria-hidden="true"></i>
-          </a>
+          <action-button href="#" icon="bi-tiktok" aria-label="TikTok" title="TikTok"></action-button>
         </li>
         <li>
-          <a href="#" aria-label="X" title="X">
-            <i class="bi bi-twitter-x" aria-hidden="true"></i>
-          </a>
+          <action-button href="#" icon="bi-twitter-x" aria-label="X" title="X"></action-button>
         </li>
         <li>
-          <a href="#" aria-label="GitHub" title="GitHub">
-            <i class="bi bi-github" aria-hidden="true"></i>
-          </a>
+          <action-button href="#" icon="bi-github" aria-label="GitHub" title="GitHub"></action-button>
         </li>
       </ul>
     </div>
@@ -365,6 +353,23 @@ function resolveFromComponent(relativePath) {
   }
 }
 
+const FULL_FOOTER_ACTION_BUTTON_SCRIPT_URL = resolveFromComponent('action-button.js');
+
+function ensureFooterActionButtonScript() {
+  if (customElements.get('action-button')) {
+    return;
+  }
+
+  if (document.querySelector('script[src*="action-button.js"]')) {
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.src = FULL_FOOTER_ACTION_BUTTON_SCRIPT_URL;
+  script.defer = true;
+  document.head.append(script);
+}
+
 class FullFooter extends HTMLElement {
   static get observedAttributes() {
     return ['last-edited', 'last-editor', 'last-edited-days'];
@@ -373,6 +378,7 @@ class FullFooter extends HTMLElement {
   connectedCallback() {
     if (this.__rendered) return;
     this.__rendered = true;
+    ensureFooterActionButtonScript();
     this.innerHTML = FULL_FOOTER_TEMPLATE;
     this.#syncLastEdited();
 

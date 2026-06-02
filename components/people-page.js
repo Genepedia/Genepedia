@@ -762,6 +762,10 @@ class PeoplePage extends HTMLElement {
 
     this.#rewriteDataAssetUrls(doc);
 
+    if (tab === 'profile' && typeof window.upgradeProfileIdentityInDocument === 'function') {
+      window.upgradeProfileIdentityInDocument(doc);
+    }
+
     return doc.body.innerHTML;
   }
 
@@ -863,6 +867,84 @@ class PeoplePage extends HTMLElement {
         }),
       );
     });
+
+    // Bind download menu actions (delegates to shared download manager)
+    const downloadDropdown = this.querySelector('#people-page-download-menu');
+    if (downloadDropdown) {
+      const ensureManager = async () => {
+        if (window.GenipediaDownloads) return window.GenipediaDownloads;
+        // try to resolve components base from the people-page script tag
+        const scripts = Array.from(document.querySelectorAll('script[src]'));
+        let base = new URL('.', window.location.href).href;
+        for (const s of scripts) {
+          const src = s.getAttribute('src') || '';
+          if (src.includes('components/people-page.js')) {
+            try {
+              base = new URL('.', new URL(src, window.location.href)).href;
+              break;
+            } catch (e) {
+              /* ignore */
+            }
+          }
+        }
+        const managerSrc = new URL('../lib/download-manager.js', base).href;
+        try {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.defer = true;
+            s.src = managerSrc;
+            s.onload = resolve;
+            s.onerror = reject;
+            document.head.appendChild(s);
+          });
+        } catch (e) {
+          console.warn('Could not load download manager', e);
+        }
+        return window.GenipediaDownloads;
+      };
+
+      downloadDropdown.addEventListener('click', async (event) => {
+        const item = event.target.closest('[role="menuitem"]');
+        if (!item) return;
+        event.preventDefault();
+        const title = (item.getAttribute('title') || item.textContent || '').trim();
+        const match = title.match(/download as\s+(.+)/i);
+        const type = (match && match[1]) ? match[1].toLowerCase().replace(/\s+/g, '') : title.toLowerCase().replace(/\s+/g, '');
+
+        const manager = await ensureManager();
+        if (manager && typeof manager.handleDownload === 'function') {
+          try {
+            await manager.handleDownload(type, {
+              getContentEl: this.#getContentElement.bind(this),
+              getTitle: () => this.querySelector('.people-page__title')?.textContent?.trim() || document.title || 'profile',
+            });
+          } catch (err) {
+            console.error('Download manager error', err);
+          }
+        } else {
+          // minimal fallback
+          if (type === 'printthispage' || type === 'print') {
+            window.print();
+          } else {
+            const contentEl = this.#getContentElement();
+            if (contentEl) {
+              const filename = (this.querySelector('.people-page__title')?.textContent || document.title || 'profile').replace(/[^a-z0-9-_]/gi, '_').toLowerCase();
+              const blob = new Blob([contentEl.innerText], { type: 'text/plain;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${filename}.txt`;
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(() => URL.revokeObjectURL(url), 1500);
+            }
+          }
+        }
+
+        closeAllMenus();
+      });
+    }
   }
 
   #getInitialTab() {
@@ -1072,6 +1154,7 @@ class PeoplePage extends HTMLElement {
 
     contentEl.append(gallery);
   }
+
 }
 
 if (!customElements.get('people-page')) {

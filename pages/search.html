@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Search - Genipedia</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="../lib/common.css">
+	<script defer src="../components/mini-header.js"></script>
+	<script defer src="../components/full-header.js"></script>
+	<script defer src="../components/genipedia-search.js"></script>
+	<script defer src="../components/full-footer.js"></script>
+</head>
+
+<body>
+	<full-header></full-header>
+	<article>
+		<main class="main-content search-page">
+			<h1 class="search-page__title" id="genipedia-search-page-title">Search Genipedia</h1>
+			<p class="search-page__meta" id="genipedia-search-page-meta">Enter a name or keyword to find people in
+				Genipedia.</p>
+
+			<div role="search" class="search-container search-page__form">
+				<form class="pure-form" id="search-page-form" action="#" role="search">
+					<fieldset>
+						<div class="search-input genipedia-search-anchor">
+							<label for="searchPageInput" class="screen-reader-text">Search Genipedia</label>
+							<input id="searchPageInput" name="search" type="search" size="20" autofocus="autofocus"
+								dir="auto" autocomplete="off" placeholder="Search Genipedia...">
+						</div>
+						<button class="pure-button pure-button-primary-progressive" type="submit" aria-label="Search">
+							<i class="bi bi-search" aria-hidden="true"></i>
+							<span class="screen-reader-text">Search</span>
+						</button>
+					</fieldset>
+				</form>
+			</div>
+
+			<div id="genipedia-search-results" aria-live="polite"></div>
+		</main>
+		<full-footer></full-footer>
+	</article>
+	<script defer src="../index.js"></script>
+</body>
+
+</html>

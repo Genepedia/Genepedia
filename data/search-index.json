@@ -1,0 +1,53 @@
+{
+  "people": [
+    {
+      "id": "1",
+      "title": "Shaun Roselt",
+      "description": "South African software developer and Embarcadero MVP.",
+      "aliases": [
+        "shaun roselt",
+        "shaun",
+        "roselt",
+        "mvp",
+        "delphi",
+        "developer",
+        "embarcadero",
+        "nerospec"
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Hanli Roselt",
+      "description": "Son of Shaun Roselt.",
+      "aliases": [
+        "hanli roselt",
+        "hanli",
+        "son"
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Spouse of Shaun Roselt",
+      "description": "Wife of Shaun Roselt and mother of Hanli Roselt.",
+      "aliases": [
+        "wife",
+        "spouse",
+        "mother",
+        "mrs roselt",
+        "roselt wife"
+      ]
+    },
+    {
+      "id": "15",
+      "title": "Nelson Mandela",
+      "description": "South African anti-apartheid leader and first president of democratic South Africa.",
+      "aliases": [
+        "nelson mandela",
+        "mandela",
+        "nelson",
+        "madiba",
+        "rolihlahla"
+      ]
+    }
+  ]
+}

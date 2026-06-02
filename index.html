@@ -18,10 +18,11 @@
         content="Genipedia is a free online encyclopedia, created and edited by volunteers around the world and hosted by the Genipedia Foundation.">
     <meta property="og:image" content="assets/Genipedia-logo-v2.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="lib/common.css">
     <link rel="stylesheet" href="index.css">
 </head>
 
-<body id="www-genipedia-org">
+<body>
     <main>
         <mini-header></mini-header>
         <nav aria-label="Popular surnames" class="central-featured" data-el-section="primary links">
@@ -192,8 +193,7 @@
             </div>
         </nav>
         <div role="search" class="search-container">
-            <form class="pure-form" id="search-form" action="//www.genipedia.org/search-redirect.php"
-                data-el-section="search">
+            <form class="pure-form" id="search-form" action="#" role="search" data-el-section="search">
                 <fieldset>
                     <input type="hidden" name="family" value="genipedia">
                     <div class="search-input" id="search-input">
@@ -677,6 +677,7 @@
     <script src="components/mini-header.js"></script>
     <script src="components/mini-footer.js"></script>
     <script src="components/sister-projects.js"></script>
+    <script defer src="components/genipedia-search.js"></script>
     <script src="index.js"></script>
 </body>
 

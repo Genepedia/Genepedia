@@ -6,8 +6,11 @@ const FULL_HEADER_TEMPLATE = String.raw`
 
 full-header {
   display: block;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
   z-index: 110;
   --header-chrome-height: 55px;
   --header-chrome-control-height: 2.375rem;
@@ -480,6 +483,115 @@ body:not(.theme-dark) .header-chrome__user-dropdown {
   display: none !important;
 }
 
+.header-chrome__notifications {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  margin-right: 0.25rem;
+}
+.header-chrome__notifications-trigger {
+  margin: 0 0.25rem 0 0;
+}
+
+.header-chrome__notifications-trigger .action-button__control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--header-chrome-control-height);
+  height: var(--header-chrome-control-height);
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  border-radius: 0.125rem;
+  box-sizing: border-box;
+  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+.header-chrome__notifications-trigger .action-button__control:hover { background: rgba(255,255,255,0.08) }
+
+body:not(.theme-dark) .header-chrome__notifications-trigger .action-button__control {
+  border-color: rgba(0, 0, 0, 0.14);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+    .header-chrome__notifications-trigger .action-button__badge {
+  /* smaller badge positioned inside the top-right of the button so it's closer to the icon */
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #ff3b30;
+  color: var(--color-inverted);
+  font-size: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  box-sizing: border-box;
+  border: 1px solid var(--header-chrome-dropdown-bg);
+}
+
+.header-chrome__notifications-dropdown {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 20;
+  min-width: 14.5rem;
+  padding: 0.35rem 0;
+  border: 1px solid var(--header-chrome-menu-border);
+  border-radius: 0.125rem;
+  background: var(--header-chrome-dropdown-bg);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  box-sizing: border-box;
+}
+
+.header-chrome__notifications-trigger .action-button__icon i {
+  position: relative;
+  z-index: 1;
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px 24px rgba(0,0,0,0.12) }
+
+.header-chrome__notifications-dropdown[hidden] { display: none !important }
+
+/* Make notifications dropdown items match the profile dropdown */
+.header-chrome__notifications-dropdown a,
+.header-chrome__notifications-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem 1rem;
+  border: 0;
+  background: transparent;
+  color: var(--header-chrome-fg);
+  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.header-chrome__notifications-dropdown i {
+  flex-shrink: 0;
+  width: 1.1rem;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.header-chrome__notifications-dropdown a:hover,
+.header-chrome__notifications-dropdown button:hover {
+  background: rgba(255,255,255,0.08);
+}
+
 .header-chrome__user-dropdown a,
 .header-chrome__user-dropdown button {
   display: flex;
@@ -823,6 +935,20 @@ full-header.sidebar-open .header-chrome__backdrop {
           <i class="bi bi-x-lg header-chrome__search-toggle-icon--close" aria-hidden="true"></i>
         </button>
       </div>
+      <div class="header-chrome__notifications">
+        <action-button class="header-chrome__notifications-trigger" type="button" icon="bi-bell" title="Notifications" aria-label="Notifications" aria-haspopup="menu" aria-expanded="false" aria-controls="header-chrome-notifications-menu" badge="3"></action-button>
+        <div id="header-chrome-notifications-menu" class="header-chrome__notifications-dropdown" role="menu" hidden>
+          <div class="header-chrome__notifications-list" style="max-height:18rem; overflow:auto; padding:0 0.25rem;">
+            <button type="button" role="menuitem" data-action="messages"><i class="bi bi-envelope" aria-hidden="true"></i><span>Messages</span><span class="meta" style="margin-left:auto;color:var(--color-subtle);font-size:0.8rem;">2 new</span></button>
+            <button type="button" role="menuitem" data-action="mentions"><i class="bi bi-at" aria-hidden="true"></i><span>Mentions</span></button>
+            <button type="button" role="menuitem" data-action="matches"><i class="bi bi-people" aria-hidden="true"></i><span>Matches</span><span class="meta" style="margin-left:auto;color:var(--color-subtle);font-size:0.8rem;">1 new</span></button>
+            
+            <button type="button" role="menuitem" data-action="edits"><i class="bi bi-pencil-square" aria-hidden="true"></i><span>Edit Requests</span></button>
+          </div>
+          <div class="header-chrome__user-divider" role="separator"></div>
+          <button type="button" role="menuitem" data-action="view-all"><i class="bi bi-bell" aria-hidden="true"></i><span>View All Notifications</span></button>
+        </div>
+      </div>
       <div class="header-chrome__end">
         <div class="header-chrome__auth" data-logged-in="false">
         <button class="header-chrome__login" type="button">Log In</button>
@@ -888,7 +1014,7 @@ full-header.sidebar-open .header-chrome__backdrop {
   <nav class="header-chrome__sidebar-nav">
     <a class="header-chrome__sidebar-link" href="#"><i class="bi bi-house" aria-hidden="true"></i><span>Home</span></a>
     <a class="header-chrome__sidebar-link" href="#"><i class="bi bi-search" aria-hidden="true"></i><span>Search</span></a>
-    <a class="header-chrome__sidebar-link" href="#"><i class="bi bi-book" aria-hidden="true"></i><span>Browse</span></a>
+    <a class="header-chrome__sidebar-link" href="#" data-action="random-profile"><i class="bi bi-shuffle" aria-hidden="true"></i><span>Random</span></a>
     <a class="header-chrome__sidebar-link" href="#"><i class="bi bi-question-circle" aria-hidden="true"></i><span>Help</span></a>
   </nav>
   <div class="header-chrome__sidebar-footer">
@@ -920,396 +1046,659 @@ const FULL_HEADER_SLOGAN = 'Free Geneology Encyclopedia';
 const FULL_HEADER_SESSION_KEY = 'genipedia-header-session';
 
 const FULL_HEADER_DEMO_USER = {
-    givenName: 'Shaun',
-    familyName: 'Roselt',
-    photoUrl: '',
+  givenName: 'Shaun',
+  familyName: 'Roselt',
+  photoUrl: '',
 };
 
 function resolveFromComponent(relativePath) {
-    try {
-        return new URL(relativePath, FULL_HEADER_SCRIPT_URL || window.location.href).href;
-    } catch {
-        return relativePath;
-    }
+  try {
+    return new URL(relativePath, FULL_HEADER_SCRIPT_URL || window.location.href).href;
+  } catch {
+    return relativePath;
+  }
+}
+
+const ACTION_BUTTON_SCRIPT_URL = resolveFromComponent('action-button.js');
+
+function ensureActionButtonScript() {
+  if (customElements.get('action-button')) {
+    return;
+  }
+
+  if (document.querySelector('script[src*="action-button.js"]')) {
+    return;
+  }
+
+  const script = document.createElement('script');
+  script.src = ACTION_BUTTON_SCRIPT_URL;
+  script.defer = true;
+  document.head.append(script);
 }
 
 const THEME_STORAGE_KEY = 'genipedia-theme';
 
 function readStoredTheme() {
-    try {
-        const theme = localStorage.getItem(THEME_STORAGE_KEY);
-        if (theme === 'dark' || theme === 'light') {
-            return theme;
-        }
-    } catch {
-        // ignore storage errors
+  try {
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
+    if (theme === 'dark' || theme === 'light') {
+      return theme;
     }
+  } catch {
+    // ignore storage errors
+  }
 
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function applyDocumentTheme(theme = readStoredTheme()) {
-    const isDark = theme === 'dark';
-    document.body.classList.toggle('theme-dark', isDark);
+  const isDark = theme === 'dark';
+  document.body.classList.toggle('theme-dark', isDark);
 
-    document.querySelectorAll('.header-chrome__theme-input').forEach((input) => {
-        input.checked = isDark;
-        input.setAttribute('aria-checked', isDark ? 'true' : 'false');
-    });
+  document.querySelectorAll('.header-chrome__theme-input').forEach((input) => {
+    input.checked = isDark;
+    input.setAttribute('aria-checked', isDark ? 'true' : 'false');
+  });
 
-    return theme;
+  return theme;
+}
+
+let randomProfileCandidatesPromise = null;
+
+async function fetchJsonForHeader(url) {
+  try {
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) {
+      return null;
+    }
+
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function getRandomProfileCandidates() {
+  if (randomProfileCandidatesPromise) {
+    return randomProfileCandidatesPromise;
+  }
+
+  randomProfileCandidatesPromise = (async () => {
+    const fromFileStats = await fetchJsonForHeader(resolveFromComponent('../data/file-stats.json'));
+    const statsCandidates = Array.isArray(fromFileStats)
+      ? fromFileStats
+          .map((entry) => String(entry?.path || '').match(/^people\/([^/]+)\/profile\.html$/)?.[1] || '')
+          .filter(Boolean)
+      : [];
+
+    if (statsCandidates.length) {
+      return [...new Set(statsCandidates)];
+    }
+
+    const fromSearchIndex = await fetchJsonForHeader(resolveFromComponent('../data/search-index.json'));
+    const searchCandidates = Array.isArray(fromSearchIndex?.people)
+      ? fromSearchIndex.people.map((person) => String(person?.id || '')).filter(Boolean)
+      : [];
+
+    if (searchCandidates.length) {
+      return [...new Set(searchCandidates)];
+    }
+
+    return ['1', '2', '3', '15'];
+  })();
+
+  return randomProfileCandidatesPromise;
+}
+
+async function navigateToRandomProfile() {
+  const candidates = await getRandomProfileCandidates();
+  const currentProfileMatch = window.location.pathname.match(/\/people\/([^/]+)\/profile\.html$/);
+  const currentProfileId = currentProfileMatch?.[1] || null;
+
+  let pool = candidates.filter((id) => id !== currentProfileId);
+  if (!pool.length) {
+    pool = candidates;
+  }
+
+  const chosenId = pool[Math.floor(Math.random() * pool.length)] || '15';
+  window.location.assign(resolveFromComponent(`../people/${chosenId}/profile.html`));
 }
 
 class FullHeader extends HTMLElement {
-    connectedCallback() {
-        if (this.__rendered) return;
-        this.__rendered = true;
-        applyDocumentTheme();
-        this.innerHTML = FULL_HEADER_TEMPLATE;
+  connectedCallback() {
+    if (this.__rendered) return;
+    this.__rendered = true;
+    applyDocumentTheme();
+    ensureActionButtonScript();
+    this.innerHTML = FULL_HEADER_TEMPLATE;
 
-        const syncBrand = () => {
-            const miniHeader = this.querySelector('mini-header');
-            const logo = miniHeader?.querySelector('.central-textlogo__logo');
-            const homeLink = miniHeader?.querySelector('.central-textlogo__home-link');
-            const slogan = miniHeader?.querySelector('.localized-slogan');
+    // Dynamically resolve links in the user dropdown
+    this.querySelectorAll('a[role="menuitem"]').forEach((link) => {
+      const text = link.textContent.trim().toLowerCase();
+      if (text.includes('settings')) {
+        link.href = resolveFromComponent('../pages/settings.html');
+      } else if (text.includes('profile')) {
+        link.href = resolveFromComponent('../pages/settings.html?tab=account');
+      }
+    });
 
-            if (logo) {
-                logo.src = resolveFromComponent('../assets/Logo.png');
-                logo.alt = '';
+    // Dynamically resolve sidebar links (ensure Home navigates to the site home page)
+    this.querySelectorAll('.header-chrome__sidebar-link').forEach((link) => {
+      const text = link.textContent.trim().toLowerCase();
+      if (text.includes('home')) {
+        link.href = resolveFromComponent('../pages/home.html');
+      } else if (text.includes('search')) {
+        link.href = resolveFromComponent('../pages/search.html');
+      } else if (text.includes('random')) {
+        link.href = resolveFromComponent('../people/15/profile.html');
+      }
+    });
+
+    const randomProfileLink = this.querySelector('[data-action="random-profile"]');
+    if (randomProfileLink) {
+      randomProfileLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        this._closeSidebar?.();
+        void navigateToRandomProfile();
+      });
+    }
+
+    const syncBrand = () => {
+      const miniHeader = this.querySelector('mini-header');
+      const logo = miniHeader?.querySelector('.central-textlogo__logo');
+      const homeLink = miniHeader?.querySelector('.central-textlogo__home-link');
+      const slogan = miniHeader?.querySelector('.localized-slogan');
+
+      if (logo) {
+        logo.src = resolveFromComponent('../assets/Logo.png');
+        logo.alt = '';
+      }
+
+      if (homeLink) {
+        homeLink.href = resolveFromComponent('../index.html');
+      }
+
+      if (slogan) {
+        if (slogan.textContent !== FULL_HEADER_SLOGAN) {
+          slogan.textContent = FULL_HEADER_SLOGAN;
+        }
+
+        if (!slogan.dataset.fullHeaderSlogan) {
+          slogan.dataset.fullHeaderSlogan = 'true';
+          new MutationObserver(() => {
+            if (slogan.textContent !== FULL_HEADER_SLOGAN) {
+              slogan.textContent = FULL_HEADER_SLOGAN;
             }
+          }).observe(slogan, { characterData: true, childList: true, subtree: true });
+        }
+      }
+    };
 
-            if (homeLink) {
-                homeLink.href = resolveFromComponent('../index.html');
-            }
+    const runSync = () => {
+      requestAnimationFrame(() => {
+        syncBrand();
+        requestAnimationFrame(syncBrand);
+      });
+    };
 
-            if (slogan) {
-                if (slogan.textContent !== FULL_HEADER_SLOGAN) {
-                    slogan.textContent = FULL_HEADER_SLOGAN;
-                }
+    if (customElements.get('mini-header')) {
+      runSync();
+    } else {
+      customElements.whenDefined('mini-header').then(runSync);
+    }
 
-                if (!slogan.dataset.fullHeaderSlogan) {
-                    slogan.dataset.fullHeaderSlogan = 'true';
-                    new MutationObserver(() => {
-                        if (slogan.textContent !== FULL_HEADER_SLOGAN) {
-                            slogan.textContent = FULL_HEADER_SLOGAN;
-                        }
-                    }).observe(slogan, { characterData: true, childList: true, subtree: true });
-                }
-            }
-        };
+    this.#syncHeaderHeight();
+    this.#initTheme();
+    this.#initSidebar();
+    this.#initSearch();
+    this.#initGenipediaSearch();
+    this.#initNotifications();
+    this.#initAuth();
+  }
 
-        const runSync = () => {
-            requestAnimationFrame(() => {
-                syncBrand();
-                requestAnimationFrame(syncBrand);
-            });
-        };
+  #initNotifications() {
+    const notifications = this.querySelector('.header-chrome__notifications');
+    if (!notifications) return;
 
-        if (customElements.get('mini-header')) {
-            runSync();
+    const trigger = notifications.querySelector('.header-chrome__notifications-trigger');
+    const menu = notifications.querySelector('.header-chrome__notifications-dropdown');
+    if (!trigger || !menu) return;
+
+    const close = () => {
+      notifications.classList.remove('is-open');
+      menu.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    };
+
+    const open = () => {
+      // ensure other header menus are closed when notifications open
+      this._closeUserMenu?.();
+      this._closeSearch?.();
+
+      notifications.classList.add('is-open');
+      menu.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+    };
+
+    // expose controls so other header menus can close this when they open
+    this._closeNotifications = close;
+    this._openNotifications = open;
+
+    trigger.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (notifications.classList.contains('is-open')) {
+        close();
+      } else {
+        // close other header menus before opening notifications
+        this._closeUserMenu?.();
+        this._closeSearch?.();
+        open();
+      }
+    });
+
+    // delegate clicks inside the menu so new notification types are handled centrally
+    this._notificationsMenuClickHandler = (ev) => {
+      const btn = ev.target.closest('[role="menuitem"]');
+      if (!btn || !menu.contains(btn)) return;
+      const action = btn.dataset.action;
+      close();
+      try {
+        switch (action) {
+          case 'messages':
+            window.location.assign(resolveFromComponent('../pages/messages.html'));
+            break;
+          case 'mentions':
+            window.location.assign(resolveFromComponent('../pages/search.html?filter=mentions'));
+            break;
+          case 'matches':
+            window.location.assign(resolveFromComponent('../pages/search.html?filter=matches'));
+            break;
+
+          case 'edits':
+            window.location.assign(resolveFromComponent('../pages/review_edits.html'));
+            break;
+          case 'view-all':
+            window.location.assign(resolveFromComponent('../pages/notifications.html'));
+            break;
+          default:
+            console.log('Notification action:', action);
+        }
+      } catch (err) {
+        console.warn('Navigation for notification action failed', action, err);
+      }
+    };
+    menu.addEventListener('click', this._notificationsMenuClickHandler);
+
+    this._notificationsDocumentClickHandler = (event) => {
+      if (notifications && !notifications.contains(event.target)) {
+        close();
+      }
+    };
+    document.addEventListener('click', this._notificationsDocumentClickHandler);
+
+    this._notificationsEscapeHandler = (event) => {
+      if (event.key === 'Escape') {
+        close();
+      }
+    };
+    document.addEventListener('keydown', this._notificationsEscapeHandler);
+  }
+
+  #initGenipediaSearch() {
+    const searchForm = this.querySelector('#header-chrome-search-form');
+    if (!searchForm) {
+      return;
+    }
+
+    const bindSearch = () => {
+      window.GenipediaSearch?.bindGenipediaSearchForm?.(searchForm);
+    };
+
+    if (window.GenipediaSearch) {
+      bindSearch();
+      return;
+    }
+
+    const existingScript = document.querySelector('script[src*="genipedia-search.js"]');
+    if (existingScript) {
+      existingScript.addEventListener('load', bindSearch, { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = resolveFromComponent('genipedia-search.js');
+    script.defer = true;
+    script.addEventListener('load', bindSearch, { once: true });
+    document.head.append(script);
+  }
+
+  #syncHeaderHeight() {
+    const header = this.querySelector('.header-container');
+    if (!header) {
+      return;
+    }
+
+    const update = () => {
+      const h = `${header.offsetHeight}px`;
+      this.style.setProperty('--header-chrome-height', h);
+      try {
+        document.documentElement.style.setProperty('--header-chrome-height', h);
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    update();
+    this._headerResizeObserver = new ResizeObserver(update);
+    this._headerResizeObserver.observe(header);
+  }
+
+  #initTheme() {
+    const themeInput = this.querySelector('.header-chrome__theme-input');
+    if (!themeInput) {
+      return;
+    }
+
+    applyDocumentTheme();
+
+    themeInput.addEventListener('change', () => {
+      const nextTheme = themeInput.checked ? 'dark' : 'light';
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+      } catch {
+        // ignore storage errors
+      }
+      applyDocumentTheme(nextTheme);
+    });
+  }
+
+  #initSearch() {
+    const searchToggle = this.querySelector('.header-chrome__search-toggle');
+    const searchInput = this.querySelector('.header-chrome__search-input');
+    const mobileQuery = window.matchMedia('(max-width: 720px)');
+
+    if (!searchToggle) {
+      return;
+    }
+
+    const closeSearch = () => {
+      this.classList.remove('search-open');
+      searchToggle.setAttribute('aria-expanded', 'false');
+      searchToggle.setAttribute('aria-label', 'Open search');
+      this.#syncHeaderHeight();
+    };
+
+    const openSearch = () => {
+      // close other header menus before opening search
+      this._closeNotifications?.();
+      this._closeUserMenu?.();
+
+      this.classList.add('search-open');
+      searchToggle.setAttribute('aria-expanded', 'true');
+      searchToggle.setAttribute('aria-label', 'Close search');
+      requestAnimationFrame(() => searchInput?.focus());
+      this.#syncHeaderHeight();
+    };
+
+    searchToggle.addEventListener('click', () => {
+      if (this.classList.contains('search-open')) {
+        closeSearch();
+        return;
+      }
+
+      openSearch();
+    });
+
+    const handleBreakpointChange = (event) => {
+      if (!event.matches) {
+        closeSearch();
+      }
+    };
+
+    mobileQuery.addEventListener('change', handleBreakpointChange);
+    this._searchMobileQuery = mobileQuery;
+    this._searchBreakpointHandler = handleBreakpointChange;
+    this._closeSearch = closeSearch;
+  }
+
+  #initSidebar() {
+    const menuButton = this.querySelector('.header-chrome__menu');
+    const backdrop = this.querySelector('.header-chrome__backdrop');
+    const desktopQuery = window.matchMedia('(min-width: 992px)');
+
+    if (!menuButton || !backdrop) {
+      return;
+    }
+
+    const isDesktop = () => desktopQuery.matches;
+
+    const setSidebarOpen = (open) => {
+      this.classList.toggle('sidebar-open', open);
+      document.body.classList.toggle('header-chrome-content-offset', open && isDesktop());
+      menuButton.setAttribute('aria-expanded', String(open));
+      menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      backdrop.hidden = !open || isDesktop();
+    };
+
+    const openSidebar = () => setSidebarOpen(true);
+    const closeSidebar = () => setSidebarOpen(false);
+    const toggleSidebar = () => setSidebarOpen(!this.classList.contains('sidebar-open'));
+
+    menuButton.addEventListener('click', toggleSidebar);
+    backdrop.addEventListener('click', closeSidebar);
+
+    const handleBreakpointChange = () => {
+      if (isDesktop()) {
+        openSidebar();
+        return;
+      }
+
+      closeSidebar();
+    };
+
+    desktopQuery.addEventListener('change', handleBreakpointChange);
+
+    if (isDesktop()) {
+      openSidebar();
+    } else {
+      closeSidebar();
+    }
+
+    this._sidebarDesktopQuery = desktopQuery;
+    this._sidebarBreakpointHandler = handleBreakpointChange;
+    this._closeSidebar = closeSidebar;
+  }
+
+  #initAuth() {
+    const auth = this.querySelector('.header-chrome__auth');
+    const loginButton = this.querySelector('.header-chrome__login');
+    const userMenu = this.querySelector('.header-chrome__user-menu');
+    const userTrigger = this.querySelector('.header-chrome__user-trigger');
+    const userDropdown = this.querySelector('.header-chrome__user-dropdown');
+    const logoutButton = this.querySelector('.header-chrome__user-logout');
+    const avatar = this.querySelector('.header-chrome__user-avatar');
+    const givenNameEl = this.querySelector('.header-chrome__user-given');
+    const familyNameEl = this.querySelector('.header-chrome__user-family');
+
+    if (!auth || !loginButton || !userMenu || !userTrigger || !userDropdown) {
+      return;
+    }
+
+    const readSession = () => {
+      try {
+        const raw = localStorage.getItem(FULL_HEADER_SESSION_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const writeSession = (user) => {
+      try {
+        if (user) {
+          localStorage.setItem(FULL_HEADER_SESSION_KEY, JSON.stringify(user));
         } else {
-            customElements.whenDefined('mini-header').then(runSync);
+          localStorage.removeItem(FULL_HEADER_SESSION_KEY);
         }
+      } catch {
+        // ignore storage errors
+      }
+    };
 
-        this.#syncHeaderHeight();
-        this.#initTheme();
-        this.#initSidebar();
-        this.#initSearch();
-        this.#initAuth();
+    const setAvatar = (user) => {
+      if (!avatar) return;
+
+      const label = `${user.givenName || ''} ${user.familyName || ''}`.trim();
+
+      if (user.photoUrl) {
+        const photo = document.createElement('img');
+        photo.src = user.photoUrl;
+        photo.alt = label;
+        photo.width = 32;
+        photo.height = 32;
+        avatar.className = 'header-chrome__user-avatar';
+        avatar.replaceChildren(photo);
+      } else {
+        avatar.className = 'header-chrome__user-avatar header-chrome__user-avatar--placeholder';
+        avatar.replaceChildren();
+        const icon = document.createElement('i');
+        icon.className = 'bi bi-person-fill';
+        icon.setAttribute('aria-hidden', 'true');
+        avatar.appendChild(icon);
+        avatar.setAttribute('aria-label', label);
+      }
+
+      userTrigger.setAttribute('aria-label', `${label}, account menu`);
+    };
+
+    const closeUserMenu = () => {
+      userMenu.classList.remove('is-open');
+      userDropdown.hidden = true;
+      userTrigger.setAttribute('aria-expanded', 'false');
+    };
+
+    const openUserMenu = () => {
+      // close other header menus before opening account/user menu
+      this._closeNotifications?.();
+      this._closeSearch?.();
+
+      userMenu.classList.add('is-open');
+      userDropdown.hidden = false;
+      userTrigger.setAttribute('aria-expanded', 'true');
+    };
+
+    // expose controls so other header menus can close this when they open
+    this._closeUserMenu = closeUserMenu;
+    this._openUserMenu = openUserMenu;
+
+    const setLoggedIn = (loggedIn, user = null) => {
+      const sessionUser = user || FULL_HEADER_DEMO_USER;
+      auth.dataset.loggedIn = loggedIn ? 'true' : 'false';
+      closeUserMenu();
+
+      if (loggedIn) {
+        if (givenNameEl) givenNameEl.textContent = sessionUser.givenName || '';
+        if (familyNameEl) familyNameEl.textContent = sessionUser.familyName || '';
+        setAvatar(sessionUser);
+        writeSession(sessionUser);
+      } else {
+        writeSession(null);
+      }
+    };
+
+    loginButton.addEventListener('click', () => {
+      setLoggedIn(true, FULL_HEADER_DEMO_USER);
+    });
+
+    userTrigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (userMenu.classList.contains('is-open')) {
+        closeUserMenu();
+      } else {
+        // close other header menus before opening user menu
+        this._closeNotifications?.();
+        this._closeSearch?.();
+        openUserMenu();
+      }
+    });
+
+    logoutButton?.addEventListener('click', () => {
+      setLoggedIn(false);
+    });
+
+    userDropdown.querySelectorAll('a[role="menuitem"]').forEach((item) => {
+      item.addEventListener('click', () => {
+        closeUserMenu();
+      });
+    });
+
+    this._authDocumentClickHandler = (event) => {
+      if (!userMenu.contains(event.target)) {
+        closeUserMenu();
+      }
+    };
+    document.addEventListener('click', this._authDocumentClickHandler);
+
+    this._authEscapeHandler = (event) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      closeUserMenu();
+      this._closeSearch?.();
+
+      if (this.classList.contains('sidebar-open') && !window.matchMedia('(min-width: 992px)').matches) {
+        this._closeSidebar?.();
+      }
+    };
+    document.addEventListener('keydown', this._authEscapeHandler);
+
+    const existingSession = readSession();
+    if (existingSession) {
+      setLoggedIn(true, { ...FULL_HEADER_DEMO_USER, ...existingSession });
+    }
+  }
+
+  disconnectedCallback() {
+    if (this._authDocumentClickHandler) {
+      document.removeEventListener('click', this._authDocumentClickHandler);
+      this._authDocumentClickHandler = null;
     }
 
-    #syncHeaderHeight() {
-        const header = this.querySelector('.header-container');
-        if (!header) {
-            return;
-        }
-
-        const update = () => {
-            this.style.setProperty('--header-chrome-height', `${header.offsetHeight}px`);
-        };
-
-        update();
-        this._headerResizeObserver = new ResizeObserver(update);
-        this._headerResizeObserver.observe(header);
+    if (this._authEscapeHandler) {
+      document.removeEventListener('keydown', this._authEscapeHandler);
+      this._authEscapeHandler = null;
     }
 
-    #initTheme() {
-        const themeInput = this.querySelector('.header-chrome__theme-input');
-        if (!themeInput) {
-            return;
-        }
-
-        applyDocumentTheme();
-
-        themeInput.addEventListener('change', () => {
-            const nextTheme = themeInput.checked ? 'dark' : 'light';
-            try {
-                localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-            } catch {
-                // ignore storage errors
-            }
-            applyDocumentTheme(nextTheme);
-        });
+    if (this._sidebarDesktopQuery && this._sidebarBreakpointHandler) {
+      this._sidebarDesktopQuery.removeEventListener('change', this._sidebarBreakpointHandler);
     }
 
-    #initSearch() {
-        const searchToggle = this.querySelector('.header-chrome__search-toggle');
-        const searchInput = this.querySelector('.header-chrome__search-input');
-        const mobileQuery = window.matchMedia('(max-width: 720px)');
-
-        if (!searchToggle) {
-            return;
-        }
-
-        const closeSearch = () => {
-            this.classList.remove('search-open');
-            searchToggle.setAttribute('aria-expanded', 'false');
-            searchToggle.setAttribute('aria-label', 'Open search');
-            this.#syncHeaderHeight();
-        };
-
-        const openSearch = () => {
-            this.classList.add('search-open');
-            searchToggle.setAttribute('aria-expanded', 'true');
-            searchToggle.setAttribute('aria-label', 'Close search');
-            requestAnimationFrame(() => searchInput?.focus());
-            this.#syncHeaderHeight();
-        };
-
-        searchToggle.addEventListener('click', () => {
-            if (this.classList.contains('search-open')) {
-                closeSearch();
-                return;
-            }
-
-            openSearch();
-        });
-
-        const handleBreakpointChange = (event) => {
-            if (!event.matches) {
-                closeSearch();
-            }
-        };
-
-        mobileQuery.addEventListener('change', handleBreakpointChange);
-        this._searchMobileQuery = mobileQuery;
-        this._searchBreakpointHandler = handleBreakpointChange;
-        this._closeSearch = closeSearch;
+    if (this._searchMobileQuery && this._searchBreakpointHandler) {
+      this._searchMobileQuery.removeEventListener('change', this._searchBreakpointHandler);
     }
 
-    #initSidebar() {
-        const menuButton = this.querySelector('.header-chrome__menu');
-        const backdrop = this.querySelector('.header-chrome__backdrop');
-        const desktopQuery = window.matchMedia('(min-width: 992px)');
-
-        if (!menuButton || !backdrop) {
-            return;
-        }
-
-        const isDesktop = () => desktopQuery.matches;
-
-        const setSidebarOpen = (open) => {
-            this.classList.toggle('sidebar-open', open);
-            document.body.classList.toggle('header-chrome-content-offset', open && isDesktop());
-            menuButton.setAttribute('aria-expanded', String(open));
-            menuButton.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-            backdrop.hidden = !open || isDesktop();
-        };
-
-        const openSidebar = () => setSidebarOpen(true);
-        const closeSidebar = () => setSidebarOpen(false);
-        const toggleSidebar = () => setSidebarOpen(!this.classList.contains('sidebar-open'));
-
-        menuButton.addEventListener('click', toggleSidebar);
-        backdrop.addEventListener('click', closeSidebar);
-
-        const handleBreakpointChange = () => {
-            if (isDesktop()) {
-                openSidebar();
-                return;
-            }
-
-            closeSidebar();
-        };
-
-        desktopQuery.addEventListener('change', handleBreakpointChange);
-
-        if (isDesktop()) {
-            openSidebar();
-        } else {
-            closeSidebar();
-        }
-
-        this._sidebarDesktopQuery = desktopQuery;
-        this._sidebarBreakpointHandler = handleBreakpointChange;
-        this._closeSidebar = closeSidebar;
+    this._headerResizeObserver?.disconnect();
+    this._headerResizeObserver = null;
+    document.body.classList.remove('header-chrome-content-offset');
+    this.classList.remove('sidebar-open', 'search-open');
+    if (this._notificationsDocumentClickHandler) {
+      document.removeEventListener('click', this._notificationsDocumentClickHandler);
+      this._notificationsDocumentClickHandler = null;
     }
 
-    #initAuth() {
-        const auth = this.querySelector('.header-chrome__auth');
-        const loginButton = this.querySelector('.header-chrome__login');
-        const userMenu = this.querySelector('.header-chrome__user-menu');
-        const userTrigger = this.querySelector('.header-chrome__user-trigger');
-        const userDropdown = this.querySelector('.header-chrome__user-dropdown');
-        const logoutButton = this.querySelector('.header-chrome__user-logout');
-        const avatar = this.querySelector('.header-chrome__user-avatar');
-        const givenNameEl = this.querySelector('.header-chrome__user-given');
-        const familyNameEl = this.querySelector('.header-chrome__user-family');
-
-        if (!auth || !loginButton || !userMenu || !userTrigger || !userDropdown) {
-            return;
-        }
-
-        const readSession = () => {
-            try {
-                const raw = localStorage.getItem(FULL_HEADER_SESSION_KEY);
-                return raw ? JSON.parse(raw) : null;
-            } catch {
-                return null;
-            }
-        };
-
-        const writeSession = (user) => {
-            try {
-                if (user) {
-                    localStorage.setItem(FULL_HEADER_SESSION_KEY, JSON.stringify(user));
-                } else {
-                    localStorage.removeItem(FULL_HEADER_SESSION_KEY);
-                }
-            } catch {
-                // ignore storage errors
-            }
-        };
-
-        const setAvatar = (user) => {
-            if (!avatar) return;
-
-            const label = `${user.givenName || ''} ${user.familyName || ''}`.trim();
-
-            if (user.photoUrl) {
-                const photo = document.createElement('img');
-                photo.src = user.photoUrl;
-                photo.alt = label;
-                photo.width = 32;
-                photo.height = 32;
-                avatar.className = 'header-chrome__user-avatar';
-                avatar.replaceChildren(photo);
-            } else {
-                avatar.className = 'header-chrome__user-avatar header-chrome__user-avatar--placeholder';
-                avatar.replaceChildren();
-                const icon = document.createElement('i');
-                icon.className = 'bi bi-person-fill';
-                icon.setAttribute('aria-hidden', 'true');
-                avatar.appendChild(icon);
-                avatar.setAttribute('aria-label', label);
-            }
-
-            userTrigger.setAttribute('aria-label', `${label}, account menu`);
-        };
-
-        const closeUserMenu = () => {
-            userMenu.classList.remove('is-open');
-            userDropdown.hidden = true;
-            userTrigger.setAttribute('aria-expanded', 'false');
-        };
-
-        const openUserMenu = () => {
-            userMenu.classList.add('is-open');
-            userDropdown.hidden = false;
-            userTrigger.setAttribute('aria-expanded', 'true');
-        };
-
-        const setLoggedIn = (loggedIn, user = null) => {
-            const sessionUser = user || FULL_HEADER_DEMO_USER;
-            auth.dataset.loggedIn = loggedIn ? 'true' : 'false';
-            closeUserMenu();
-
-            if (loggedIn) {
-                if (givenNameEl) givenNameEl.textContent = sessionUser.givenName || '';
-                if (familyNameEl) familyNameEl.textContent = sessionUser.familyName || '';
-                setAvatar(sessionUser);
-                writeSession(sessionUser);
-            } else {
-                writeSession(null);
-            }
-        };
-
-        loginButton.addEventListener('click', () => {
-            setLoggedIn(true, FULL_HEADER_DEMO_USER);
-        });
-
-        userTrigger.addEventListener('click', (event) => {
-            event.stopPropagation();
-            if (userMenu.classList.contains('is-open')) {
-                closeUserMenu();
-            } else {
-                openUserMenu();
-            }
-        });
-
-        logoutButton?.addEventListener('click', () => {
-            setLoggedIn(false);
-        });
-
-        userDropdown.querySelectorAll('a[role="menuitem"]').forEach((item) => {
-            item.addEventListener('click', () => {
-                closeUserMenu();
-            });
-        });
-
-        this._authDocumentClickHandler = (event) => {
-            if (!userMenu.contains(event.target)) {
-                closeUserMenu();
-            }
-        };
-        document.addEventListener('click', this._authDocumentClickHandler);
-
-        this._authEscapeHandler = (event) => {
-            if (event.key !== 'Escape') {
-                return;
-            }
-
-            closeUserMenu();
-            this._closeSearch?.();
-
-            if (this.classList.contains('sidebar-open') && !window.matchMedia('(min-width: 992px)').matches) {
-                this._closeSidebar?.();
-            }
-        };
-        document.addEventListener('keydown', this._authEscapeHandler);
-
-        const existingSession = readSession();
-        if (existingSession) {
-            setLoggedIn(true, { ...FULL_HEADER_DEMO_USER, ...existingSession });
-        }
+    if (this._notificationsEscapeHandler) {
+      document.removeEventListener('keydown', this._notificationsEscapeHandler);
+      this._notificationsEscapeHandler = null;
     }
-
-    disconnectedCallback() {
-        if (this._authDocumentClickHandler) {
-            document.removeEventListener('click', this._authDocumentClickHandler);
-            this._authDocumentClickHandler = null;
-        }
-
-        if (this._authEscapeHandler) {
-            document.removeEventListener('keydown', this._authEscapeHandler);
-            this._authEscapeHandler = null;
-        }
-
-        if (this._sidebarDesktopQuery && this._sidebarBreakpointHandler) {
-            this._sidebarDesktopQuery.removeEventListener('change', this._sidebarBreakpointHandler);
-        }
-
-        if (this._searchMobileQuery && this._searchBreakpointHandler) {
-            this._searchMobileQuery.removeEventListener('change', this._searchBreakpointHandler);
-        }
-
-        this._headerResizeObserver?.disconnect();
-        this._headerResizeObserver = null;
-        document.body.classList.remove('header-chrome-content-offset');
-        this.classList.remove('sidebar-open', 'search-open');
+    if (this._notificationsMenuClickHandler) {
+      const menu = this.querySelector('#header-chrome-notifications-menu');
+      if (menu) menu.removeEventListener('click', this._notificationsMenuClickHandler);
+      this._notificationsMenuClickHandler = null;
     }
+  }
 }
 
 if (!customElements.get('full-header')) {
-    customElements.define('full-header', FullHeader);
+  customElements.define('full-header', FullHeader);
 }

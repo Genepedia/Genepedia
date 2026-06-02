@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>404 Not Found - Genipedia</title>
+    <meta name="robots" content="noindex">
+    <style>
+        :root {
+            --bg: #fff;
+            --fg: #111
+        }
+
+        @media (prefers-color-scheme:dark) {
+            :root {
+                --bg: #0b0b0d;
+                --fg: #eaecf0
+            }
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            padding: 36px
+        }
+
+        .hero {
+            max-width: 72rem;
+            margin: 0 auto
+        }
+
+        .actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.45rem 0.8rem;
+            border-radius: 4px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: transparent;
+            color: inherit;
+            text-decoration: none
+        }
+
+        .search {
+            margin-top: 1rem
+        }
+
+        input[type=search] {
+            padding: 0.5rem;
+            min-width: 220px
+        }
+    </style>
+</head>
+
+<body>
+    <main class="hero">
+        <h1>404 — Page not found</h1>
+        <p>We couldn't find the page you were looking for. It may have been moved or deleted.</p>
+
+        <div class="actions">
+            <a id="go-home" class="btn" href="#">Go to homepage</a>
+            <button class="btn" onclick="history.back()">Go back</button>
+        </div>
+
+        <form id="search404" class="search" role="search">
+            <label for="search404Input" class="screen-reader-text">Search Genipedia</label>
+            <input id="search404Input" name="q" type="search" placeholder="Search Genipedia..." autocomplete="off">
+            <button type="submit" class="btn">Search</button>
+        </form>
+    </main>
+
+    <script>
+        (function () {
+            // Compute candidate base prefixes by walking up the URL path.
+            const link = document.getElementById('go-home');
+            const segsRaw = location.pathname.split('/').filter(Boolean);
+            const segs = segsRaw.slice();
+            // If last path looks like a filename, drop it.
+            if (segs.length && segs[segs.length - 1].includes('.')) segs.pop();
+
+            const bases = [];
+            for (let i = segs.length; i >= 0; i--) {
+                const base = i > 0 ? '/' + segs.slice(0, i).join('/') + '/' : '/';
+                bases.push(base);
+            }
+
+            async function exists(url) {
+                try {
+                    const r = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+                    return r && r.ok;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            (async function resolveLinks() {
+                // Find an index.html up the tree
+                for (const base of bases) {
+                    const cand = base + 'index.html';
+                    if (await exists(cand)) {
+                        link.href = cand;
+                        break;
+                    }
+                }
+                if (!link.href || link.href === '#') link.href = '/';
+
+                // Resolve search page (prefer pages/search.html then search.html)
+                const searchRel = ['pages/search.html', 'search.html'];
+                let searchHref = null;
+                for (const base of bases) {
+                    for (const rel of searchRel) {
+                        const cand = base + rel;
+                        if (await exists(cand)) {
+                            searchHref = cand;
+                            break;
+                        }
+                    }
+                    if (searchHref) break;
+                }
+                if (!searchHref) searchHref = link.href;
+
+                const form = document.getElementById('search404');
+                const input = document.getElementById('search404Input');
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    const q = (input.value || '').trim();
+                    const url = new URL(searchHref, location.origin);
+                    if (q) url.searchParams.set('q', q);
+                    location.href = url.href;
+                });
+            })();
+        })();
+    </script>
+</body>
+
+</html>
