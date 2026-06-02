@@ -1,287 +1,392 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width,initial-scale=1" />
-	<title>Site statistics</title>
-	<style>
-		:root{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;line-height:1.4}
-		body{margin:0;padding:24px;background:#f7f7f8;color:#111}
-		.container{max-width:980px;margin:0 auto}
-		header h1{margin:0 0 6px;font-size:20px}
-		.controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px}
-		.controls label{display:flex;gap:6px;align-items:center}
-		input[type="text"],input[type="search"]{padding:6px 8px;border:1px solid #ccc;border-radius:6px}
-		button{padding:8px 10px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}
-		#status{Margin-top:8px;margin:8px 0;padding:8px;border-radius:6px;background:#fff;border:1px solid #e6e6e6}
-		.card{background:#fff;border:1px solid #e6e6e6;border-radius:8px;padding:12px;margin:10px 0}
-		.card h3{margin:0 0 8px;font-size:15px}
-		table{width:100%;border-collapse:collapse}
-		table th,table td{padding:6px;border-bottom:1px solid #eee;text-align:left}
-		.langs .lang{margin:6px 0}
-		.bar{height:12px;background:#eee;border-radius:6px;overflow:hidden}
-		.fill{height:100%;background:linear-gradient(90deg,#4f46e5,#06b6d4)}
-		pre{white-space:pre-wrap;word-break:break-word}
-		footer{font-size:13px;color:#444;margin-top:18px}
-		dt{font-weight:600}
-		dd{margin:0 0 8px 0}
-	</style>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Site statistics</title>
+    <style>
+        :root {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+            line-height: 1.4
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            background: #f7f7f8;
+            color: #111
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto
+        }
+
+        header h1 {
+            margin: 0 0 6px;
+            font-size: 20px
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 12px 0 18px
+        }
+
+        .controls label {
+            display: flex;
+            gap: 6px;
+            align-items: center
+        }
+
+        input[type="text"],
+        input[type="search"] {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px
+        }
+
+        button {
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #bbb;
+            background: #fff;
+            cursor: pointer
+        }
+
+        #status {
+            Margin-top: 8px;
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 6px;
+            background: #fff;
+            border: 1px solid #e6e6e6
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0
+        }
+
+        .card h3 {
+            margin: 0 0 8px;
+            font-size: 15px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse
+        }
+
+        table th,
+        table td {
+            padding: 6px;
+            border-bottom: 1px solid #eee;
+            text-align: left
+        }
+
+        .langs .lang {
+            margin: 6px 0
+        }
+
+        .bar {
+            height: 12px;
+            background: #eee;
+            border-radius: 6px;
+            overflow: hidden
+        }
+
+        .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #06b6d4)
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word
+        }
+
+        footer {
+            font-size: 13px;
+            color: #444;
+            margin-top: 18px
+        }
+
+        dt {
+            font-weight: 600
+        }
+
+        dd {
+            margin: 0 0 8px 0
+        }
+    </style>
 </head>
+
 <body>
-	<main class="container">
-		<header>
-			<h1>Repository & Pages statistics (no API key required)</h1>
-			<p style="margin:6px 0 0">This page fetches public GitHub repository metrics without a token where possible. Some traffic endpoints require repo admin access and will show a message if unavailable.</p>
-		</header>
+    <main class="container">
+        <header>
+            <h1>Repository & Pages statistics (no API key required)</h1>
+            <p style="margin:6px 0 0">This page fetches public GitHub repository metrics without a token where possible.
+                Some traffic endpoints require repo admin access and will show a message if unavailable.</p>
+        </header>
 
-		<div class="controls" role="search" aria-label="Repository selector">
-			<label>Owner <input id="owner" type="text" value="ShaunRoselt" /></label>
-			<label>Repo <input id="repo" type="text" value="Genipedia" /></label>
-			<button id="load">Load stats</button>
-			<button id="download-json">Download JSON</button>
-			<button id="export-csv">Export CSV</button>
-		</div>
+        <div class="controls" role="search" aria-label="Repository selector">
+            <label>Owner <input id="owner" type="text" value="ShaunRoselt" /></label>
+            <label>Repo <input id="repo" type="text" value="Genipedia" /></label>
+            <button id="load">Load stats</button>
+            <button id="download-json">Download JSON</button>
+            <button id="export-csv">Export CSV</button>
+        </div>
 
-		<div id="status">Ready — enter owner/repo and click "Load stats".</div>
+        <div id="status">Ready — enter owner/repo and click "Load stats".</div>
 
-		<div id="file-stats-container" class="card">
-			<h3>Site files (.html, .css, .js)</h3>
-			<div id="file-stats-table">Loading file list (from <code>/data/file-stats.json</code>)...</div>
-			<div style="font-size:12px;color:#666;margin-top:8px">To refresh this list run <code>scripts/generate-file-stats.sh</code> at the repository root; output is written to <code>data/file-stats.json</code>.</div>
-		</div>
+        <div id="file-stats-container" class="card">
+            <h3>Site files (.html, .css, .js)</h3>
+            <div id="file-stats-table">Loading file list (from <code>/data/file-stats.json</code>)...</div>
+            <div style="font-size:12px;color:#666;margin-top:8px">To refresh this list run
+                <code>scripts/generate-file-stats.sh</code> at the repository root; output is written to
+                <code>data/file-stats.json</code>.</div>
+        </div>
 
-		<div id="results" aria-live="polite"></div>
+        <div id="results" aria-live="polite"></div>
 
-		<footer>
-			<strong>Notes:</strong> Unauthenticated requests are rate-limited (about 60 requests/hour per IP). Some endpoints (traffic/clones/referrers) usually require repository admin permissions; when they are blocked the page will show guidance.
-		</footer>
+        <footer>
+            <strong>Notes:</strong> Unauthenticated requests are rate-limited (about 60 requests/hour per IP). Some
+            endpoints (traffic/clones/referrers) usually require repository admin permissions; when they are blocked the
+            page will show guidance.
+        </footer>
 
-		<script>
-		(function(){
-			const ownerInput = document.getElementById('owner');
-			const repoInput = document.getElementById('repo');
-			const loadBtn = document.getElementById('load');
-			const statusEl = document.getElementById('status');
-			const resultsEl = document.getElementById('results');
-			const downloadBtn = document.getElementById('download-json');
-			const exportCsvBtn = document.getElementById('export-csv');
-			let resultsData = {};
+        <script>
+            (function () {
+                const ownerInput = document.getElementById('owner');
+                const repoInput = document.getElementById('repo');
+                const loadBtn = document.getElementById('load');
+                const statusEl = document.getElementById('status');
+                const resultsEl = document.getElementById('results');
+                const downloadBtn = document.getElementById('download-json');
+                const exportCsvBtn = document.getElementById('export-csv');
+                let resultsData = {};
 
-			function setStatus(msg){ statusEl.textContent = msg; }
-			function clearResults(){ resultsEl.innerHTML = ''; }
+                function setStatus(msg) { statusEl.textContent = msg; }
+                function clearResults() { resultsEl.innerHTML = ''; }
 
-			async function fetchGitHub(path){
-				const url = 'https://api.github.com' + path;
-				try {
-					const resp = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
-					const text = await resp.text();
-					let data = null;
-					try { data = text ? JSON.parse(text) : null; } catch(e) { data = text; }
-					return { status: resp.status, ok: resp.ok, data, headers: Object.fromEntries(resp.headers.entries()) };
-				} catch (err) {
-					return { status: 0, ok: false, error: err.message };
-				}
-			}
+                async function fetchGitHub(path) {
+                    const url = 'https://api.github.com' + path;
+                    try {
+                        const resp = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+                        const text = await resp.text();
+                        let data = null;
+                        try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+                        return { status: resp.status, ok: resp.ok, data, headers: Object.fromEntries(resp.headers.entries()) };
+                    } catch (err) {
+                        return { status: 0, ok: false, error: err.message };
+                    }
+                }
 
-			function createCard(title, node){
-				const card = document.createElement('section'); card.className = 'card';
-				const h = document.createElement('h3'); h.textContent = title; card.appendChild(h);
-				card.appendChild(node); return card;
-			}
+                function createCard(title, node) {
+                    const card = document.createElement('section'); card.className = 'card';
+                    const h = document.createElement('h3'); h.textContent = title; card.appendChild(h);
+                    card.appendChild(node); return card;
+                }
 
-			function formatBytes(bytes){ if (!bytes && bytes !== 0) return '—'; return bytes >= 1024 ? Math.round(bytes/1024) + ' KB' : bytes + ' B'; }
+                function formatBytes(bytes) { if (!bytes && bytes !== 0) return '—'; return bytes >= 1024 ? Math.round(bytes / 1024) + ' KB' : bytes + ' B'; }
 
-			function renderRepo(repo){
-				const el = document.createElement('div');
-				if (!repo) { el.textContent = 'No repository data'; return el; }
-				const dl = document.createElement('dl');
-				const add = (k,v)=>{ const dt=document.createElement('dt'); dt.textContent=k; const dd=document.createElement('dd'); dd.textContent = v===null||v===undefined? '—' : String(v); dl.appendChild(dt); dl.appendChild(dd); };
-				add('Name', repo.full_name || repo.name);
-				add('Description', repo.description);
-				add('Default branch', repo.default_branch);
-				add('Stars', repo.stargazers_count);
-				add('Forks', repo.forks_count);
-				add('Open issues', repo.open_issues_count);
-				add('Watchers', repo.watchers_count);
-				add('Size', formatBytes((repo.size||0)*1024));
-				add('License', repo.license && repo.license.name);
-				add('Updated', repo.updated_at);
-				if (repo.homepage) add('Homepage', repo.homepage);
-				el.appendChild(dl); return el;
-			}
+                function renderRepo(repo) {
+                    const el = document.createElement('div');
+                    if (!repo) { el.textContent = 'No repository data'; return el; }
+                    const dl = document.createElement('dl');
+                    const add = (k, v) => { const dt = document.createElement('dt'); dt.textContent = k; const dd = document.createElement('dd'); dd.textContent = v === null || v === undefined ? '—' : String(v); dl.appendChild(dt); dl.appendChild(dd); };
+                    add('Name', repo.full_name || repo.name);
+                    add('Description', repo.description);
+                    add('Default branch', repo.default_branch);
+                    add('Stars', repo.stargazers_count);
+                    add('Forks', repo.forks_count);
+                    add('Open issues', repo.open_issues_count);
+                    add('Watchers', repo.watchers_count);
+                    add('Size', formatBytes((repo.size || 0) * 1024));
+                    add('License', repo.license && repo.license.name);
+                    add('Updated', repo.updated_at);
+                    if (repo.homepage) add('Homepage', repo.homepage);
+                    el.appendChild(dl); return el;
+                }
 
-			function renderLanguages(langs){
-				const el = document.createElement('div');
-				if (!langs || Object.keys(langs).length===0){ el.textContent='No language data'; return el; }
-				const total = Object.values(langs).reduce((a,b)=>a+b,0);
-				const wrap = document.createElement('div'); wrap.className='langs';
-				Object.entries(langs).forEach(([name,bytes])=>{
-					const pct = Math.round((bytes/total)*1000)/10;
-					const row = document.createElement('div'); row.className='lang';
-					const label = document.createElement('div'); label.textContent = `${name} — ${pct}%`;
-					const bar = document.createElement('div'); bar.className='bar'; const fill = document.createElement('div'); fill.className='fill'; fill.style.width = pct + '%';
-					bar.appendChild(fill); row.appendChild(label); row.appendChild(bar); wrap.appendChild(row);
-				});
-				el.appendChild(wrap); return el;
-			}
+                function renderLanguages(langs) {
+                    const el = document.createElement('div');
+                    if (!langs || Object.keys(langs).length === 0) { el.textContent = 'No language data'; return el; }
+                    const total = Object.values(langs).reduce((a, b) => a + b, 0);
+                    const wrap = document.createElement('div'); wrap.className = 'langs';
+                    Object.entries(langs).forEach(([name, bytes]) => {
+                        const pct = Math.round((bytes / total) * 1000) / 10;
+                        const row = document.createElement('div'); row.className = 'lang';
+                        const label = document.createElement('div'); label.textContent = `${name} — ${pct}%`;
+                        const bar = document.createElement('div'); bar.className = 'bar'; const fill = document.createElement('div'); fill.className = 'fill'; fill.style.width = pct + '%';
+                        bar.appendChild(fill); row.appendChild(label); row.appendChild(bar); wrap.appendChild(row);
+                    });
+                    el.appendChild(wrap); return el;
+                }
 
-			function renderReleases(releases){
-				const el = document.createElement('div');
-				if (!Array.isArray(releases) || releases.length===0){ el.textContent='No releases'; return el; }
-				const ul = document.createElement('ul');
-				releases.slice(0,10).forEach(r=>{ const li=document.createElement('li'); li.textContent = `${r.name||r.tag_name} — ${r.published_at||r.created_at||'unknown'} — ${ (r.assets && r.assets.length) || 0 } assets`; ul.appendChild(li); });
-				el.appendChild(ul); return el;
-			}
+                function renderReleases(releases) {
+                    const el = document.createElement('div');
+                    if (!Array.isArray(releases) || releases.length === 0) { el.textContent = 'No releases'; return el; }
+                    const ul = document.createElement('ul');
+                    releases.slice(0, 10).forEach(r => { const li = document.createElement('li'); li.textContent = `${r.name || r.tag_name} — ${r.published_at || r.created_at || 'unknown'} — ${(r.assets && r.assets.length) || 0} assets`; ul.appendChild(li); });
+                    el.appendChild(ul); return el;
+                }
 
-			function renderContributors(contrib){
-				const el = document.createElement('div');
-				if (!Array.isArray(contrib)){ el.textContent='No contributor data'; return el; }
-				const top = contrib.slice().sort((a,b)=> (b.total||0)-(a.total||0)).slice(0,20);
-				const table = document.createElement('table'); table.innerHTML = '<thead><tr><th>Contributor</th><th>Commits</th><th>Additions</th><th>Deletions</th></tr></thead>';
-				const tbody = document.createElement('tbody');
-				top.forEach(c=>{
-					const tr = document.createElement('tr');
-					const name = (c.author && c.author.login) || (c.author && c.author.name) || 'unknown';
-					const additions = (c.weeks||[]).reduce((a,w)=>a+(w.a||0),0);
-					const deletions = (c.weeks||[]).reduce((a,w)=>a+(w.d||0),0);
-					tr.innerHTML = `<td>${name}</td><td>${c.total||0}</td><td>${additions}</td><td>${deletions}</td>`;
-					tbody.appendChild(tr);
-				});
-				table.appendChild(tbody); el.appendChild(table); return el;
-			}
+                function renderContributors(contrib) {
+                    const el = document.createElement('div');
+                    if (!Array.isArray(contrib)) { el.textContent = 'No contributor data'; return el; }
+                    const top = contrib.slice().sort((a, b) => (b.total || 0) - (a.total || 0)).slice(0, 20);
+                    const table = document.createElement('table'); table.innerHTML = '<thead><tr><th>Contributor</th><th>Commits</th><th>Additions</th><th>Deletions</th></tr></thead>';
+                    const tbody = document.createElement('tbody');
+                    top.forEach(c => {
+                        const tr = document.createElement('tr');
+                        const name = (c.author && c.author.login) || (c.author && c.author.name) || 'unknown';
+                        const additions = (c.weeks || []).reduce((a, w) => a + (w.a || 0), 0);
+                        const deletions = (c.weeks || []).reduce((a, w) => a + (w.d || 0), 0);
+                        tr.innerHTML = `<td>${name}</td><td>${c.total || 0}</td><td>${additions}</td><td>${deletions}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody); el.appendChild(table); return el;
+                }
 
-			function renderWeeklyCommitActivity(arr){
-				const el = document.createElement('div'); if (!Array.isArray(arr) || arr.length===0){ el.textContent='No weekly commit activity'; return el; }
-				const ul = document.createElement('ul'); arr.slice(-12).forEach(w=>{ const date = w.week ? new Date(w.week*1000) : new Date(); const total = w.total ?? (Array.isArray(w.days)? w.days.reduce((a,b)=>a+b,0) : null); const li=document.createElement('li'); li.textContent = `${date.toISOString().slice(0,10)} — ${total} commits`; ul.appendChild(li); }); el.appendChild(ul); return el;
-			}
+                function renderWeeklyCommitActivity(arr) {
+                    const el = document.createElement('div'); if (!Array.isArray(arr) || arr.length === 0) { el.textContent = 'No weekly commit activity'; return el; }
+                    const ul = document.createElement('ul'); arr.slice(-12).forEach(w => { const date = w.week ? new Date(w.week * 1000) : new Date(); const total = w.total ?? (Array.isArray(w.days) ? w.days.reduce((a, b) => a + b, 0) : null); const li = document.createElement('li'); li.textContent = `${date.toISOString().slice(0, 10)} — ${total} commits`; ul.appendChild(li); }); el.appendChild(ul); return el;
+                }
 
-			function renderCodeFrequency(arr){ const el=document.createElement('div'); if (!Array.isArray(arr)||arr.length===0){ el.textContent='No code frequency data'; return el;} const additions = arr.reduce((a,row)=> a+(row[1]||0),0); const deletions = arr.reduce((a,row)=> a+Math.abs(row[2]||0),0); el.textContent = `Additions: ${additions}, Deletions: ${deletions}`; return el; }
+                function renderCodeFrequency(arr) { const el = document.createElement('div'); if (!Array.isArray(arr) || arr.length === 0) { el.textContent = 'No code frequency data'; return el; } const additions = arr.reduce((a, row) => a + (row[1] || 0), 0); const deletions = arr.reduce((a, row) => a + Math.abs(row[2] || 0), 0); el.textContent = `Additions: ${additions}, Deletions: ${deletions}`; return el; }
 
-			function renderPunchCard(arr){ const el=document.createElement('div'); if (!Array.isArray(arr)||arr.length===0){ el.textContent='No punch card data'; return el;} const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; const summary={}; arr.forEach(([d,h,c])=>{ summary[d] = (summary[d]||0) + (c||0); }); const ul=document.createElement('ul'); days.forEach((day,idx)=>{ const li=document.createElement('li'); li.textContent = `${day}: ${summary[idx]||0} commits`; ul.appendChild(li); }); el.appendChild(ul); return el; }
+                function renderPunchCard(arr) { const el = document.createElement('div'); if (!Array.isArray(arr) || arr.length === 0) { el.textContent = 'No punch card data'; return el; } const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; const summary = {}; arr.forEach(([d, h, c]) => { summary[d] = (summary[d] || 0) + (c || 0); }); const ul = document.createElement('ul'); days.forEach((day, idx) => { const li = document.createElement('li'); li.textContent = `${day}: ${summary[idx] || 0} commits`; ul.appendChild(li); }); el.appendChild(ul); return el; }
 
-			function renderTraffic(traffic){ const el=document.createElement('div'); if (!traffic){ el.textContent='No traffic (requires repo admin token)'; return el; } if (traffic.status===202){ el.textContent='Traffic data is processing (202) — try again later.'; return el; } if (!traffic.ok){ el.textContent=`Traffic unavailable — status ${traffic.status} ${traffic.data && traffic.data.message ? ' — '+traffic.data.message : ''}`; return el; } const data = traffic.data; if (Array.isArray(data)){ const ul=document.createElement('ul'); data.forEach(i=>{ const li=document.createElement('li'); li.textContent = `${i.path || i.timestamp || ''} — ${i.count || 0} (${i.uniques || 0} uniques)`; ul.appendChild(li); }); el.appendChild(ul); return el; } const pre=document.createElement('pre'); pre.textContent = JSON.stringify(data,null,2); el.appendChild(pre); return el; }
+                function renderTraffic(traffic) { const el = document.createElement('div'); if (!traffic) { el.textContent = 'No traffic (requires repo admin token)'; return el; } if (traffic.status === 202) { el.textContent = 'Traffic data is processing (202) — try again later.'; return el; } if (!traffic.ok) { el.textContent = `Traffic unavailable — status ${traffic.status} ${traffic.data && traffic.data.message ? ' — ' + traffic.data.message : ''}`; return el; } const data = traffic.data; if (Array.isArray(data)) { const ul = document.createElement('ul'); data.forEach(i => { const li = document.createElement('li'); li.textContent = `${i.path || i.timestamp || ''} — ${i.count || 0} (${i.uniques || 0} uniques)`; ul.appendChild(li); }); el.appendChild(ul); return el; } const pre = document.createElement('pre'); pre.textContent = JSON.stringify(data, null, 2); el.appendChild(pre); return el; }
 
-			function appendSection(title,node){ resultsEl.appendChild(createCard(title,node)); }
+                function appendSection(title, node) { resultsEl.appendChild(createCard(title, node)); }
 
-			// --- File stats (local data/file-stats.json) ---
-			const fileStatsTableEl = document.getElementById('file-stats-table');
+                // --- File stats (local data/file-stats.json) ---
+                const fileStatsTableEl = document.getElementById('file-stats-table');
 
-			function renderFileStatsTable(arr){
-				if (!Array.isArray(arr) || arr.length===0){ fileStatsTableEl.textContent = 'No file stats found.'; return; }
-				arr.sort((a,b)=>{
-					const da = a.last_date ? new Date(a.last_date).getTime() : 0;
-					const db = b.last_date ? new Date(b.last_date).getTime() : 0;
-					return db - da;
-				});
-				const table = document.createElement('table');
-				table.innerHTML = '<thead><tr><th>Path</th><th style="width:90px">Size</th><th style="width:180px">Last updated</th><th>Author</th><th>Commit</th></tr></thead>';
-				const tbody = document.createElement('tbody');
-				arr.forEach(item=>{
-					const tr = document.createElement('tr');
-					const size = Number(item.size||0);
-					const sizeText = size >= 1024 ? Math.round(size/1024) + ' KB' : size + ' B';
-					const lastDate = item.last_date ? new Date(item.last_date).toLocaleString() : '—';
-					const author = item.last_author || '—';
-					const commitShort = item.last_commit ? (item.last_commit+'').slice(0,7) : '—';
-					tr.innerHTML = `<td><a href="/${item.path}" target="_blank">${item.path}</a></td><td>${sizeText}</td><td>${lastDate}</td><td>${author}</td><td>${commitShort}</td>`;
-					tbody.appendChild(tr);
-				});
-				table.appendChild(tbody);
-				fileStatsTableEl.innerHTML = '';
-				fileStatsTableEl.appendChild(table);
-			}
+                function renderFileStatsTable(arr) {
+                    if (!Array.isArray(arr) || arr.length === 0) { fileStatsTableEl.textContent = 'No file stats found.'; return; }
+                    arr.sort((a, b) => {
+                        const da = a.last_date ? new Date(a.last_date).getTime() : 0;
+                        const db = b.last_date ? new Date(b.last_date).getTime() : 0;
+                        return db - da;
+                    });
+                    const table = document.createElement('table');
+                    table.innerHTML = '<thead><tr><th>Path</th><th style="width:90px">Size</th><th style="width:180px">Last updated</th><th>Author</th><th>Commit</th></tr></thead>';
+                    const tbody = document.createElement('tbody');
+                    arr.forEach(item => {
+                        const tr = document.createElement('tr');
+                        const size = Number(item.size || 0);
+                        const sizeText = size >= 1024 ? Math.round(size / 1024) + ' KB' : size + ' B';
+                        const lastDate = item.last_date ? new Date(item.last_date).toLocaleString() : '—';
+                        const author = item.last_author || '—';
+                        const commitShort = item.last_commit ? (item.last_commit + '').slice(0, 7) : '—';
+                        tr.innerHTML = `<td><a href="/${item.path}" target="_blank">${item.path}</a></td><td>${sizeText}</td><td>${lastDate}</td><td>${author}</td><td>${commitShort}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+                    fileStatsTableEl.innerHTML = '';
+                    fileStatsTableEl.appendChild(table);
+                }
 
-			async function loadFileStats(){
-				try{
-					const candidates = [
-						'/data/file-stats.json',
-						'data/file-stats.json',
-						new URL('../data/file-stats.json', location.href).href,
-						new URL('../../data/file-stats.json', location.href).href
-					];
-					let resp = null;
-					for (const c of candidates){
-						try{ resp = await fetch(c, {cache: 'no-store'}); if (resp.ok) break; }catch(e){ resp = null; }
-					}
-					if (!resp || !resp.ok){ fileStatsTableEl.textContent = 'File stats not found (run scripts/generate-file-stats.sh).'; return; }
-					const data = await resp.json(); renderFileStatsTable(data);
-				}catch(err){ fileStatsTableEl.textContent = 'Error loading file-stats.json: '+err.message; }
-			}
+                async function loadFileStats() {
+                    try {
+                        const candidates = [
+                            '/data/file-stats.json',
+                            'data/file-stats.json',
+                            new URL('../data/file-stats.json', location.href).href,
+                            new URL('../../data/file-stats.json', location.href).href
+                        ];
+                        let resp = null;
+                        for (const c of candidates) {
+                            try { resp = await fetch(c, { cache: 'no-store' }); if (resp.ok) break; } catch (e) { resp = null; }
+                        }
+                        if (!resp || !resp.ok) { fileStatsTableEl.textContent = 'File stats not found (run scripts/generate-file-stats.sh).'; return; }
+                        const data = await resp.json(); renderFileStatsTable(data);
+                    } catch (err) { fileStatsTableEl.textContent = 'Error loading file-stats.json: ' + err.message; }
+                }
 
-			// load file stats immediately
-			loadFileStats();
+                // load file stats immediately
+                loadFileStats();
 
-			async function load(){
-				clearResults(); setStatus('Loading public GitHub data (no token)...');
-				const owner = ownerInput.value.trim(); const repo = repoInput.value.trim();
-				const base = `/repos/${owner}/${repo}`;
-				const paths = {
-					repo: `${base}`,
-					languages: `${base}/languages`,
-					releases: `${base}/releases?per_page=100`,
-					commit_activity: `${base}/stats/commit_activity`,
-					code_frequency: `${base}/stats/code_frequency`,
-					contributors: `${base}/stats/contributors`,
-					participation: `${base}/stats/participation`,
-					punch_card: `${base}/stats/punch_card`,
-					actions: `${base}/actions/runs?per_page=1`,
-					traffic_views: `${base}/traffic/views`,
-					traffic_clones: `${base}/traffic/clones`,
-					traffic_paths: `${base}/traffic/popular/paths`,
-					traffic_referrers: `${base}/traffic/popular/referrers`
-				};
+                async function load() {
+                    clearResults(); setStatus('Loading public GitHub data (no token)...');
+                    const owner = ownerInput.value.trim(); const repo = repoInput.value.trim();
+                    const base = `/repos/${owner}/${repo}`;
+                    const paths = {
+                        repo: `${base}`,
+                        languages: `${base}/languages`,
+                        releases: `${base}/releases?per_page=100`,
+                        commit_activity: `${base}/stats/commit_activity`,
+                        code_frequency: `${base}/stats/code_frequency`,
+                        contributors: `${base}/stats/contributors`,
+                        participation: `${base}/stats/participation`,
+                        punch_card: `${base}/stats/punch_card`,
+                        actions: `${base}/actions/runs?per_page=1`,
+                        traffic_views: `${base}/traffic/views`,
+                        traffic_clones: `${base}/traffic/clones`,
+                        traffic_paths: `${base}/traffic/popular/paths`,
+                        traffic_referrers: `${base}/traffic/popular/referrers`
+                    };
 
-				const fetches = Object.entries(paths).map(async ([key,path])=>{ const res = await fetchGitHub(path); return { key, res }; });
-				const settled = await Promise.all(fetches);
-				resultsData = {};
-				for (const {key,res} of settled) resultsData[key] = res;
+                    const fetches = Object.entries(paths).map(async ([key, path]) => { const res = await fetchGitHub(path); return { key, res }; });
+                    const settled = await Promise.all(fetches);
+                    resultsData = {};
+                    for (const { key, res } of settled) resultsData[key] = res;
 
-				const repoRes = resultsData.repo;
-				if (!repoRes.ok){ appendSection('Repository', document.createTextNode(`Failed to fetch repository: ${repoRes.status} — ${repoRes?.data?.message || repoRes?.error || 'unknown'}`)); setStatus('Warning: some endpoints failed or need auth'); }
-				else appendSection('Repository', renderRepo(repoRes.data));
+                    const repoRes = resultsData.repo;
+                    if (!repoRes.ok) { appendSection('Repository', document.createTextNode(`Failed to fetch repository: ${repoRes.status} — ${repoRes?.data?.message || repoRes?.error || 'unknown'}`)); setStatus('Warning: some endpoints failed or need auth'); }
+                    else appendSection('Repository', renderRepo(repoRes.data));
 
-				appendSection('Languages', renderLanguages(resultsData.languages && resultsData.languages.ok ? resultsData.languages.data : {}));
-				appendSection('Releases', renderReleases(resultsData.releases && resultsData.releases.ok ? resultsData.releases.data : []));
+                    appendSection('Languages', renderLanguages(resultsData.languages && resultsData.languages.ok ? resultsData.languages.data : {}));
+                    appendSection('Releases', renderReleases(resultsData.releases && resultsData.releases.ok ? resultsData.releases.data : []));
 
-				if (resultsData.commit_activity && resultsData.commit_activity.status===202) appendSection('Weekly commit activity', document.createTextNode('Processing (202): GitHub is building statistics; try again after a short wait.'));
-				else appendSection('Weekly commit activity', renderWeeklyCommitActivity(resultsData.commit_activity && resultsData.commit_activity.ok ? resultsData.commit_activity.data : []));
+                    if (resultsData.commit_activity && resultsData.commit_activity.status === 202) appendSection('Weekly commit activity', document.createTextNode('Processing (202): GitHub is building statistics; try again after a short wait.'));
+                    else appendSection('Weekly commit activity', renderWeeklyCommitActivity(resultsData.commit_activity && resultsData.commit_activity.ok ? resultsData.commit_activity.data : []));
 
-				appendSection('Code frequency (additions/deletions)', renderCodeFrequency(resultsData.code_frequency && resultsData.code_frequency.ok ? resultsData.code_frequency.data : []));
-				appendSection('Contributors (top)', renderContributors(resultsData.contributors && resultsData.contributors.ok ? resultsData.contributors.data : []));
+                    appendSection('Code frequency (additions/deletions)', renderCodeFrequency(resultsData.code_frequency && resultsData.code_frequency.ok ? resultsData.code_frequency.data : []));
+                    appendSection('Contributors (top)', renderContributors(resultsData.contributors && resultsData.contributors.ok ? resultsData.contributors.data : []));
 
-				appendSection('Weekly commit counts (participation)', (function(){ const p = resultsData.participation; if (!p || !p.ok) return document.createTextNode(`Unavailable — ${p ? p.status : 'no data'}`); const node = document.createElement('div'); node.textContent = `All (last 8 weeks): ${ (p.data && p.data.all) ? p.data.all.slice(-8).join(', ') : 'N/A' }`; return node; })());
+                    appendSection('Weekly commit counts (participation)', (function () { const p = resultsData.participation; if (!p || !p.ok) return document.createTextNode(`Unavailable — ${p ? p.status : 'no data'}`); const node = document.createElement('div'); node.textContent = `All (last 8 weeks): ${(p.data && p.data.all) ? p.data.all.slice(-8).join(', ') : 'N/A'}`; return node; })());
 
-				appendSection('Punch card (day/hour commits)', renderPunchCard(resultsData.punch_card && resultsData.punch_card.ok ? resultsData.punch_card.data : []));
+                    appendSection('Punch card (day/hour commits)', renderPunchCard(resultsData.punch_card && resultsData.punch_card.ok ? resultsData.punch_card.data : []));
 
-				appendSection('Actions/CI', (function(){ const a = resultsData.actions; if (!a || !a.ok) return document.createTextNode(`Unavailable — ${a ? a.status : 'no data'}`); const d = a.data; const node = document.createElement('div'); node.textContent = `Workflow runs (sample): total_count=${d.total_count}`; return node; })());
+                    appendSection('Actions/CI', (function () { const a = resultsData.actions; if (!a || !a.ok) return document.createTextNode(`Unavailable — ${a ? a.status : 'no data'}`); const d = a.data; const node = document.createElement('div'); node.textContent = `Workflow runs (sample): total_count=${d.total_count}`; return node; })());
 
-				appendSection('Traffic — Views (last 14 days)', renderTraffic(resultsData.traffic_views));
-				appendSection('Traffic — Clones (last 14 days)', renderTraffic(resultsData.traffic_clones));
-				appendSection('Traffic — Top paths (last 14 days)', renderTraffic(resultsData.traffic_paths));
-				appendSection('Traffic — Top referrers (last 14 days)', renderTraffic(resultsData.traffic_referrers));
+                    appendSection('Traffic — Views (last 14 days)', renderTraffic(resultsData.traffic_views));
+                    appendSection('Traffic — Clones (last 14 days)', renderTraffic(resultsData.traffic_clones));
+                    appendSection('Traffic — Top paths (last 14 days)', renderTraffic(resultsData.traffic_paths));
+                    appendSection('Traffic — Top referrers (last 14 days)', renderTraffic(resultsData.traffic_referrers));
 
-				setStatus('Load complete. Note: traffic endpoints often require repo admin token and may return 403.');
-			}
+                    setStatus('Load complete. Note: traffic endpoints often require repo admin token and may return 403.');
+                }
 
-			loadBtn.addEventListener('click', load);
+                loadBtn.addEventListener('click', load);
 
-			downloadBtn.addEventListener('click', ()=>{
-				const blob = new Blob([JSON.stringify(resultsData,null,2)],{type:'application/json'});
-				const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${ownerInput.value.trim()}-${repoInput.value.trim()}-github-stats.json`; document.body.appendChild(a); a.click(); a.remove();
-			});
+                downloadBtn.addEventListener('click', () => {
+                    const blob = new Blob([JSON.stringify(resultsData, null, 2)], { type: 'application/json' });
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${ownerInput.value.trim()}-${repoInput.value.trim()}-github-stats.json`; document.body.appendChild(a); a.click(); a.remove();
+                });
 
-			exportCsvBtn.addEventListener('click', ()=>{
-				const rows = [];
-				if (resultsData.repo && resultsData.repo.ok){ const r = resultsData.repo.data; rows.push(['Key','Value']); [['full_name',r.full_name],['description',r.description],['stars',r.stargazers_count],['forks',r.forks_count],['open_issues',r.open_issues_count],['size_kb',r.size]].forEach(([k,v])=>rows.push([k,String(v).replace(/\r?\n/g,' ')])); rows.push([]); }
-				if (resultsData.languages && resultsData.languages.ok){ rows.push(['Language','Bytes']); Object.entries(resultsData.languages.data).forEach(([k,v])=>rows.push([k,String(v)])); rows.push([]); }
-				if (resultsData.contributors && resultsData.contributors.ok){ rows.push(['Contributor','Commits']); resultsData.contributors.data.slice(0,50).forEach(c=> rows.push([(c.author && c.author.login) || (c.author && c.author.name) || 'unknown', String(c.total||0)])); }
-				const csv = rows.map(r=> r.map(cell=> '"'+String(cell).replace(/"/g,'""')+'"').join(',')).join('\n');
-				const blob = new Blob([csv],{type:'text/csv'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${ownerInput.value.trim()}-${repoInput.value.trim()}-github-stats.csv`; document.body.appendChild(a); a.click(); a.remove();
-			});
+                exportCsvBtn.addEventListener('click', () => {
+                    const rows = [];
+                    if (resultsData.repo && resultsData.repo.ok) { const r = resultsData.repo.data; rows.push(['Key', 'Value']);[['full_name', r.full_name], ['description', r.description], ['stars', r.stargazers_count], ['forks', r.forks_count], ['open_issues', r.open_issues_count], ['size_kb', r.size]].forEach(([k, v]) => rows.push([k, String(v).replace(/\r?\n/g, ' ')])); rows.push([]); }
+                    if (resultsData.languages && resultsData.languages.ok) { rows.push(['Language', 'Bytes']); Object.entries(resultsData.languages.data).forEach(([k, v]) => rows.push([k, String(v)])); rows.push([]); }
+                    if (resultsData.contributors && resultsData.contributors.ok) { rows.push(['Contributor', 'Commits']); resultsData.contributors.data.slice(0, 50).forEach(c => rows.push([(c.author && c.author.login) || (c.author && c.author.name) || 'unknown', String(c.total || 0)])); }
+                    const csv = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${ownerInput.value.trim()}-${repoInput.value.trim()}-github-stats.csv`; document.body.appendChild(a); a.click(); a.remove();
+                });
 
-		})();
-		</script>
-	</main>
+            })();
+        </script>
+    </main>
 </body>
-</html>
 
+</html>

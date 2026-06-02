@@ -748,7 +748,7 @@ class PeoplePage extends HTMLElement {
     return doc.querySelector('h1')?.textContent?.trim() || '';
   }
 
-  #prepareContentHtml(html, tab) {
+  async #prepareContentHtml(html, tab) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
     if (tab === 'profile') {
@@ -760,7 +760,31 @@ class PeoplePage extends HTMLElement {
       heading?.remove();
     }
 
+    // Rewrite asset URLs in the main document
     this.#rewriteDataAssetUrls(doc);
+
+    // Inline any <include src="..."></include> or elements with data-include
+    const includeEls = Array.from(doc.querySelectorAll('include[src], [data-include]'));
+    for (const el of includeEls) {
+      const src = el.getAttribute('src') || el.dataset.include;
+      if (!src) continue;
+
+      try {
+        const url = this.#resolveDataUrl(src);
+        const response = await fetch(url);
+        if (!response.ok) continue;
+        const fragHtml = await response.text();
+        const fragDoc = new DOMParser().parseFromString(fragHtml, 'text/html');
+        // Rewrite asset URLs inside the included fragment as well
+        this.#rewriteDataAssetUrls(fragDoc);
+
+        // Replace the include element with the fragment's body children
+        const nodes = Array.from(fragDoc.body.childNodes).map((n) => n.cloneNode(true));
+        el.replaceWith(...nodes);
+      } catch (err) {
+        console.warn('Could not inline include', src, err);
+      }
+    }
 
     if (tab === 'profile' && typeof window.upgradeProfileIdentityInDocument === 'function') {
       window.upgradeProfileIdentityInDocument(doc);
@@ -1015,7 +1039,7 @@ class PeoplePage extends HTMLElement {
         throw new Error(`Failed to load ${url}: ${response.status}`);
       }
 
-      contentEl.innerHTML = this.#prepareContentHtml(await response.text(), tab);
+      contentEl.innerHTML = await this.#prepareContentHtml(await response.text(), tab);
 
       if (tab === 'media') {
         await this.#renderMediaGallery(contentEl);
