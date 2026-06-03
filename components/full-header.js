@@ -4,6 +4,13 @@ const FULL_HEADER_TEMPLATE = String.raw`
   --header-chrome-sidebar-width: 280px;
 }
 
+/* When a full-header is present, add top padding to the document so the
+   fixed header never overlaps page content. The header script keeps
+   --header-chrome-height in sync with the actual header height. */
+body[data-has-full-header="true"] {
+  padding-top: calc(var(--header-chrome-height, 55px) + 0.25rem);
+}
+
 full-header {
   display: block;
   position: fixed;
@@ -487,10 +494,10 @@ body:not(.theme-dark) .header-chrome__user-dropdown {
   display: inline-flex;
   align-items: center;
   position: relative;
-  margin-right: 0.25rem;
+  margin: 0;
 }
 .header-chrome__notifications-trigger {
-  margin: 0 0.25rem 0 0;
+  margin: 0;
 }
 
 .header-chrome__notifications-trigger .action-button__control {
@@ -904,6 +911,46 @@ full-header.sidebar-open .header-chrome__backdrop {
     justify-content: center;
   }
 }
+
+@media (max-width: 420px) {
+  /* Extra bottom padding for the header row to give more breathing room
+     before the page content on very small screens. */
+  .header-chrome__row {
+    padding-bottom: 0.75rem;
+  }
+
+  /* Keep the logo fully visible and prevent the brand text from pushing into
+     the right-side controls by ellipsizing the wordmark only (not clipping the
+     entire brand container). */
+  .header-chrome__brand {
+    min-width: 0;
+  }
+
+  .header-chrome__brand mini-header,
+  .header-chrome__brand mini-header .central-textlogo,
+  .header-chrome__brand mini-header .central-textlogo-wrapper {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .header-chrome__brand mini-header .central-textlogo__home-link {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .header-chrome__brand mini-header .localized-slogan {
+    display: none;
+  }
+
+  /* When the user name is hidden, also hide the caret so the avatar fits
+     within the compact square button. */
+  .header-chrome__user-caret {
+    display: none;
+  }
+}
 </style>
 <header class="header-container header-chrome" role="banner">
   <div class="header-chrome__row">
@@ -1254,6 +1301,25 @@ class FullHeader extends HTMLElement {
     this.#initGenipediaSearch();
     this.#initNotifications();
     this.#initAuth();
+    // Mark the document so CSS can safely offset content below this fixed header
+    try {
+      document.body.setAttribute('data-has-full-header', 'true');
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  disconnectedCallback() {
+    try {
+      document.body.removeAttribute('data-has-full-header');
+    } catch (e) {
+      // ignore
+    }
+
+    if (this._headerResizeObserver) {
+      this._headerResizeObserver.disconnect();
+      this._headerResizeObserver = null;
+    }
   }
 
   #initNotifications() {

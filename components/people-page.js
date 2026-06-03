@@ -292,9 +292,7 @@ body.theme-dark .people-page__gallery img {
 }
 
 .people-page__tabs {
-  flex: 1 1 100%;
-  width: 100%;
-  max-width: 100%;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -311,12 +309,11 @@ body.theme-dark .people-page__gallery img {
 
 .people-page__tabs-actions {
   display: flex;
-  align-items: stretch;
-  flex: 1 1 100%;
-  flex-shrink: 0;
+  align-items: center;
+  flex: 0 0 auto;
   justify-content: flex-end;
   gap: 0.35rem;
-  margin-bottom: -1px;
+  margin-bottom: 0;
 }
 
 .people-page__tab-item {
@@ -340,15 +337,39 @@ body.theme-dark .people-page__gallery img {
   text-decoration: none;
 }
 
-.people-page__tab-link:hover {
+.people-page__tab-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  color: var(--page-toolbar-fg);
+  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  text-decoration: none;
+  border-radius: 0.25rem;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.people-page__tab-link:hover,
+.people-page__tab-link:focus {
+  background: var(--page-toolbar-button-hover);
   color: var(--page-toolbar-fg);
   text-decoration: none;
+  outline: none;
+}
+
+.people-page__tab-link:focus-visible {
+  box-shadow: 0 0 0 3px rgba(107,154,255,0.12);
 }
 
 .people-page__tab-link i {
   font-size: 0.95rem;
   line-height: 1;
-  opacity: 0.9;
+  opacity: 0.95;
+  transition: opacity 0.12s ease;
+}
+
+.people-page__tab-link:hover i {
+  opacity: 1;
 }
 
 .people-page__button {
@@ -489,9 +510,47 @@ body.theme-dark .people-page__gallery img {
     padding: 0.75rem 0.5rem 0;
   }
 
+  .people-page__tabs-row {
+    padding-top: 1.5rem;
+  }
+
   .people-page__tabs-actions {
     margin-bottom: 0;
     padding-bottom: 0.25rem;
+  }
+}
+
+/* On small screens, wrap tabs instead of showing a horizontal scrollbar. */
+@media (max-width: 520px) {
+  .people-page__tab-list {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: auto;
+  }
+}
+
+/* On very small screens make tabs wrap and actions use a full-width row
+   so buttons don't overlap other content when they drop to a second line. */
+@media (max-width: 420px) {
+  .people-page__tabs-row {
+    align-items: flex-start;
+    padding-top: 2.25rem;
+    padding-bottom: 0.5rem;
+    gap: 0.4rem 0.5rem;
+  }
+
+  .people-page__tabs-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .people-page__button {
+    min-height: 2rem;
+    height: auto;
   }
 }
 </style>
@@ -788,6 +847,24 @@ class PeoplePage extends HTMLElement {
 
     if (tab === 'profile' && typeof window.upgradeProfileIdentityInDocument === 'function') {
       window.upgradeProfileIdentityInDocument(doc);
+    }
+
+    // Remove unwanted sections from loaded profile content (e.g. "See also" lists)
+    try {
+      const headings = Array.from(doc.querySelectorAll('h2, h3'));
+      for (const h of headings) {
+        const text = (h.textContent || '').trim().toLowerCase();
+        if (text === 'see also') {
+          const next = h.nextElementSibling;
+          if (next && next.tagName && next.tagName.toLowerCase() === 'ul') {
+            next.remove();
+          }
+          h.remove();
+        }
+      }
+    } catch (e) {
+      // non-fatal; leave document as-is on error
+      console.warn('Could not prune profile sections', e);
     }
 
     return doc.body.innerHTML;

@@ -1529,7 +1529,7 @@ a.suggestion-link:focus {
 }
 
 .lang-list-button {
-    background-color: var(--background-color-interactive-subtle);
+    background-color: transparent;
     display: inline-flex;
     align-items: center;
     box-sizing: border-box;
@@ -1540,7 +1540,7 @@ a.suggestion-link:focus {
     padding: .8rem 2rem;
     height: 4.4rem;
     min-height: 4.4rem;
-    outline: 1.6rem solid var(--background-color-base);
+    outline: 1.6rem solid transparent;
     border: var(--border-base);
     border-radius: var(--border-radius-base);
     color: var(--color-progressive);
@@ -1551,7 +1551,7 @@ a.suggestion-link:focus {
 }
 
 .lang-list-button:hover {
-    background-color: var(--background-color-base);
+    background-color: transparent;
     border-color: var(--border-color-base)
 }
 
@@ -1562,7 +1562,7 @@ a.suggestion-link:focus {
 }
 
 .lang-list-dropdown[open] .lang-list-button {
-    background-color: var(--background-color-base);
+    background-color: transparent;
     outline: 1px solid var(--border-color-inverted);
     border-color: var(--border-color-interactive);
     transition-delay: 0s

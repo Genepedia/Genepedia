@@ -1,4 +1,18 @@
-const FULL_FOOTER_SCRIPT_URL = document.currentScript?.src || '';
+const FULL_FOOTER_SCRIPT_URL = (() => {
+  if (document.currentScript?.src) return document.currentScript.src;
+  try {
+    const scripts = document.getElementsByTagName('script');
+    for (let i = scripts.length - 1; i >= 0; i--) {
+      const s = scripts[i];
+      if (s && s.src && s.src.includes('full-footer.js')) {
+        return s.src;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+  return window.location.href;
+})();
 const FULL_FOOTER_SLOGAN = 'Free Geneology Encyclopedia';
 
 const FULL_FOOTER_TEMPLATE = String.raw`
@@ -381,6 +395,54 @@ class FullFooter extends HTMLElement {
     ensureFooterActionButtonScript();
     this.innerHTML = FULL_FOOTER_TEMPLATE;
     this.#syncLastEdited();
+
+    // Resolve important footer links to site pages so links work from any
+    // document location (script path is used as the base for resolution).
+    try {
+      const footerLinks = this.querySelectorAll('.page-footer__links a');
+      footerLinks.forEach((a) => {
+        const text = (a.textContent || '').trim().toLowerCase();
+        if (text.includes('privacy')) {
+          a.href = resolveFromComponent('../pages/privacy_policy.html');
+        } else if (text.includes('terms')) {
+          a.href = resolveFromComponent('../pages/terms_of_use.html');
+        } else if (text.includes('statistics')) {
+          a.href = resolveFromComponent('../pages/statistics.html');
+        } else if (text.includes('developers')) {
+          a.href = resolveFromComponent('../pages/developers.html');
+        } else if (text.includes('contact')) {
+          a.href = resolveFromComponent('../pages/contact.html');
+        }
+      });
+    } catch (e) {
+      // ignore
+    }
+
+    // Second pass: ensure any anchors still using the placeholder '#' are updated.
+    requestAnimationFrame(() => {
+      try {
+        const footerLinks2 = this.querySelectorAll('.page-footer__links a');
+        footerLinks2.forEach((a) => {
+          const raw = a.getAttribute('href');
+          if (!raw || raw === '#') {
+            const text = (a.textContent || '').trim().toLowerCase();
+            if (text.includes('privacy')) {
+              a.setAttribute('href', resolveFromComponent('../pages/privacy_policy.html'));
+            } else if (text.includes('terms')) {
+              a.setAttribute('href', resolveFromComponent('../pages/terms_of_use.html'));
+            } else if (text.includes('statistics')) {
+              a.setAttribute('href', resolveFromComponent('../pages/statistics.html'));
+            } else if (text.includes('developers')) {
+              a.setAttribute('href', resolveFromComponent('../pages/developers.html'));
+            } else if (text.includes('contact')) {
+              a.setAttribute('href', resolveFromComponent('../pages/contact.html'));
+            }
+          }
+        });
+      } catch (e) {
+        // ignore
+      }
+    });
 
     const runBrandSync = () => {
       requestAnimationFrame(() => {

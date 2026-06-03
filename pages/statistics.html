@@ -90,6 +90,18 @@
             text-align: left
         }
 
+        /* Sortable table header styles */
+        table.sortable th {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        table.sortable th .sort-indicator {
+            margin-left: 6px;
+            font-size: 0.82rem;
+            opacity: 0.8;
+        }
+
         .langs .lang {
             margin: 6px 0
         }
@@ -150,7 +162,8 @@
             <div id="file-stats-table">Loading file list (from <code>/data/file-stats.json</code>)...</div>
             <div style="font-size:12px;color:#666;margin-top:8px">To refresh this list run
                 <code>scripts/generate-file-stats.sh</code> at the repository root; output is written to
-                <code>data/file-stats.json</code>.</div>
+                <code>data/file-stats.json</code>.
+            </div>
         </div>
 
         <div id="results" aria-live="polite"></div>
@@ -273,15 +286,20 @@
 
                 function renderFileStatsTable(arr) {
                     if (!Array.isArray(arr) || arr.length === 0) { fileStatsTableEl.textContent = 'No file stats found.'; return; }
-                    arr.sort((a, b) => {
-                        const da = a.last_date ? new Date(a.last_date).getTime() : 0;
-                        const db = b.last_date ? new Date(b.last_date).getTime() : 0;
-                        return db - da;
-                    });
+                    // Build a sortable table from the provided array of file stats
+                    const data = arr.slice(); // copy so we can sort freely
                     const table = document.createElement('table');
-                    table.innerHTML = '<thead><tr><th>Path</th><th style="width:90px">Size</th><th style="width:180px">Last updated</th><th>Author</th><th>Commit</th></tr></thead>';
+                    table.className = 'sortable';
+                    table.innerHTML = '<thead><tr>' +
+                        '<th data-key="path">Path<span class="sort-indicator"></span></th>' +
+                        '<th data-key="size" style="width:90px">Size<span class="sort-indicator"></span></th>' +
+                        '<th data-key="last_date" style="width:180px">Last updated<span class="sort-indicator"></span></th>' +
+                        '<th data-key="last_author">Author<span class="sort-indicator"></span></th>' +
+                        '<th data-key="last_commit">Commit<span class="sort-indicator"></span></th>' +
+                        '</tr></thead>';
                     const tbody = document.createElement('tbody');
-                    arr.forEach(item => {
+
+                    function makeRow(item) {
                         const tr = document.createElement('tr');
                         const size = Number(item.size || 0);
                         const sizeText = size >= 1024 ? Math.round(size / 1024) + ' KB' : size + ' B';
@@ -289,8 +307,62 @@
                         const author = item.last_author || '—';
                         const commitShort = item.last_commit ? (item.last_commit + '').slice(0, 7) : '—';
                         tr.innerHTML = `<td><a href="/${item.path}" target="_blank">${item.path}</a></td><td>${sizeText}</td><td>${lastDate}</td><td>${author}</td><td>${commitShort}</td>`;
-                        tbody.appendChild(tr);
+                        return tr;
+                    }
+
+                    const comparators = {
+                        path: (a, b) => String(a.path || '').localeCompare(String(b.path || '')),
+                        size: (a, b) => (Number(a.size || 0) - Number(b.size || 0)),
+                        last_date: (a, b) => ((a.last_date ? new Date(a.last_date).getTime() : 0) - (b.last_date ? new Date(b.last_date).getTime() : 0)),
+                        last_author: (a, b) => String(a.last_author || '').localeCompare(String(b.last_author || '')),
+                        last_commit: (a, b) => String(a.last_commit || '').localeCompare(String(b.last_commit || ''))
+                    };
+
+                    let sortKey = null;
+                    let sortDir = -1; // -1 = descending, 1 = ascending
+
+                    function renderRows(items) {
+                        tbody.innerHTML = '';
+                        items.forEach(it => tbody.appendChild(makeRow(it)));
+                    }
+
+                    function updateHeaderIndicators() {
+                        const ths = table.querySelectorAll('th');
+                        ths.forEach(th => {
+                            const key = th.dataset.key;
+                            const ind = th.querySelector('.sort-indicator');
+                            if (key === sortKey) {
+                                ind.textContent = sortDir > 0 ? '▲' : '▼';
+                                th.setAttribute('aria-sort', sortDir > 0 ? 'ascending' : 'descending');
+                            } else {
+                                ind.textContent = '';
+                                th.setAttribute('aria-sort', 'none');
+                            }
+                        });
+                    }
+
+                    function sortAndRender(key) {
+                        if (sortKey === key) sortDir = -sortDir; else { sortKey = key; sortDir = -1; }
+                        const sorted = data.slice().sort((a, b) => {
+                            const res = (comparators[sortKey] || comparators.path)(a, b);
+                            return res * sortDir;
+                        });
+                        renderRows(sorted);
+                        updateHeaderIndicators();
+                    }
+
+                    // Click-anywhere header sorting (delegated)
+                    table.addEventListener('click', (ev) => {
+                        const th = ev.target.closest('th');
+                        if (!th) return;
+                        const key = th.dataset.key;
+                        if (!key) return;
+                        sortAndRender(key);
                     });
+
+                    // initial render (sort by date desc)
+                    sortAndRender('last_date');
+
                     table.appendChild(tbody);
                     fileStatsTableEl.innerHTML = '';
                     fileStatsTableEl.appendChild(table);
