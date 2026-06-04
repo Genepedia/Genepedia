@@ -10,18 +10,12 @@
     <style>
         .container {
             max-width: 64rem;
-            margin: 1.25rem auto;
+            margin: 0 auto 1.25rem;
             padding: 1rem;
         }
 
-        h1 {
-            margin-bottom: .25rem;
-        }
-
-        footer {
-            text-align: center;
-            padding: 2rem 0;
-            border-top: 1px solid #eee;
+        full-page-toolbar {
+            --page-toolbar-max-width: 64rem;
         }
     </style>
 </head>
@@ -29,8 +23,9 @@
 <body>
     <full-header></full-header>
     <article>
+        <full-page-toolbar title="Privacy Policy" edit-text="Edit Page" edit-href="#"
+            variant="page"></full-page-toolbar>
         <main class="container">
-            <h1>Privacy Policy</h1>
             <p><strong>Last updated:</strong> 22 May 2026</p>
 
             <p>Genipedia (“we”, “us”, or “our”) respects your privacy and is committed to protecting it. This Privacy
@@ -87,6 +82,7 @@
     <script src="../components/mini-header.js"></script>
     <script src="../components/mini-footer.js"></script>
     <script src="../components/full-header.js"></script>
+    <script src="../components/full-page-toolbar.js"></script>
     <script src="../components/full-footer.js"></script>
     <script src="../components/sister-projects.js"></script>
     <script src="../index.js"></script>

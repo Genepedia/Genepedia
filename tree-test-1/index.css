@@ -1,0 +1,579 @@
+:root {
+    --node-w: 260px;
+    --node-h: 96px;
+    --sidebar-w: 320px;
+
+    /* Shared UI spacing (used for button gap + offsets + avatar padding) */
+    --node-ui-gap: 4px;
+
+    /* Gender tint tokens (fallback first; color-mix overrides when supported) */
+    --gender-male-bg: rgba(13, 110, 253, 0.10);
+    --gender-female-bg: rgba(214, 51, 132, 0.10);
+    --gender-unknown-bg: rgba(0, 0, 0, 0.04);
+    --gender-male-bg: color-mix(in srgb, Canvas 88%, #0d6efd 12%);
+    --gender-female-bg: color-mix(in srgb, Canvas 88%, #d63384 12%);
+    --gender-unknown-bg: color-mix(in srgb, Canvas 92%, GrayText 8%);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans,
+        "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    background: Canvas;
+    color: CanvasText;
+}
+
+#app {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 0;
+    min-width: 0;
+}
+
+.main {
+    min-height: 0;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+.main--sidebar {
+    grid-template-columns: 1fr var(--sidebar-w);
+}
+
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid GrayText;
+}
+
+.toolbar__left {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+}
+
+.toolbar__title {
+    font-weight: 700;
+}
+
+.toolbar__hint {
+    font-size: 12px;
+    opacity: 0.75;
+    white-space: nowrap;
+}
+
+.toolbar__right {
+    display: flex;
+    gap: 8px;
+}
+
+.tree-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding-left: 10px;
+    border: 1px solid GrayText;
+    background: Canvas;
+    color: CanvasText;
+}
+
+.tree-search:focus-within {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+
+.tree-search__icon {
+    opacity: 0.6;
+}
+
+.tree-search__input {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: 6px 10px 6px 0;
+    width: 240px;
+    min-width: 140px;
+}
+
+.tree-search__results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: -1px;
+    right: -1px;
+    z-index: 1200;
+    border: 1px solid GrayText;
+    background: Canvas;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+.tree-search__results--hidden {
+    display: none;
+}
+
+.tree-search__result {
+    width: 100%;
+    text-align: left;
+    border-radius: 0;
+    border: 1px solid GrayText;
+    background: var(--gender-unknown-bg);
+    padding: 10px 10px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.tree-search__result[data-gender="M"] {
+    background: var(--gender-male-bg);
+}
+
+.tree-search__result[data-gender="F"] {
+    background: var(--gender-female-bg);
+}
+
+.tree-search__result[data-gender="U"] {
+    background: var(--gender-unknown-bg);
+}
+
+.tree-search__result:hover {
+    border-color: Highlight;
+}
+
+.tree-search__result:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+
+button {
+    appearance: none;
+    border: 1px solid GrayText;
+    background: Canvas;
+    color: CanvasText;
+    border-radius: 0;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.icon-button {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-button svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.icon-button i {
+    font-size: 16px;
+    line-height: 1;
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+
+.viewport {
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+    min-width: 0;
+}
+
+.viewport:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+}
+
+.scene {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+    color: CanvasText;
+}
+
+.links {
+    position: absolute;
+    left: 0;
+    top: 0;
+    overflow: visible;
+    pointer-events: none;
+}
+
+.links path {
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.45;
+}
+
+.nodes {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.node {
+    position: absolute;
+    width: var(--node-w);
+    height: var(--node-h);
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    border: 1px solid GrayText;
+    border-radius: 0;
+    background: var(--gender-unknown-bg);
+    color: CanvasText;
+    padding: 0;
+    user-select: none;
+    cursor: pointer;
+    min-width: 0;
+}
+
+.node[data-gender="M"] {
+    background: var(--gender-male-bg);
+}
+
+.node[data-gender="F"] {
+    background: var(--gender-female-bg);
+}
+
+.node[data-gender="U"] {
+    background: var(--gender-unknown-bg);
+}
+
+.node__avatar {
+    width: calc(var(--node-h) - (var(--node-ui-gap) * 2));
+    height: calc(var(--node-h) - (var(--node-ui-gap) * 2));
+    flex: 0 0 calc(var(--node-h) - (var(--node-ui-gap) * 2));
+    margin: var(--node-ui-gap) 0 var(--node-ui-gap) var(--node-ui-gap);
+    border: 1px solid GrayText;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.node__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.node__avatar-icon {
+    font-size: 44px;
+    opacity: 0.55;
+}
+
+.node__content {
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 8px 44px 28px 0;
+}
+
+.node__actions {
+    position: absolute;
+    right: var(--node-ui-gap);
+    bottom: var(--node-ui-gap);
+    display: flex;
+    gap: var(--node-ui-gap);
+    flex: 0 0 auto;
+}
+
+.node__actions .icon-button {
+    width: 28px;
+    height: 28px;
+}
+
+.node:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+
+.node__name {
+    font-weight: 650;
+    font-size: 14px;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.node__meta {
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.75;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.node--selected {
+    border-color: Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+
+.menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 230px;
+    padding: 8px;
+    border: 1px solid GrayText;
+    border-radius: 0;
+    background: Canvas;
+    color: CanvasText;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.menu--hidden {
+    display: none;
+}
+
+.menu__title {
+    font-size: 12px;
+    opacity: 0.75;
+    padding: 6px 8px 8px 8px;
+    border-bottom: 1px solid GrayText;
+    margin-bottom: 0;
+}
+
+.menu__item {
+    width: 100%;
+    text-align: left;
+    border-radius: 0;
+    border: 1px solid GrayText;
+    background: var(--gender-unknown-bg);
+    padding: 10px 10px;
+    font-weight: 600;
+}
+
+.menu__item[data-gender="M"] {
+    background: var(--gender-male-bg);
+}
+
+.menu__item[data-gender="F"] {
+    background: var(--gender-female-bg);
+}
+
+.menu__item[data-gender="U"] {
+    background: var(--gender-unknown-bg);
+}
+
+.menu__item:hover {
+    border-color: Highlight;
+}
+
+.menu__item:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+}
+
+.sidebar {
+    border-left: 1px solid GrayText;
+    background: Canvas;
+    color: CanvasText;
+    padding: 12px;
+    overflow: auto;
+    min-width: 0;
+}
+
+.sidebar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid GrayText;
+}
+
+.sidebar__title {
+    font-weight: 800;
+}
+
+.sidebar--hidden {
+    display: none;
+}
+
+.sidebar__content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar__person {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.sidebar__avatar {
+    width: 72px;
+    height: 72px;
+    border: 1px solid GrayText;
+    border-radius: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.sidebar__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.sidebar__avatar-icon {
+    font-size: 54px;
+    opacity: 0.55;
+}
+
+.sidebar__subtitle {
+    font-size: 12px;
+    opacity: 0.75;
+    margin-top: 2px;
+}
+
+.sidebar__heading {
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.sidebar__details {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 8px 10px;
+    font-size: 13px;
+}
+
+.sidebar__details-label {
+    font-weight: 700;
+}
+
+.sidebar__family-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar__group-title {
+    font-weight: 800;
+    font-size: 13px;
+}
+
+.sidebar__list--plain {
+    list-style: none;
+    padding-left: 0;
+}
+
+.sidebar__list--plain li {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.sidebar__partner-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.sidebar__dot {
+    width: 10px;
+    height: 10px;
+    border: 1px solid GrayText;
+    display: inline-block;
+    flex: 0 0 auto;
+}
+
+.sidebar__dot[data-gender="M"] {
+    background: var(--gender-male-bg);
+}
+
+.sidebar__dot[data-gender="F"] {
+    background: var(--gender-female-bg);
+}
+
+.sidebar__dot[data-gender="U"] {
+    background: var(--gender-unknown-bg);
+}
+
+.sidebar__nested {
+    margin: 4px 0 0 18px;
+}
+
+.sidebar__name {
+    font-weight: 800;
+    font-size: 16px;
+}
+
+.sidebar__meta {
+    font-size: 13px;
+    opacity: 0.8;
+}
+
+.sidebar__section-title {
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.sidebar__list {
+    margin: 0;
+    padding-left: 18px;
+}

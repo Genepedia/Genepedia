@@ -1,937 +1,765 @@
-const FULL_PAGE_TOOLBAR_BASE_URL = new URL('.', document.currentScript.src);
-const FULL_PAGE_TOOLBAR_STYLE_ELEMENT_ID = 'genipedia-full-page-toolbar-styles';
-const FULL_PAGE_TOOLBAR_STYLES = String.raw`
-/*
- * Make the <full-page-toolbar> custom element transparent to layout so it
- * doesn't break grid/flex parents. Mirrors what full-header and full-footer do.
- */
+const FULL_PAGE_TOOLBAR_TEMPLATE = String.raw`
+<style>
 full-page-toolbar {
-    display: contents;
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	--page-toolbar-fg: #eaecf0;
+	--page-toolbar-muted: #a7adb4;
+	--page-toolbar-border: rgba(255, 255, 255, 0.12);
+	--page-toolbar-link: #6b9eff;
+	--page-toolbar-button-hover: rgba(255, 255, 255, 0.08);
+	--page-toolbar-dropdown-bg: #313438;
+	--page-toolbar-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-.vector-page-tools-pinned-container {
-    width: 100%;
-    pointer-events: auto;
+body:not(.theme-dark) full-page-toolbar {
+	--page-toolbar-fg: #202122;
+	--page-toolbar-muted: #54595d;
+	--page-toolbar-border: rgba(0, 0, 0, 0.12);
+	--page-toolbar-link: #3366cc;
+	--page-toolbar-button-hover: rgba(0, 0, 0, 0.05);
+	--page-toolbar-dropdown-bg: #ffffff;
+	--page-toolbar-dropdown-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-#vector-appearance-pinned-container:not(:empty) + #vector-page-tools-pinned-container:not(:empty) {
-    margin-top: 1.25rem;
+full-page-toolbar .people-page__inner {
+	width: 100%;
+	max-width: var(--page-toolbar-max-width, 90rem);
+	margin: 0 auto;
+	padding: 1rem 1rem 0;
+	box-sizing: border-box;
 }
 
-.vector-appearance-sidebar-shell .vector-page-tools--pinned {
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    padding: 0;
-    box-shadow: none;
+/* Override the default content width enforcement in lib/common.css. */
+body>article full-page-toolbar .people-page__inner {
+	max-width: var(--page-toolbar-max-width, 90rem);
 }
 
-.vector-page-tools--pinned .vector-pinnable-header {
-    padding-bottom: 0.375rem;
-    margin-bottom: 0.375rem;
+full-page-toolbar .people-page__title-row {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-bottom: 0.75rem;
 }
 
-.vector-page-tools--pinned .vector-pinnable-header-actions {
-    display: none;
+full-page-toolbar .people-page__title {
+	margin: 0;
+	padding: 0;
+	flex: 1 1 auto;
+	min-width: 0;
+	font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
+	font-size: clamp(1.75rem, 4vw, 2.3rem);
+	font-weight: 400;
+	line-height: 1.2;
+	color: var(--page-toolbar-fg);
 }
 
-.vector-page-tools--pinned .mw-list-item a {
-    padding: 0.375rem 0;
-    line-height: normal;
+full-page-toolbar .people-page__edit-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	flex-shrink: 0;
+	margin-bottom: 0.15rem;
+	padding: 0.35rem 0.5rem;
+	border: 0;
+	border-radius: 0.125rem;
+	background: transparent;
+	color: var(--page-toolbar-link);
+	font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	box-sizing: border-box;
 }
 
-.vector-page-toolbar-container {
-    border-bottom: 1px solid var(--vector-border);
-    background: var(--vector-page-bg);
-    padding-top: 1rem;
+full-page-toolbar .people-page__edit-button:hover {
+	background: var(--page-toolbar-button-hover);
+	color: var(--page-toolbar-link);
+	text-decoration: none;
 }
 
-.vector-page-titlebar,
-.vector-page-titlebar-start,
-.vector-page-titlebar-end,
-.vector-page-toolbar-end,
-.vector-page-language-button,
-.vector-toc-toggle {
-    display: flex;
-    align-items: center;
+full-page-toolbar .people-page__edit-button i {
+	font-size: 1rem;
+	line-height: 1;
+	color: var(--page-toolbar-fg);
 }
 
-.vector-page-titlebar {
-    justify-content: space-between;
-    gap: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--vector-border);
+full-page-toolbar .people-page__tabs-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 0.5rem 1rem;
+	border-bottom: 1px solid var(--page-toolbar-border);
 }
 
-.vector-page-titlebar-start {
-    gap: 0.75rem;
-    min-width: 0;
+full-page-toolbar .people-page__tabs {
+	flex: 1 1 auto;
+	min-width: 0;
 }
 
-.vector-page-titlebar-end {
-    justify-content: flex-end;
+full-page-toolbar .people-page__tab-list {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: 1rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
 }
 
-.vector-toc-toggle,
-.vector-page-language-button {
-    color: var(--vector-text);
-    padding: 0.25rem 0;
-    gap: 0.35rem;
-    font: inherit;
+full-page-toolbar .people-page__tabs-actions {
+	display: flex;
+	align-items: center;
+	flex: 0 0 auto;
+	justify-content: flex-end;
+	gap: 0.35rem;
+	margin-bottom: 0;
 }
 
-.vector-toc-toggle {
-    border: 0;
-    background: transparent;
-    cursor: pointer;
+full-page-toolbar .people-page__tab-item {
+	flex-shrink: 0;
+	margin: 0;
+	padding: 0;
+	border-bottom: 2px solid transparent;
 }
 
-.firstHeading {
-    margin: 0;
-    font-family: 'Linux Libertine', Georgia, 'Times New Roman', Times, serif;
-    font-weight: 400;
-    font-size: 2.3rem;
-    line-height: 1.2;
-    color: var(--vector-text);
+full-page-toolbar .people-page__tab-item.is-selected {
+	border-bottom-color: var(--page-toolbar-fg);
 }
 
-.vector-page-language-label {
-    white-space: nowrap;
-    font-size: 0.875rem;
-    color: var(--vector-link);
+full-page-toolbar .people-page__tab-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.35rem 0.5rem;
+	color: var(--page-toolbar-fg);
+	font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+	text-decoration: none;
+	border-radius: 0.25rem;
+	transition: background-color 0.12s ease, color 0.12s ease;
 }
 
-.vector-page-toolbar {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding-top: 0;
-    padding-bottom: 0;
-    height: 2.5rem;
-    min-height: 2.5rem;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    align-items: stretch;
-    box-sizing: border-box;
+full-page-toolbar .people-page__tab-link:hover,
+full-page-toolbar .people-page__tab-link:focus {
+	background: var(--page-toolbar-button-hover);
+	color: var(--page-toolbar-fg);
+	text-decoration: none;
+	outline: none;
 }
 
-.vector-page-toolbar-start,
-.vector-page-toolbar-end,
-.vector-page-toolbar-start nav,
-.vector-page-toolbar-end nav {
-    display: flex;
-    align-items: stretch;
-    height: 100%;
+full-page-toolbar .people-page__tab-link:focus-visible {
+	box-shadow: 0 0 0 3px rgba(107,154,255,0.12);
 }
 
-.vector-page-toolbar-end {
-    gap: 0.75rem;
-    flex-wrap: nowrap;
-    justify-content: flex-end;
+full-page-toolbar .people-page__tab-link i {
+	font-size: 0.95rem;
+	line-height: 1;
+	opacity: 0.95;
+	transition: opacity 0.12s ease;
 }
 
-.vector-page-toolbar-list {
-    display: flex;
-    gap: 1rem;
-    margin: 0;
-    padding: 0;
-    font-size: inherit;
-    line-height: inherit;
-    flex-wrap: nowrap;
-    align-items: center;
-    height: 100%;
-    list-style: none;
+full-page-toolbar .people-page__tab-link:hover i {
+	opacity: 1;
 }
 
-.vector-page-toolbar-list .mw-list-item,
-.vector-page-toolbar-list .mw-list-item + .mw-list-item {
-    margin: 0;
-    padding: 0;
-    border-bottom: 2px solid transparent;
-    display: flex;
-    align-items: center;
-    align-self: stretch;
-    height: 100%;
-    box-sizing: border-box;
+full-page-toolbar .people-page__button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	height: 100%;
+	min-height: 2.5rem;
+	padding: 0 0.5rem;
+	border: 0;
+	border-radius: 0.125rem;
+	background: transparent;
+	color: var(--page-toolbar-link);
+	font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+	text-decoration: none;
+	cursor: pointer;
+	box-sizing: border-box;
+	white-space: nowrap;
 }
 
-.vector-page-toolbar-list .mw-list-item a {
-    color: var(--vector-text);
-    display: flex;
-    align-items: center;
-    height: 100%;
-    padding: 0 0.5rem;
-    font-size: inherit;
-    line-height: inherit;
-    font-weight: 400;
-    box-sizing: border-box;
-    min-height: 100%;
+full-page-toolbar .people-page__button:hover {
+	background: var(--page-toolbar-button-hover);
+	color: var(--page-toolbar-link);
+	text-decoration: none;
 }
 
-.vector-page-toolbar-list .mw-list-item a span {
-    display: inline-block;
-    vertical-align: middle;
-    line-height: normal;
+full-page-toolbar .people-page__button i {
+	font-size: 1rem;
+	line-height: 1;
+	color: var(--page-toolbar-fg);
 }
 
-.vector-page-toolbar-list .mw-list-item.is-selected {
-    border-bottom-color: var(--vector-text);
+full-page-toolbar .people-page__menu {
+	position: relative;
+	display: flex;
+	align-items: stretch;
 }
 
-.vector-page-toolbar-list .mw-list-item.is-selected a,
-.vector-page-toolbar-list .mw-list-item.is-selected a span {
-    color: var(--vector-text);
-    font-weight: 400;
+full-page-toolbar .people-page__menu.is-open .people-page__menu-trigger {
+	background: var(--page-toolbar-button-hover);
 }
 
-.vector-page-toolbar-container .vector-page-tools-dropdown {
-    display: flex;
-    align-items: stretch;
-    align-self: stretch;
-    height: 100%;
-    margin: 0;
-    float: none;
+full-page-toolbar .people-page__menu-caret {
+	font-size: 0.75rem;
+	line-height: 1;
+	color: var(--page-toolbar-fg);
+	transition: transform 0.15s ease;
 }
 
-.vector-page-toolbar-container .vector-page-tools-dropdown .vector-dropdown-label {
-    height: 100%;
-    min-height: 0;
-    padding: 0 !important;
-    margin: 0 !important;
-    gap: 0.2rem;
-    border-bottom: 2px solid transparent;
-    box-sizing: border-box;
-    font-size: inherit;
-    line-height: inherit;
-    font-weight: 400;
-    align-items: center;
-    align-self: stretch;
+full-page-toolbar .people-page__menu.is-open .people-page__menu-caret {
+	transform: rotate(180deg);
 }
 
-.vector-page-toolbar-container .vector-page-tools-dropdown .vector-dropdown-label-text {
-    font-size: inherit;
-    line-height: inherit;
-    font-weight: inherit;
+full-page-toolbar .people-page__dropdown {
+	position: absolute;
+	top: calc(100% + 0.25rem);
+	right: 0;
+	z-index: 20;
+	min-width: 12.5rem;
+	margin: 0;
+	padding: 0.35rem 0;
+	border: 1px solid var(--page-toolbar-border);
+	border-radius: 0.125rem;
+	background: var(--page-toolbar-dropdown-bg);
+	box-shadow: var(--page-toolbar-dropdown-shadow);
+	list-style: none;
+	box-sizing: border-box;
 }
 
-.vector-page-toolbar-container .vector-page-tools-dropdown .vector-icon:not(.bi) {
-    width: 1rem;
-    height: 1rem;
-    min-width: 1rem;
-    min-height: 1rem;
-    mask-size: 1rem 1rem;
-    -webkit-mask-size: 1rem 1rem;
-    flex: none;
-    align-self: center;
+full-page-toolbar .people-page__dropdown[hidden] {
+	display: none !important;
 }
 
-/* vector-page.css masks .vector-icon with a 1px image, hiding Bootstrap font icons */
-.vector-page-toolbar-container .vector-icon.bi,
-#vector-page-titlebar-toc-label .vector-icon.bi {
-    -webkit-mask-image: none !important;
-    mask-image: none !important;
-    background: none !important;
-    background-color: transparent !important;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 1.25rem;
-    height: 1.25rem;
-    min-width: 1.25rem;
-    min-height: 1.25rem;
-    font-size: 1.25rem;
-    color: var(--vector-text, currentColor);
-    vertical-align: middle;
-    flex: none;
-    align-self: center;
+full-page-toolbar .people-page__dropdown li {
+	margin: 0;
+	padding: 0;
 }
 
-.vector-page-toolbar-container .vector-icon.bi::before {
-    display: inline-block;
-    line-height: 1;
+full-page-toolbar .people-page__dropdown a,
+full-page-toolbar .people-page__dropdown button {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	width: 100%;
+	margin: 0;
+	padding: 0.55rem 1rem;
+	border: 0;
+	background: transparent;
+	color: var(--page-toolbar-fg);
+	font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+	text-align: left;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: pointer;
+	box-sizing: border-box;
 }
 
-.vector-dropdown-label-text-visible {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0;
-    overflow: visible;
-    clip: auto;
-    white-space: normal;
+full-page-toolbar .people-page__dropdown a:hover,
+full-page-toolbar .people-page__dropdown button:hover {
+	background: var(--page-toolbar-button-hover);
+	color: var(--page-toolbar-fg);
+	text-decoration: none;
 }
 
-.vector-page-tools-dropdown .vector-dropdown-content {
-    left: auto;
-    right: 0;
-    min-width: 10rem;
+full-page-toolbar .people-page__dropdown a.is-selected {
+	font-weight: 600;
 }
 
-.vector-page-titlebar-toc .vector-pinned-container {
-    display: block !important;
-    padding: 0;
-    background: transparent;
+full-page-toolbar .people-page__dropdown-check {
+	margin-left: auto;
+	font-size: 0.9rem;
+	opacity: 0.9;
 }
 
-.mw-page-container {
-    --vector-page-side-left: 0px;
-    --vector-page-side-right: 0px;
-    background: var(--vector-page-bg);
-    min-height: calc(100vh - 8rem);
-    padding-bottom: 2rem;
+full-page-toolbar .people-page__dropdown-divider {
+	height: 1px;
+	margin: 0.35rem 0;
+	background: var(--page-toolbar-border);
 }
 
-.mw-page-container-inner,
-.vector-shell-page-inner {
-    max-width: var(--vector-page-max-width);
-    margin: 0 auto;
-    padding-left: var(--vector-page-padding);
-    padding-right: var(--vector-page-padding);
-    position: relative;
+full-page-toolbar .people-page__dropdown-add {
+	color: var(--page-toolbar-link);
 }
 
-.vector-shell-page-toolbar-inner {
-    width: 100%;
+full-page-toolbar .people-page__dropdown-add:hover {
+	color: var(--page-toolbar-link);
 }
 
-#content.mw-body {
-    min-height: 36rem;
-    background: transparent;
-    padding-top: 0.9rem;
-    color: var(--vector-text);
+full-page-toolbar .people-page__dropdown i {
+	flex-shrink: 0;
+	width: 1.1rem;
+	font-size: 1rem;
+	opacity: 0.9;
 }
 
-#mw-content-text.mw-body-content {
-    min-height: 32rem;
-    max-width: var(--vector-content-max-width);
+@media (max-width: 720px) {
+	full-page-toolbar .people-page__inner {
+		padding: 0.75rem 0.5rem 0;
+	}
+
+	full-page-toolbar .people-page__tabs-row {
+		padding-top: 1.5rem;
+	}
+
+	full-page-toolbar .people-page__tabs-actions {
+		margin-bottom: 0;
+		padding-bottom: 0.25rem;
+	}
 }
 
-.mw-parser-output.container {
-    max-width: var(--vector-content-max-width);
-    min-height: 30rem;
-    padding: 0;
-    margin: 0;
+/* On small screens, wrap tabs instead of showing a horizontal scrollbar. */
+@media (max-width: 520px) {
+	full-page-toolbar .people-page__tab-list {
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		overflow-x: hidden;
+		-webkit-overflow-scrolling: auto;
+	}
 }
 
-.mw-parser-output p {
-    margin: 0 0 1rem;
-    font-size: 0.95rem;
-    line-height: 1.7;
+/* On very small screens make tabs wrap and actions use a full-width row
+	 so buttons don't overlap other content when they drop to a second line. */
+@media (max-width: 420px) {
+	full-page-toolbar .people-page__tabs-row {
+		align-items: flex-start;
+		padding-top: 2.25rem;
+		padding-bottom: 0.5rem;
+		gap: 0.4rem 0.5rem;
+	}
+
+	full-page-toolbar .people-page__tabs-actions {
+		width: 100%;
+		justify-content: flex-start;
+		gap: 0.5rem;
+		margin-bottom: 0;
+		padding-bottom: 0;
+	}
+
+	full-page-toolbar .people-page__button {
+		min-height: 2rem;
+		height: auto;
+	}
 }
 
-.mw-parser-output .hatnote {
-    font-style: italic;
-    color: var(--vector-muted);
-    margin-bottom: 0.75rem;
+/* Simple variant hides tabs/actions and uses a title underline instead. */
+/* Allow pages to force-show the tabs with the show-tabs attribute or by using variant="page". */
+full-page-toolbar:not([variant="people"]):not([variant="page"]):not([show-tabs]) .people-page__tabs-row {
+	display: none;
 }
 
-.mw-parser-output h2 {
-    font-family: 'Linux Libertine', Georgia, 'Times New Roman', Times, serif;
-    font-weight: 400;
-    font-size: 1.5rem;
-    line-height: 1.3;
-    margin: 1.75rem 0 0.75rem;
-    padding-bottom: 0.2rem;
-    border-bottom: 1px solid var(--vector-border);
-    max-width: 46rem;
+full-page-toolbar:not([variant="people"]):not([variant="page"]) .people-page__title-row {
+	border-bottom: 1px solid var(--page-toolbar-border);
 }
+</style>
 
-#mw-content-text .navbox,
-#mw-content-text .navbox-styles + .navbox,
-#mw-content-text .navbox-styles + span.mw-empty-elt + .navbox-styles + .navbox {
-    box-sizing: border-box;
-    border: 1px solid var(--vector-border);
-    width: 100%;
-    clear: both;
-    font-size: 88%;
-    text-align: center;
-    padding: 1px;
-    margin: 1em auto 0;
-    background-color: var(--background-color-base, #fdfdfd);
-    color: inherit;
-}
-
-#mw-content-text .navbox .navbox-inner,
-#mw-content-text .navbox .navbox-subgroup {
-    width: 100%;
-}
-
-#mw-content-text .navbox .navbox-group,
-#mw-content-text .navbox .navbox-title,
-#mw-content-text .navbox .navbox-abovebelow {
-    padding: 0.25em 1em;
-    line-height: 1.5em;
-    text-align: center;
-}
-
-#mw-content-text .navbox .navbox-group {
-    white-space: nowrap;
-    text-align: right;
-}
-
-#mw-content-text .navbox .navbox-list {
-    line-height: 1.5em;
-    border-color: var(--background-color-base, #fdfdfd);
-}
-
-#mw-content-text .navbox .navbox-list-with-group {
-    text-align: left;
-    border-left-width: 2px;
-    border-left-style: solid;
-}
-
-#mw-content-text .navbox tr + tr > .navbox-abovebelow,
-#mw-content-text .navbox tr + tr > .navbox-group,
-#mw-content-text .navbox tr + tr > .navbox-image,
-#mw-content-text .navbox tr + tr > .navbox-list {
-    border-top: 2px solid var(--background-color-base, #fdfdfd);
-}
-
-#mw-content-text .navbox .navbox-title {
-    background-color: #ccf;
-    color: inherit;
-}
-
-#mw-content-text .navbox .navbox-abovebelow,
-#mw-content-text .navbox .navbox-group,
-#mw-content-text .navbox .navbox-subgroup .navbox-title {
-    background-color: #ddf;
-    color: inherit;
-}
-
-#mw-content-text .navbox .navbox-subgroup .navbox-group,
-#mw-content-text .navbox .navbox-subgroup .navbox-abovebelow {
-    background-color: #e6e6ff;
-    color: inherit;
-}
-
-#mw-content-text .navbox .navbox-even {
-    background-color: #f7f7f7;
-    color: inherit;
-}
-
-#mw-content-text .navbox .navbox-odd {
-    background-color: transparent;
-    color: inherit;
-}
-
-#mw-content-text .navbox .hlist dl,
-#mw-content-text .navbox .hlist ol,
-#mw-content-text .navbox .hlist ul,
-#mw-content-text .navbox td.hlist dl,
-#mw-content-text .navbox td.hlist ol,
-#mw-content-text .navbox td.hlist ul {
-    margin: 0;
-    padding: 0.125em 0;
-    list-style: none;
-}
-
-#mw-content-text .navbox .hlist dd,
-#mw-content-text .navbox .hlist dt,
-#mw-content-text .navbox .hlist li {
-    margin: 0;
-    display: inline;
-}
-
-#mw-content-text .navbox .navbar {
-    display: block;
-    font-size: 100%;
-}
-
-#mw-content-text .navbox .navbar ul,
-#mw-content-text .navbox .navbar ol {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    gap: 0.25em;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-#mw-content-text .navbox .navbox-title .navbar {
-    float: left;
-    text-align: left;
-    margin-right: 0.5em;
-}
-
-@media (min-width: 1120px) {
-    html.vector-feature-page-tools-pinned-enabled {
-        --vector-pinned-right-width: 14rem;
-    }
-
-    .vector-page-toolbar-container,
-    .mw-page-container {
-        --vector-page-side-left: var(--vector-pinned-left-width, 0px);
-        --vector-page-side-right: var(--vector-pinned-right-width, 0px);
-        padding-left: var(--vector-page-side-left);
-        padding-right: var(--vector-page-side-right);
-    }
-
-    html.vector-feature-toc-pinned-clientpref-1 .vector-page-titlebar .vector-page-titlebar-toc {
-        display: none;
-    }
-
-    html.vector-feature-page-tools-pinned-enabled .vector-page-toolbar .vector-page-tools-landmark {
-        display: none;
-    }
-
-    html.vector-feature-main-menu-pinned-enabled .mw-page-container-inner {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: 'siteNotice' 'pageContent' 'footer';
-    }
-
-    html.vector-feature-main-menu-pinned-enabled .vector-column-start {
-        display: none;
-    }
-}
-
-@media (max-width: 900px) {
-    .vector-page-titlebar,
-    .vector-page-toolbar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .vector-page-toolbar-end {
-        justify-content: flex-start;
-    }
-}
-
-@media (max-width: 640px) {
-    .firstHeading {
-        font-size: 1.8rem;
-    }
-
-    .vector-page-toolbar-list {
-        gap: 0.75rem;
-    }
-}
+<section class="people-page" aria-label="Page header">
+	<div class="people-page__inner">
+		<div class="people-page__title-row">
+			<h1 class="people-page__title"></h1>
+			<a class="people-page__edit-button" href="#" title="Edit profile">
+				<i class="bi bi-pencil-square" aria-hidden="true"></i>
+				<span class="people-page__edit-label">Edit Profile</span>
+			</a>
+		</div>
+		<div class="people-page__tabs-row">
+			<nav class="people-page__tabs" aria-label="Page views">
+				<ul class="people-page__tab-list" role="tablist">
+					<li class="people-page__tab-item is-selected" role="presentation">
+						<a class="people-page__tab-link" href="#profile" data-tab="profile" role="tab" aria-selected="true">
+							<i class="bi bi-person" aria-hidden="true"></i>
+							<span>Profile</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#tree" data-tab="tree" role="tab" aria-selected="false">
+							<i class="bi bi-diagram-3" aria-hidden="true"></i>
+							<span>Tree</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#media" data-tab="media" role="tab" aria-selected="false">
+							<i class="bi bi-images" aria-hidden="true"></i>
+							<span>Media</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#talk" data-tab="talk" role="tab" aria-selected="false">
+							<i class="bi bi-chat-left-text" aria-hidden="true"></i>
+							<span>Talk</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#changes" data-tab="changes" role="tab" aria-selected="false">
+							<i class="bi bi-clock-history" aria-hidden="true"></i>
+							<span>Changes</span>
+						</a>
+					</li>
+				</ul>
+			</nav>
+			<div class="people-page__tabs-actions">
+				<div class="people-page__menu people-page__language-menu">
+					<button
+						class="people-page__button people-page__menu-trigger"
+						type="button"
+						aria-haspopup="menu"
+						aria-expanded="false"
+						aria-controls="people-page-language-menu"
+						title="Change language"
+					>
+						<i class="bi bi-translate" aria-hidden="true"></i>
+						<span>Language</span>
+						<i class="bi bi-chevron-down people-page__menu-caret" aria-hidden="true"></i>
+					</button>
+					<ul
+						id="people-page-language-menu"
+						class="people-page__dropdown"
+						role="menu"
+						hidden
+					>
+						<li role="none">
+							<a href="#" role="menuitem" class="is-selected" aria-current="true" title="English">
+								<span>English</span>
+								<i class="bi bi-check2 people-page__dropdown-check" aria-hidden="true"></i>
+							</a>
+						</li>
+						<li class="people-page__dropdown-divider" role="separator"></li>
+						<li role="none">
+							<button
+								type="button"
+								class="people-page__dropdown-add"
+								role="menuitem"
+								title="Add a new language"
+							>
+								<i class="bi bi-plus-lg" aria-hidden="true"></i>
+								<span>Add language</span>
+							</button>
+						</li>
+					</ul>
+				</div>
+				<div class="people-page__menu people-page__download-menu">
+					<button
+						class="people-page__button people-page__menu-trigger"
+						type="button"
+						aria-haspopup="menu"
+						aria-expanded="false"
+						aria-controls="people-page-download-menu"
+						title="Download this page"
+					>
+						<i class="bi bi-download" aria-hidden="true"></i>
+						<span>Download</span>
+						<i class="bi bi-chevron-down people-page__menu-caret" aria-hidden="true"></i>
+					</button>
+					<ul
+						id="people-page-download-menu"
+						class="people-page__dropdown"
+						role="menu"
+						hidden
+					>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as PDF">
+								<i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
+								<span>PDF</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as PNG">
+								<i class="bi bi-filetype-png" aria-hidden="true"></i>
+								<span>PNG</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as SVG">
+								<i class="bi bi-filetype-svg" aria-hidden="true"></i>
+								<span>SVG</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as HTML">
+								<i class="bi bi-file-earmark-code" aria-hidden="true"></i>
+								<span>HTML</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as Markdown">
+								<i class="bi bi-filetype-md" aria-hidden="true"></i>
+								<span>Markdown</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as plain text">
+								<i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+								<span>Plain text</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as JSON">
+								<i class="bi bi-braces" aria-hidden="true"></i>
+								<span>JSON</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as GEDCOM">
+								<i class="bi bi-diagram-3" aria-hidden="true"></i>
+								<span>GEDCOM</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Download as EPUB">
+								<i class="bi bi-book" aria-hidden="true"></i>
+								<span>EPUB</span>
+							</a>
+						</li>
+						<li role="none">
+							<a href="#" role="menuitem" title="Print this page">
+								<i class="bi bi-printer" aria-hidden="true"></i>
+								<span>Print</span>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
 `;
 
-const OFFLINE_PAGE_TOOLBAR_NOOP_URL = '#';
-const VECTOR_PAGE_TOOLS_STORAGE_KEY = 'genipedia-vector-page-tools-pinned-v1';
-const FULL_PAGE_TOOLBAR_PINNED_SIDEBAR_MIN_WIDTH = 1120;
-
-function shouldUsePersistentPageToolsSidebar() {
-    return window.innerWidth >= FULL_PAGE_TOOLBAR_PINNED_SIDEBAR_MIN_WIDTH;
-}
-
-function ensurePageToolbarStyles() {
-    if (!document.getElementById(FULL_PAGE_TOOLBAR_STYLE_ELEMENT_ID)) {
-        const shellStyles = document.createElement('style');
-        shellStyles.id = FULL_PAGE_TOOLBAR_STYLE_ELEMENT_ID;
-        shellStyles.textContent = FULL_PAGE_TOOLBAR_STYLES;
-        document.head.appendChild(shellStyles);
-    }
-}
-
-function escapePageToolbarHtml(value) {
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function readPageToolsPinnedPreference() {
-    return shouldUsePersistentPageToolsSidebar();
-}
-
-function persistPageToolsPinnedPreference(pinned) {
-    return Boolean(pinned);
-}
-
-function applyPageToolsPinnedState(pinned) {
-    const html = document.documentElement;
-    if (!html) {
-        return;
-    }
-
-    const shouldPin = shouldUsePersistentPageToolsSidebar();
-
-    html.classList.remove(
-        'vector-feature-page-tools-pinned-enabled',
-        'vector-feature-page-tools-pinned-disabled'
-    );
-    html.classList.add(
-        shouldPin
-            ? 'vector-feature-page-tools-pinned-enabled'
-            : 'vector-feature-page-tools-pinned-disabled'
-    );
-
-    if (document.body) {
-        document.body.dataset.vectorPageToolsPinned = shouldPin ? 'true' : 'false';
-    }
-}
-
-function getCanonicalPageUrl() {
-    const canonicalLink = document.querySelector('link[rel="canonical"]');
-
-    try {
-        return canonicalLink?.href
-            ? new URL(canonicalLink.getAttribute('href') || canonicalLink.href, window.location.href).href
-            : window.location.href;
-    } catch {
-        return window.location.href;
-    }
-}
-
-function normalizeArticleTitle(pageTitle) {
-    const normalizedTitle = String(pageTitle || '').trim();
-
-    if (!normalizedTitle || normalizedTitle.toLowerCase() === 'person') {
-        return null;
-    }
-
-    return normalizedTitle.replace(/\s+/g, '_');
-}
-
-function buildArticleHref(pathname) {
-    return new URL(pathname, 'https://genipedia.org/').href;
-}
-
-function buildOtherProjectHref(hostname, pathname) {
-    return new URL(pathname, `https://${hostname}/`).href;
-}
-
-function buildPageToolLinks(pageTitle) {
-    const articleUrl = getCanonicalPageUrl();
-    const articleTitle = normalizeArticleTitle(pageTitle);
-
-    if (!articleTitle) {
-        return {
-            articleUrl,
-            viewSource: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            viewHistory: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            whatLinksHere: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            relatedChanges: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            uploadFile: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            permanentLink: articleUrl,
-            pageInformation: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            citePage: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            shortUrl: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            editInterlanguageLinks: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            downloadPdf: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            printableVersion: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            commons: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            wikinews: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            wikiquote: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            wikisource: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-            wikidataItem: OFFLINE_PAGE_TOOLBAR_NOOP_URL
-        };
-    }
-
-    const encodedTitle = encodeURIComponent(articleTitle);
-    const encodedArticleUrl = encodeURIComponent(buildArticleHref(`/wiki/${articleTitle}`));
-    const wikidataSearchUrl = new URL('https://www.wikidata.org/w/index.php');
-    wikidataSearchUrl.searchParams.set('search', articleTitle.replace(/_/g, ' '));
-
-    return {
-        articleUrl,
-        viewSource: buildArticleHref(`/w/index.php?title=${encodedTitle}&action=edit`),
-        viewHistory: buildArticleHref(`/w/index.php?title=${encodedTitle}&action=history`),
-        whatLinksHere: buildArticleHref(`/wiki/Special:WhatLinksHere/${encodedTitle}`),
-        relatedChanges: buildArticleHref(`/wiki/Special:RecentChangesLinked/${encodedTitle}`),
-        uploadFile: OFFLINE_PAGE_TOOLBAR_NOOP_URL,
-        permanentLink: buildArticleHref(`/wiki/${articleTitle}`),
-        pageInformation: buildArticleHref(`/w/index.php?title=${encodedTitle}&action=info`),
-        citePage: buildArticleHref(`/w/index.php?title=Special:CiteThisPage&page=${encodedTitle}`),
-        shortUrl: buildArticleHref(`/w/index.php?title=Special:UrlShortener&url=${encodedArticleUrl}`),
-        editInterlanguageLinks: wikidataSearchUrl.href,
-        downloadPdf: buildArticleHref(`/w/index.php?title=Special:DownloadAsPdf&page=${encodedTitle}&action=show-download-screen`),
-        printableVersion: buildArticleHref(`/w/index.php?title=${encodedTitle}&printable=yes`),
-        commons: buildOtherProjectHref('gravepedia.org', `/wiki/${articleTitle}`),
-        wikinews: buildOtherProjectHref('geni.com', `/`),
-        wikiquote: buildOtherProjectHref('en.wikiquote.org', `/wiki/${articleTitle}`),
-        wikisource: buildOtherProjectHref('en.wikisource.org', `/wiki/Author:${articleTitle}`),
-        wikidataItem: wikidataSearchUrl.href
-    };
-}
-
-function buildPageToolsMarkup(pageTitle) {
-    const pageToolLinks = buildPageToolLinks(pageTitle);
-
-    return `
-<div id="vector-page-tools" class="vector-page-tools vector-pinnable-element">
-    <div class="vector-pinnable-header vector-page-tools-pinnable-header vector-pinnable-header-unpinned">
-        <div class="vector-pinnable-header-label">Tools</div>
-        <div class="vector-pinnable-header-actions">
-            <button type="button" class="vector-pinnable-header-toggle-button vector-pinnable-header-pin-button" data-vector-action="pin-page-tools">move to sidebar</button>
-            <button type="button" class="vector-pinnable-header-toggle-button vector-pinnable-header-unpin-button" data-vector-action="hide-page-tools">hide</button>
-        </div>
-    </div>
-
-    <div id="p-cactions" class="vector-menu mw-portlet mw-portlet-cactions emptyPortlet vector-has-collapsible-items">
-        <div class="vector-menu-heading">Actions</div>
-        <div class="vector-menu-content">
-            <ul class="vector-menu-content-list">
-                <li id="ca-more-view" class="selected vector-more-collapsible-item mw-list-item"><a href="${pageToolLinks.articleUrl}"><span>Read</span></a></li>
-                <li id="ca-more-viewsource" class="vector-more-collapsible-item mw-list-item"><a href="${pageToolLinks.viewSource}"><span>View source</span></a></li>
-                <li id="ca-more-history" class="vector-more-collapsible-item mw-list-item"><a href="${pageToolLinks.viewHistory}"><span>View history</span></a></li>
-            </ul>
-        </div>
-    </div>
-
-    <div id="p-tb" class="vector-menu mw-portlet mw-portlet-tb">
-        <div class="vector-menu-heading">General</div>
-        <div class="vector-menu-content">
-            <ul class="vector-menu-content-list">
-                <li id="t-whatlinkshere" class="mw-list-item"><a href="${pageToolLinks.whatLinksHere}"><span>What links here</span></a></li>
-                
-                <li id="t-info" class="mw-list-item"><a href="${pageToolLinks.pageInformation}"><span>Page information</span></a></li>
-                <li id="t-urlshortener" class="mw-list-item"><a href="${pageToolLinks.shortUrl}"><span>Get shortened URL</span></a></li>
-                
-            </ul>
-        </div>
-    </div>
-
-    <div id="p-coll-print_export" class="vector-menu mw-portlet mw-portlet-coll-print_export">
-        <div class="vector-menu-heading">Print/export</div>
-        <div class="vector-menu-content">
-            <ul class="vector-menu-content-list">
-                <li id="coll-download-as-rl" class="mw-list-item"><a href="${pageToolLinks.downloadPdf}"><span>Download as PDF</span></a></li>
-            </ul>
-        </div>
-    </div>
-
-    <div id="p-wikibase-otherprojects" class="vector-menu mw-portlet mw-portlet-wikibase-otherprojects">
-        <div class="vector-menu-heading">In other projects</div>
-        <div class="vector-menu-content">
-            <ul class="vector-menu-content-list">
-                <li class="wb-otherproject-link wb-otherproject-commons mw-list-item"><a href="${pageToolLinks.commons}"><span>Gravepedia</span></a></li>
-                <li class="wb-otherproject-link wb-otherproject-geni mw-list-item"><a href="${pageToolLinks.wikinews}"><span>Geni.com</span></a></li>
-            </ul>
-        </div>
-    </div>
-</div>`;
-}
-
 class FullPageToolbar extends HTMLElement {
-    connectedCallback() {
-        if (this.__rendered) return;
-        this.__rendered = true;
+	static get observedAttributes() {
+		return ['title', 'page-title', 'edit-href', 'edit-text', 'variant'];
+	}
 
-        ensurePageToolbarStyles();
-        this.state = {
-            pageToolsPinned: readPageToolsPinnedPreference()
-        };
-        applyPageToolsPinnedState(this.state.pageToolsPinned);
-        this.render();
-        this.installPageToolsSidebarTarget();
-        this.cacheElements();
-        this.bindEvents();
-        this.movePageToolsPanel();
-    }
+	connectedCallback() {
+		if (this.__rendered) return;
+		this.__rendered = true;
+		this.innerHTML = FULL_PAGE_TOOLBAR_TEMPLATE;
+		this.#sync();
 
-    render() {
-        const rawPageTitle = this.getAttribute('page-title') || 'Person';
-        const pageTitle = escapePageToolbarHtml(rawPageTitle);
-        const pageToolsMarkup = buildPageToolsMarkup(rawPageTitle);
+		// Bind event handlers for menus (language, download, etc.)
+		this.__boundOnClick = this.#onLocalClick.bind(this);
+		this.__boundDocClick = this.#onDocumentClick.bind(this);
+		this.__boundKeyDown = this.#onKeyDown.bind(this);
+		this.addEventListener('click', this.__boundOnClick);
+		document.addEventListener('click', this.__boundDocClick);
+		document.addEventListener('keydown', this.__boundKeyDown);
+		this.__boundHashChange = this.#onHashChange?.bind(this);
+		if (this.__boundHashChange) window.addEventListener('hashchange', this.__boundHashChange);
+	}
 
-        this.innerHTML = `
-<div class="vector-page-toolbar-container">
-    <div class="vector-shell-page-inner vector-shell-page-toolbar-inner">
-        <div class="vector-page-titlebar">
-            <div class="vector-page-titlebar-start">
-                <div id="vector-page-titlebar-toc" class="vector-dropdown vector-page-titlebar-toc vector-button-flush-left" title="Table of Contents">
-                    <input type="checkbox" id="vector-page-titlebar-toc-checkbox" role="button" aria-haspopup="true" data-event-name="ui.dropdown-vector-page-titlebar-toc" class="vector-dropdown-checkbox" aria-label="Toggle the table of contents">
-                    <label id="vector-page-titlebar-toc-label" for="vector-page-titlebar-toc-checkbox" class="vector-dropdown-label cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet cdx-button--icon-only" aria-hidden="true">
-                        <i class="vector-icon bi bi-list-ul" aria-hidden="true"></i>
-                        <span class="vector-dropdown-label-text">Toggle the table of contents</span>
-                    </label>
-                    <div class="vector-dropdown-content">
-                        <div id="vector-page-titlebar-toc-unpinned-container" class="vector-unpinned-container"></div>
-                    </div>
-                </div>
-                <h1 id="firstHeading" class="firstHeading mw-first-heading">${pageTitle}</h1>
-            </div>
-            <div class="vector-page-titlebar-end"></div>
-        </div>
-        <div class="vector-page-toolbar">
-            <nav class="vector-page-toolbar-start" aria-label="Namespaces">
-                <ul class="vector-menu-content-list vector-page-toolbar-list">
-                    <li class="mw-list-item is-selected"><a href="#content"><span>Article</span></a></li>
-                    <li class="mw-list-item"><a href="#content"><span>Talk</span></a></li>
-                </ul>
-            </nav>
-            <div class="vector-page-toolbar-end">
-                <nav aria-label="Views">
-                    <ul class="vector-menu-content-list vector-page-toolbar-list vector-page-toolbar-list-end">
-                        <li class="mw-list-item is-selected"><a href="#content"><span>Read</span></a></li>
-                        <li class="mw-list-item"><a href="#content"><span>View source</span></a></li>
-                        <li class="mw-list-item"><a href="#content"><span>View history</span></a></li>
-                    </ul>
-                </nav>
-                <nav class="vector-page-tools-landmark" aria-label="Page tools">
-                    <div id="vector-page-tools-dropdown" class="vector-dropdown vector-page-tools-dropdown" title="Tools">
-                        <input type="checkbox" id="vector-page-tools-dropdown-checkbox" role="button" aria-haspopup="true" class="vector-dropdown-checkbox" aria-label="Tools">
-                        <label id="vector-page-tools-dropdown-label" for="vector-page-tools-dropdown-checkbox" class="vector-dropdown-label cdx-button cdx-button--fake-button cdx-button--fake-button--enabled cdx-button--weight-quiet" aria-hidden="true">
-                            <span class="vector-dropdown-label-text vector-dropdown-label-text-visible">Tools</span>
-                        </label>
-                        <div class="vector-dropdown-content">
-                            <div id="vector-page-tools-unpinned-container" class="vector-unpinned-container">${pageToolsMarkup}</div>
-                        </div>
-                    </div>
-                </nav>
-            </div>
-        </div>
-    </div>
-</div>`;
-    }
+	disconnectedCallback() {
+		if (this.__boundOnClick) {
+			this.removeEventListener('click', this.__boundOnClick);
+			this.__boundOnClick = null;
+		}
+		if (this.__boundDocClick) {
+			document.removeEventListener('click', this.__boundDocClick);
+			this.__boundDocClick = null;
+		}
+		if (this.__boundKeyDown) {
+			document.removeEventListener('keydown', this.__boundKeyDown);
+			this.__boundKeyDown = null;
+		}
+	}
 
-    installPageToolsSidebarTarget() {
-        let shell = document.querySelector('aside[data-genipedia-appearance-sidebar="true"]');
+		#onHashChange() {
+			// Update tab selection when location.hash changes for non-people pages
+			try {
+				this.#sync();
+			} catch (e) {
+				// non-fatal
+			}
+		}
 
-        if (!shell) {
-            shell = document.createElement('aside');
-            shell.className = 'vector-appearance-sidebar-shell';
-            shell.setAttribute('aria-label', 'Right sidebar');
-            shell.dataset.genipediaAppearanceSidebar = 'true';
-            document.body.appendChild(shell);
-        }
+	attributeChangedCallback() {
+		if (this.__rendered) {
+			this.#sync();
+		}
+	}
 
-        let appearancePinnedContainer = shell.querySelector('#vector-appearance-pinned-container');
-        if (!appearancePinnedContainer) {
-            appearancePinnedContainer = document.createElement('div');
-            appearancePinnedContainer.id = 'vector-appearance-pinned-container';
-            appearancePinnedContainer.className = 'vector-appearance-pinned-container';
-            shell.appendChild(appearancePinnedContainer);
-        }
+	#sync() {
+		const titleEl = this.querySelector('.people-page__title');
+		const titleAttr = this.getAttribute('title');
+		const legacyTitleAttr = this.getAttribute('page-title');
+		const rawTitle = titleAttr ?? legacyTitleAttr;
+		if (titleEl && (rawTitle !== null || !titleEl.textContent?.trim())) {
+			const next = (rawTitle ?? '').trim();
+			titleEl.textContent = next || 'Untitled';
+		}
 
-        let pageToolsPinnedContainer = shell.querySelector('#vector-page-tools-pinned-container');
-        if (!pageToolsPinnedContainer) {
-            pageToolsPinnedContainer = document.createElement('div');
-            pageToolsPinnedContainer.id = 'vector-page-tools-pinned-container';
-            pageToolsPinnedContainer.className = 'vector-page-tools-pinned-container';
-            shell.appendChild(pageToolsPinnedContainer);
-        } else if (appearancePinnedContainer.nextElementSibling !== pageToolsPinnedContainer) {
-            appearancePinnedContainer.insertAdjacentElement('afterend', pageToolsPinnedContainer);
-        }
+		const variant = (this.getAttribute('variant') || '').trim().toLowerCase();
+		const editHref = this.getAttribute('edit-href')?.trim() || '';
+		const editText = this.getAttribute('edit-text');
 
-        this.pageToolsSidebarHost = shell;
-        this.pinnedPageToolsContainer = pageToolsPinnedContainer;
-    }
+		const editButton = this.querySelector('.people-page__edit-button');
+		const editLabelEl = this.querySelector('.people-page__edit-label');
 
-    cacheElements() {
-        this.dropdownCheckboxes = [...this.querySelectorAll('.vector-dropdown-checkbox')];
-        this.pageToolsDropdownCheckbox = this.querySelector('#vector-page-tools-dropdown-checkbox');
-        this.pageToolsPanel = this.querySelector('#vector-page-tools');
-        this.unpinnedPageToolsContainer = this.querySelector('#vector-page-tools-unpinned-container');
-    }
+		// Normalize explicit `edit-text` for common lowercase usage, otherwise use as-provided.
+		let labelFromAttr = null;
+		if (editText !== null) {
+			const t = editText.trim();
+			labelFromAttr = (t.toLowerCase() === 'edit page') ? 'Edit Page' : t;
+		}
 
-    bindEvents() {
-        this.handleDocumentClick = (event) => {
-            if (!this.contains(event.target)) {
-                this.closeAllDropdowns();
-            }
-        };
+		// Determine label: explicit `edit-text` attr -> variant default
+		const defaultLabel = (labelFromAttr !== null)
+			? labelFromAttr
+			: (variant === 'people' ? 'Edit Profile' : 'Edit Page');
 
-        document.addEventListener('click', this.handleDocumentClick);
+		if (editLabelEl) {
+			editLabelEl.textContent = defaultLabel;
+		}
 
-        this.handleActionClick = (event) => {
-            const actionButton = event.target.closest('[data-vector-action]');
-            if (!actionButton) {
-                return;
-            }
+		if (editButton) {
+			const shouldShowEdit = variant === 'people' || Boolean(editHref);
+			editButton.hidden = !shouldShowEdit;
+			if (editHref) editButton.href = editHref;
+			// keep title in sync with label for accessibility
+			editButton.title = defaultLabel;
+		}
 
-            const isInsideToolbar = this.contains(actionButton);
-            const isInsidePageTools = this.pageToolsPanel?.contains(actionButton)
-                || this.pageToolsSidebarHost?.contains(actionButton);
+		// Tabs content: support a compact `page` variant with a single "Page" tab.
+		const tabsList = this.querySelector('.people-page__tab-list');
+		if (tabsList) {
+			if (variant === 'page') {
+				// Neutral page variant shows a 'Page' tab and the 'Changes' tab.
+				tabsList.innerHTML = String.raw`
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#page" data-tab="page" role="tab" aria-selected="false">
+							<i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+							<span>Page</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#changes" data-tab="changes" role="tab" aria-selected="false">
+							<i class="bi bi-clock-history" aria-hidden="true"></i>
+							<span>Changes</span>
+						</a>
+					</li>
+				`;
 
-            if (!isInsideToolbar && !isInsidePageTools) {
-                return;
-            }
+				// Select tab based on current hash (defaults to 'page')
+				try {
+					const currentHash = (window.location.hash || '').replace(/^#/, '');
+					const selectedTab = (currentHash === 'changes') ? 'changes' : 'page';
+					tabsList.querySelectorAll('.people-page__tab-link').forEach((link) => {
+						const isSelected = link.dataset.tab === selectedTab;
+						const tabItem = link.closest('.people-page__tab-item');
+						tabItem?.classList.toggle('is-selected', isSelected);
+						link.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+					});
+				} catch (e) {
+					// ignore selection errors
+				}
+			} else if (variant === 'people') {
+				// Restore or ensure the full people tabset exists if it was previously replaced.
+				if (!tabsList.querySelector('[data-tab="profile"]')) {
+					const defaultPeopleTabs = String.raw`
+					<li class="people-page__tab-item is-selected" role="presentation">
+						<a class="people-page__tab-link" href="#profile" data-tab="profile" role="tab" aria-selected="true">
+							<i class="bi bi-person" aria-hidden="true"></i>
+							<span>Profile</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#tree" data-tab="tree" role="tab" aria-selected="false">
+							<i class="bi bi-diagram-3" aria-hidden="true"></i>
+							<span>Tree</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#media" data-tab="media" role="tab" aria-selected="false">
+							<i class="bi bi-images" aria-hidden="true"></i>
+							<span>Media</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#talk" data-tab="talk" role="tab" aria-selected="false">
+							<i class="bi bi-chat-left-text" aria-hidden="true"></i>
+							<span>Talk</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#changes" data-tab="changes" role="tab" aria-selected="false">
+							<i class="bi bi-clock-history" aria-hidden="true"></i>
+							<span>Changes</span>
+						</a>
+					</li>
+					`;
+					tabsList.innerHTML = defaultPeopleTabs;
+				}
+			}
+		}
+	}
 
-            const action = actionButton.getAttribute('data-vector-action');
-            if (action === 'pin-page-tools') {
-                event.preventDefault();
-                this.state.pageToolsPinned = true;
-            } else if (action === 'hide-page-tools') {
-                event.preventDefault();
-                this.state.pageToolsPinned = false;
-            } else {
-                return;
-            }
+	// Event handling: toggle and close the menus inside the toolbar
+	#onLocalClick(event) {
+		const trigger = event.target.closest?.('.people-page__menu-trigger');
+		if (trigger && this.contains(trigger)) {
+			event.preventDefault?.();
+			this.#toggleMenu(trigger);
+			return;
+		}
 
-            this.commitState();
-            this.closeAllDropdowns();
-        };
+		const menuItem = event.target.closest?.('.people-page__dropdown a, .people-page__dropdown button');
+		if (menuItem && this.contains(menuItem)) {
+			const menu = menuItem.closest('.people-page__menu');
+			if (menu) this.#closeMenu(menu);
+		}
+	}
 
-        document.addEventListener('click', this.handleActionClick);
+	#toggleMenu(trigger) {
+		const menu = trigger.closest('.people-page__menu');
+		if (!menu) return;
+		if (menu.classList.contains('is-open')) {
+			this.#closeMenu(menu);
+		} else {
+			const open = this.querySelector('.people-page__menu.is-open');
+			if (open && open !== menu) this.#closeMenu(open);
+			this.#openMenu(menu);
+		}
+	}
 
-        this.handleResize = () => {
-            applyPageToolsPinnedState(this.state.pageToolsPinned);
-            this.movePageToolsPanel();
-        };
+	#openMenu(menu) {
+		const trigger = menu.querySelector('.people-page__menu-trigger');
+		const dropdown = menu.querySelector('.people-page__dropdown');
+		menu.classList.add('is-open');
+		if (dropdown) dropdown.removeAttribute('hidden');
+		if (trigger) trigger.setAttribute('aria-expanded', 'true');
+		this.__openMenu = menu;
+	}
 
-        window.addEventListener('resize', this.handleResize);
-    }
+	#closeMenu(menu) {
+		const trigger = menu.querySelector('.people-page__menu-trigger');
+		const dropdown = menu.querySelector('.people-page__dropdown');
+		menu.classList.remove('is-open');
+		if (dropdown) dropdown.setAttribute('hidden', '');
+		if (trigger) trigger.setAttribute('aria-expanded', 'false');
+		if (this.__openMenu === menu) this.__openMenu = null;
+	}
 
-    closeAllDropdowns() {
-        this.dropdownCheckboxes.forEach((checkbox) => {
-            checkbox.checked = false;
-        });
-    }
+	#onDocumentClick(event) {
+		if (!this.__openMenu) return;
+		if (event.target.closest?.('.people-page__menu')) return; // clicked inside a menu
+		this.#closeMenu(this.__openMenu);
+	}
 
-    syncPinnableHeader(panel, pinned) {
-        const header = panel?.querySelector('.vector-pinnable-header');
-        if (!header) {
-            return;
-        }
-
-        header.classList.toggle('vector-pinnable-header-pinned', pinned);
-        header.classList.toggle('vector-pinnable-header-unpinned', !pinned);
-    }
-
-    movePageToolsPanel() {
-        if (!this.pageToolsPanel) {
-            return;
-        }
-
-        const shouldPinToSidebar = shouldUsePersistentPageToolsSidebar();
-        const nextParent = shouldPinToSidebar
-            ? this.pinnedPageToolsContainer
-            : this.unpinnedPageToolsContainer;
-
-        if (nextParent && this.pageToolsPanel.parentElement !== nextParent) {
-            nextParent.appendChild(this.pageToolsPanel);
-        }
-
-        this.pageToolsPanel.classList.toggle('vector-page-tools--pinned', shouldPinToSidebar);
-        this.pageToolsPanel.classList.toggle('vector-page-tools--dropdown', !shouldPinToSidebar);
-        this.syncPinnableHeader(this.pageToolsPanel, shouldPinToSidebar);
-
-        if (this.pageToolsDropdownCheckbox) {
-            if (shouldPinToSidebar) {
-                this.pageToolsDropdownCheckbox.checked = false;
-            }
-            this.pageToolsDropdownCheckbox.disabled = shouldPinToSidebar;
-        }
-    }
-
-    commitState() {
-        persistPageToolsPinnedPreference(this.state.pageToolsPinned);
-        applyPageToolsPinnedState(this.state.pageToolsPinned);
-        this.movePageToolsPanel();
-    }
-
-    disconnectedCallback() {
-        if (this.handleDocumentClick) {
-            document.removeEventListener('click', this.handleDocumentClick);
-        }
-
-        if (this.handleActionClick) {
-            document.removeEventListener('click', this.handleActionClick);
-        }
-
-        if (this.handleResize) {
-            window.removeEventListener('resize', this.handleResize);
-        }
-    }
+	#onKeyDown(event) {
+		if (event.key === 'Escape' && this.__openMenu) {
+			this.#closeMenu(this.__openMenu);
+			const trigger = this.__openMenu?.querySelector('.people-page__menu-trigger');
+			if (trigger) trigger.focus();
+		}
+	}
 }
 
 if (!customElements.get('full-page-toolbar')) {
-    customElements.define('full-page-toolbar', FullPageToolbar);
+	customElements.define('full-page-toolbar', FullPageToolbar);
 }
+

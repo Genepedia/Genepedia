@@ -48,6 +48,109 @@
         "madiba",
         "rolihlahla"
       ]
+    },
+    {
+      "id": "16",
+      "title": "Gadla Henry Mphakanyiswa Mandela",
+      "description": "Thembu leader and father of Nelson Mandela.",
+      "aliases": [
+        "gadla mandela",
+        "mphakanyiswa mandela",
+        "gadla henry",
+        "gadla henry mphakanyiswa mandela"
+      ]
+    },
+    {
+      "id": "17",
+      "title": "Nosekeni Nonqaphi Fanny Mandela",
+      "description": "Mother of Nelson Mandela.",
+      "aliases": [
+        "nosekeni mandela",
+        "fanny mandela",
+        "nonqaphi mandela",
+        "nosekeni nonqaphi fanny mandela"
+      ]
+    },
+    {
+      "id": "18",
+      "title": "Mabel Notancu Timakwe",
+      "description": "Sister of Nelson Mandela.",
+      "aliases": [
+        "mabel timakwe",
+        "notancu timakwe",
+        "mabel notancu timakwe"
+      ]
+    },
+    {
+      "id": "19",
+      "title": "Constance Mbekeni Mandela",
+      "description": "Sister of Nelson Mandela.",
+      "aliases": [
+        "constance mandela",
+        "mbekeni mandela",
+        "constance mbekeni mandela"
+      ]
+    },
+    {
+      "id": "20",
+      "title": "Daligqili Mandela",
+      "description": "Half-brother of Nelson Mandela.",
+      "aliases": [
+        "daligqili",
+        "daligqili mandela"
+      ]
+    },
+    {
+      "id": "21",
+      "title": "Leabie Philiso Mandela",
+      "description": "Half-sibling of Nelson Mandela.",
+      "aliases": [
+        "leabie mandela",
+        "philiso mandela",
+        "leabie philiso mandela"
+      ]
+    },
+    {
+      "id": "22",
+      "title": "Nokuthamba Bhulehluthi",
+      "description": "Half-sister of Nelson Mandela.",
+      "aliases": [
+        "nokuthamba",
+        "bhulehluthi",
+        "nokuthamba bhulehluthi"
+      ]
+    },
+    {
+      "id": "23",
+      "title": "Graça Machel",
+      "description": "Mozambican humanitarian and the third wife of Nelson Mandela.",
+      "aliases": [
+        "graca machel",
+        "graça machel",
+        "mandela wife",
+        "graca mandela"
+      ]
+    },
+    {
+      "id": "24",
+      "title": "Evelyn Mase",
+      "description": "First wife of Nelson Mandela.",
+      "aliases": [
+        "evelyn mase",
+        "evelyn ntoko mase",
+        "evelyn mandela"
+      ]
+    },
+    {
+      "id": "25",
+      "title": "Winnie Madikizela-Mandela",
+      "description": "South African activist and second wife of Nelson Mandela.",
+      "aliases": [
+        "winnie mandela",
+        "madikizela",
+        "winnie madikizela",
+        "winnie madikizela-mandela"
+      ]
     }
   ]
 }
