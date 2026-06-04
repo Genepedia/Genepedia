@@ -9,321 +9,18 @@ const CONFIG = {
 	maxScale: 2.8,
 };
 
-/**
- * Data model:
- * - people: id -> { id, name, gender?: "M"|"F"|"U", birthSurname?, born?, died?, photoUrl? }
- * - unions: id -> { id, partners: [personId...], children: [personId...] }
- */
-function buildDemoData() {
-	// Base dataset (then expanded with parents/siblings/grandparents).
-	const people = [
-		{ id: "p100", name: "Robert Johnson", gender: "M", born: 1925, died: 1990 },
-		{ id: "p101", name: "Evelyn Johnson", birthSurname: "Carter", gender: "F", born: 1927, died: 2001 },
-		{ id: "p1", name: "Alex Johnson", gender: "M", born: 1950 },
-		{ id: "p2", name: "Morgan Johnson", birthSurname: "Lee", gender: "F", born: 1952 },
-		{ id: "p10", name: "Jamie Johnson", gender: "M", born: 1955 },
-		{ id: "p11", name: "Pat Johnson", gender: "M", born: 1960 },
-		{ id: "p13", name: "Leslie Nguyen", gender: "F", born: 1956 },
-		{ id: "p16", name: "Robin Smith", gender: "F", born: 1961 },
+const GEDCOM_DATA_URL = "./family-tree.ged";
 
-		{ id: "p3", name: "Casey Johnson", gender: "M", born: 1975 },
-		{ id: "p4", name: "Taylor Johnson", birthSurname: "Kim", gender: "F", born: 1976 },
-		{ id: "p5", name: "Jordan Johnson", gender: "M", born: 1978 },
-		{ id: "p6", name: "Riley Patel", gender: "F", born: 1980 },
-		{ id: "p12", name: "Cameron Johnson", gender: "M", born: 1981 },
-		{ id: "p19", name: "Bailey Chen", gender: "F", born: 1979 },
-		{ id: "p14", name: "Drew Johnson", gender: "M", born: 1982 },
-		{ id: "p21", name: "Parker Brooks", gender: "F", born: 1983 },
-		{ id: "p15", name: "Sky Johnson", gender: "F", born: 1985 },
-
-		{ id: "p7", name: "Avery Johnson", gender: "F", born: 2000 },
-		{ id: "p8", name: "Quinn Johnson", gender: "M", born: 2003 },
-		{ id: "p17", name: "Harper Johnson", gender: "F", born: 2007 },
-		{ id: "p9", name: "Sam Patel", gender: "F", born: 2005 },
-		{ id: "p18", name: "Rowan Patel", gender: "F", born: 2009 },
-		{ id: "p20", name: "Emerson Johnson", gender: "M", born: 2008 },
-		{ id: "p22", name: "Reese Brooks", gender: "F", born: 2010 },
-		{ id: "p23", name: "Sydney Thompson", gender: "M", born: 2001 },
-		{ id: "p24", name: "Noah Alexander Johnson", gender: "M", born: 2023 },
-		{ id: "p25", name: "Luna Rose Johnson", gender: "F", born: 2025 },
-		{ id: "p26", name: "Kai Rivera", gender: "F", born: 2002 },
-		{ id: "p27", name: "Milo Johnson-Rivera", gender: "M", born: 2024 },
-		{ id: "p28", name: "Aiden Brooks", gender: "M", born: 2004 },
-		{ id: "p29", name: "Sienna Patel", gender: "F", born: 2027 },
-		{ id: "p30", name: "Harper Elizabeth Patel", gender: "F", born: 2029 },
-		{ id: "p31", name: "Dana Johnson", gender: "F", born: 1958 },
-		{ id: "p32", name: "Christopher Benjamin Evans", gender: "M", born: 1957 },
-		{ id: "p33", name: "Logan Christopher Evans-Johnson", gender: "M", born: 1984 },
-		{ id: "p34", name: "Mia Isabella Evans", gender: "F", born: 1987 },
-		{ id: "p35", name: "Ethan Williams", gender: "M", born: 1986 },
-		{ id: "p36", name: "Sophie Williams", gender: "F", born: 2012 },
-		{ id: "p37", name: "Oliver Williams", gender: "M", born: 2014 },
-
-		{ id: "p38", name: "Sage Johnson", gender: "F", born: 2016 },
-		{ id: "p39", name: "River Johnson", gender: "M", born: 2018 },
-		{ id: "p40", name: "Charlie Johnson", gender: "M", born: 2020 },
-	];
-
-	const unions = [
-		{ id: "u0", partners: ["p100", "p101"], children: ["p1", "p10", "p11", "p31"] },
-		{ id: "u1", partners: ["p1", "p2"], children: ["p3", "p5", "p12"] },
-		{ id: "u4", partners: ["p10", "p13"], children: ["p14", "p15"] },
-		{ id: "u5", partners: ["p11", "p16"], children: ["p38", "p39", "p40"] },
-		{ id: "u2", partners: ["p3", "p4"], children: ["p7", "p8", "p17"] },
-		{ id: "u3", partners: ["p5", "p6"], children: ["p9", "p18"] },
-		{ id: "u6", partners: ["p12", "p19"], children: ["p20"] },
-		{ id: "u7", partners: ["p14", "p21"], children: ["p22"] },
-		{ id: "u8", partners: ["p7", "p23"], children: ["p24", "p25"] },
-		{ id: "u9", partners: ["p8", "p26"], children: ["p27"] },
-		{ id: "u10", partners: ["p9", "p28"], children: ["p29", "p30"] },
-		{ id: "u11", partners: ["p31", "p32"], children: ["p33", "p34"] },
-		{ id: "u12", partners: ["p34", "p35"], children: ["p36", "p37"] },
-	];
-
-	const peopleById = byId(people);
-	const unionsById = byId(unions);
-
-	const parentUnionByChild = new Map();
-	for (const union of unions) {
-		for (const childId of union.children ?? []) {
-			if (!parentUnionByChild.has(childId)) parentUnionByChild.set(childId, union.id);
-		}
+async function loadTreeData(url) {
+	const api = window.GenipediaGedcom;
+	if (!api || typeof api.loadTreeData !== "function") {
+		throw new Error(
+			"GenipediaGedcom library not loaded. Ensure ../lib/gedcom.js is included before tree-test-1/index.js.",
+		);
 	}
 
-	let nextPersonNum = 200;
-	let nextUnionNum = 100;
-
-	const MALE_FIRST = [
-		"William",
-		"James",
-		"George",
-		"Charles",
-		"Henry",
-		"Edward",
-		"Frank",
-		"Arthur",
-		"Albert",
-		"Samuel",
-		"Joseph",
-		"Walter",
-		"Thomas",
-		"John",
-		"Richard",
-		"Peter",
-		"David",
-		"Harold",
-		"Frederick",
-	];
-	const FEMALE_FIRST = [
-		"Mary",
-		"Elizabeth",
-		"Margaret",
-		"Anna",
-		"Florence",
-		"Rose",
-		"Dorothy",
-		"Ethel",
-		"Alice",
-		"Helen",
-		"Ruth",
-		"Mabel",
-		"Clara",
-		"Emma",
-		"Sarah",
-		"Catherine",
-		"Frances",
-		"Lillian",
-	];
-	const MAIDEN_SURNAMES = [
-		"Harris",
-		"Baker",
-		"Miller",
-		"Clark",
-		"Davis",
-		"Wilson",
-		"Moore",
-		"Taylor",
-		"Anderson",
-		"Thomas",
-		"White",
-		"Martin",
-		"Thompson",
-		"Young",
-		"Walker",
-		"Hall",
-		"Allen",
-		"King",
-	];
-
-	const pick = (arr, seed) => arr[Math.abs(seed) % arr.length];
-	const safeMaidenSurname = (familySurname, seed) => {
-		const first = pick(MAIDEN_SURNAMES, seed);
-		if (!familySurname) return first;
-		if (first.toLowerCase() !== familySurname.toLowerCase()) return first;
-		return pick(MAIDEN_SURNAMES, seed + 1);
-	};
-
-	const allocPersonId = () => {
-		while (peopleById.has(`p${nextPersonNum}`)) nextPersonNum += 1;
-		const id = `p${nextPersonNum}`;
-		nextPersonNum += 1;
-		return id;
-	};
-
-	const allocUnionId = () => {
-		while (unionsById.has(`u${nextUnionNum}`)) nextUnionNum += 1;
-		const id = `u${nextUnionNum}`;
-		nextUnionNum += 1;
-		return id;
-	};
-
-	const addPerson = (person) => {
-		if (!person || !person.id) return;
-		if (peopleById.has(person.id)) {
-			Object.assign(peopleById.get(person.id), person);
-			return;
-		}
-		people.push(person);
-		peopleById.set(person.id, person);
-	};
-
-	const addUnion = (union) => {
-		if (!union || !union.id) return;
-		if (unionsById.has(union.id)) {
-			Object.assign(unionsById.get(union.id), union);
-			return;
-		}
-		unions.push(union);
-		unionsById.set(union.id, union);
-		for (const childId of union.children ?? []) {
-			if (!parentUnionByChild.has(childId)) parentUnionByChild.set(childId, union.id);
-		}
-	};
-
-	const bornYear = (id) => {
-		const p = peopleById.get(id);
-		return typeof p?.born === "number" ? p.born : null;
-	};
-
-	const familySurnameFor = (person) => {
-		if (!person) return "";
-		const gender = normalizeGender(person.gender);
-		if (gender === "F" && typeof person.birthSurname === "string" && person.birthSurname.trim()) {
-			return person.birthSurname.trim();
-		}
-		return surnameFromName(person.name) || "";
-	};
-
-	const maybeDeathYear = (born, seed) => {
-		if (typeof born !== "number") return undefined;
-		if (born <= 1938) return born + 66 + (Math.abs(seed) % 22);
-		if (born <= 1958 && Math.abs(seed) % 3 === 0) return born + 60 + (Math.abs(seed) % 26);
-		return undefined;
-	};
-
-	const ensureParents = (personId, seed = 1) => {
-		if (parentUnionByChild.has(personId)) return parentUnionByChild.get(personId);
-		const person = peopleById.get(personId);
-		if (!person) return null;
-
-		const familySurname = familySurnameFor(person) || "Unknown";
-		const childBorn = typeof person.born === "number" ? person.born : null;
-		const fatherBorn = typeof childBorn === "number" ? childBorn - (28 + (Math.abs(seed) % 7)) : 1930;
-		const motherBorn = fatherBorn + 2;
-
-		const fatherId = allocPersonId();
-		const motherId = allocPersonId();
-		addPerson({
-			id: fatherId,
-			name: `${pick(MALE_FIRST, seed)} ${familySurname}`,
-			gender: "M",
-			born: fatherBorn,
-			died: maybeDeathYear(fatherBorn, seed + 11),
-		});
-		addPerson({
-			id: motherId,
-			name: `${pick(FEMALE_FIRST, seed + 3)} ${familySurname}`,
-			birthSurname: safeMaidenSurname(familySurname, seed + 17),
-			gender: "F",
-			born: motherBorn,
-			died: maybeDeathYear(motherBorn, seed + 19),
-		});
-
-		const siblingCount = 2;
-		const siblingIds = [];
-		for (let i = 0; i < siblingCount; i += 1) {
-			const sibId = allocPersonId();
-			const sibGender = i % 2 === 0 ? "F" : "M";
-			const first = sibGender === "M" ? pick(MALE_FIRST, seed + 40 + i) : pick(FEMALE_FIRST, seed + 40 + i);
-			const sibBorn = typeof childBorn === "number" ? childBorn + (-3 + i * 2) : undefined;
-			addPerson({
-				id: sibId,
-				name: `${first} ${familySurname}`,
-				gender: sibGender,
-				born: sibBorn,
-				died: maybeDeathYear(sibBorn, seed + 90 + i),
-			});
-			siblingIds.push(sibId);
-		}
-
-		const unionId = allocUnionId();
-		addUnion({ id: unionId, partners: [fatherId, motherId], children: [personId, ...siblingIds] });
-		parentUnionByChild.set(personId, unionId);
-		return unionId;
-	};
-
-	const ensureAncestors = (personId, generations = 2, seed = 1, stack = new Set()) => {
-		if (!personId || generations <= 0) return;
-		if (stack.has(personId)) return;
-		stack.add(personId);
-		const parentUnionId = ensureParents(personId, seed);
-		if (!parentUnionId) {
-			stack.delete(personId);
-			return;
-		}
-		if (generations <= 1) {
-			stack.delete(personId);
-			return;
-		}
-		const union = unionsById.get(parentUnionId);
-		for (let idx = 0; idx < (union?.partners?.length ?? 0); idx += 1) {
-			ensureAncestors(union.partners[idx], generations - 1, seed + 200 + idx * 17, stack);
-		}
-		stack.delete(personId);
-	};
-
-	// Ensure unions with a single child get at least one sibling.
-	const ensureUnionHasSibling = (unionId, seed) => {
-		const union = unionsById.get(unionId);
-		if (!union) return;
-		const children = union.children ?? [];
-		if (children.length >= 2) return;
-		const baseChildId = children[0];
-		const baseBorn = bornYear(baseChildId);
-		const baseSurname = surnameFromName(peopleById.get(baseChildId)?.name ?? "") || "";
-		const newId = allocPersonId();
-		const gender = Math.abs(seed) % 2 === 0 ? "F" : "M";
-		const first = gender === "M" ? pick(MALE_FIRST, seed) : pick(FEMALE_FIRST, seed);
-		const b = typeof baseBorn === "number" ? baseBorn + 2 : undefined;
-		addPerson({ id: newId, name: `${first} ${baseSurname}`.trim() || newId, gender, born: b, died: maybeDeathYear(b, seed) });
-		union.children = [...children, newId];
-		parentUnionByChild.set(newId, unionId);
-	};
-
-	ensureUnionHasSibling("u6", 601);
-	ensureUnionHasSibling("u7", 701);
-	ensureUnionHasSibling("u9", 901);
-
-	// Snapshot current people IDs, then ensure parents+grandparents for all of them.
-	const idsToEnsure = people.map((p) => p.id);
-	for (let i = 0; i < idsToEnsure.length; i += 1) {
-		ensureAncestors(idsToEnsure[i], 2, 1000 + i);
-	}
-
-	return { people, unions, rootUnionId: "u0" };
+	return api.loadTreeData(url);
 }
-
-const DATA = buildDemoData();
 
 function clamp(value, min, max) {
 	return Math.min(max, Math.max(min, value));
@@ -336,8 +33,8 @@ function byId(list) {
 }
 
 function formatDates(person) {
-	const born = typeof person.born === "number" ? String(person.born) : "";
-	const died = typeof person.died === "number" ? String(person.died) : "";
+	const born = person.birthDate || (typeof person.born === "number" ? String(person.born) : "");
+	const died = person.deathDate || (typeof person.died === "number" ? String(person.died) : "");
 	if (!born && !died) return "";
 	return `(${born} - ${died})`;
 }
@@ -396,7 +93,10 @@ function pickSingleUnionForPerson(personId, indexes, opts = {}) {
 	const excludeUnionId = opts.excludeUnionId;
 	const unionIds = indexes.unionsByPartner.get(personId) ?? [];
 
-	for (const id of unionIds) {
+	// If a person has multiple unions (e.g. multiple marriages), prefer the most
+	// recently-added union. This keeps spouse selection stable when re-rooting.
+	for (let i = unionIds.length - 1; i >= 0; i -= 1) {
+		const id = unionIds[i];
 		if (id !== excludeUnionId) return id;
 	}
 	return null;
@@ -404,26 +104,85 @@ function pickSingleUnionForPerson(personId, indexes, opts = {}) {
 
 function createLayoutEngine(data, indexes) {
 	const widthMemo = new Map();
+	const clusterMemo = new Map();
+
+	function getUnionCluster(primaryUnionId) {
+		if (clusterMemo.has(primaryUnionId)) return clusterMemo.get(primaryUnionId);
+		const primary = indexes.unionsById.get(primaryUnionId);
+		if (!primary) {
+			const empty = {
+				unionIds: [primaryUnionId],
+				partnerIds: [],
+				childIds: [],
+			};
+			clusterMemo.set(primaryUnionId, empty);
+			return empty;
+		}
+
+		// Cluster = primary union plus any unions for the primary union's partners.
+		// This is what enables multi-partner display (e.g. show all spouses for Leslie).
+		const unionIds = [];
+		const seenUnionIds = new Set();
+		const pushUnionId = (id) => {
+			if (!id || seenUnionIds.has(id)) return;
+			seenUnionIds.add(id);
+			unionIds.push(id);
+		};
+		pushUnionId(primaryUnionId);
+		for (const partnerId of primary.partners ?? []) {
+			const ids = indexes.unionsByPartner.get(partnerId) ?? [];
+			for (const id of ids) pushUnionId(id);
+		}
+
+		const partnerIds = [];
+		const seenPartnerIds = new Set();
+		const pushPartnerId = (id) => {
+			if (!id || seenPartnerIds.has(id)) return;
+			seenPartnerIds.add(id);
+			partnerIds.push(id);
+		};
+		for (const id of primary.partners ?? []) pushPartnerId(id);
+		for (const unionId of unionIds) {
+			const union = indexes.unionsById.get(unionId);
+			for (const id of union?.partners ?? []) pushPartnerId(id);
+		}
+
+		const childIds = [];
+		const seenChildIds = new Set();
+		const pushChildId = (id) => {
+			if (!id || seenChildIds.has(id)) return;
+			seenChildIds.add(id);
+			childIds.push(id);
+		};
+		for (const id of primary.children ?? []) pushChildId(id);
+		for (const unionId of unionIds) {
+			if (unionId === primaryUnionId) continue;
+			const union = indexes.unionsById.get(unionId);
+			for (const id of union?.children ?? []) pushChildId(id);
+		}
+
+		const cluster = { unionIds, partnerIds, childIds };
+		clusterMemo.set(primaryUnionId, cluster);
+		return cluster;
+	}
 
 	function measureUnion(unionId, stack = new Set()) {
 		if (widthMemo.has(unionId)) return widthMemo.get(unionId);
 		const union = indexes.unionsById.get(unionId);
 		if (!union) return CONFIG.nodeWidth;
+		const cluster = getUnionCluster(unionId);
+
+		const partnersWidth =
+			cluster.partnerIds.length * CONFIG.nodeWidth +
+			Math.max(0, cluster.partnerIds.length - 1) * CONFIG.partnerGap;
 
 		if (stack.has(unionId)) {
-			const partnersWidth =
-				union.partners.length * CONFIG.nodeWidth +
-				Math.max(0, union.partners.length - 1) * CONFIG.partnerGap;
 			return partnersWidth;
 		}
 
 		stack.add(unionId);
 
-		const partnersWidth =
-			union.partners.length * CONFIG.nodeWidth +
-			Math.max(0, union.partners.length - 1) * CONFIG.partnerGap;
-
-		const childIds = union.children ?? [];
+		const childIds = cluster.childIds;
 		const childGroups = childIds.map((childId) => {
 			const childUnionId = pickSingleUnionForPerson(childId, indexes);
 			if (childUnionId) {
@@ -440,7 +199,7 @@ function createLayoutEngine(data, indexes) {
 			childGroups.length === 0
 				? 0
 				: childGroups.reduce((sum, g) => sum + g.width, 0) +
-					Math.max(0, childGroups.length - 1) * CONFIG.siblingGap;
+				Math.max(0, childGroups.length - 1) * CONFIG.siblingGap;
 
 		const unionWidth = Math.max(partnersWidth, childrenWidth);
 		widthMemo.set(unionId, unionWidth);
@@ -460,6 +219,7 @@ function createLayoutEngine(data, indexes) {
 			if (stack.has(unionId)) return;
 			const union = indexes.unionsById.get(unionId);
 			if (!union) return;
+			const cluster = getUnionCluster(unionId);
 
 			stack.add(unionId);
 
@@ -468,25 +228,52 @@ function createLayoutEngine(data, indexes) {
 			const y = CONFIG.padding + depth * CONFIG.generationGap;
 
 			const partnersWidth =
-				union.partners.length * CONFIG.nodeWidth +
-				Math.max(0, union.partners.length - 1) * CONFIG.partnerGap;
+				cluster.partnerIds.length * CONFIG.nodeWidth +
+				Math.max(0, cluster.partnerIds.length - 1) * CONFIG.partnerGap;
 			const partnersLeft = centerX - partnersWidth / 2;
 
-			for (let idx = 0; idx < union.partners.length; idx += 1) {
-				const personId = union.partners[idx];
+			for (let idx = 0; idx < cluster.partnerIds.length; idx += 1) {
+				const personId = cluster.partnerIds[idx];
 				const x =
 					partnersLeft + idx * (CONFIG.nodeWidth + CONFIG.partnerGap) + CONFIG.nodeWidth / 2;
 				positions.people.set(personId, { x, y });
 			}
 
 			const unionLineY = y + CONFIG.nodeHeight / 2 + 18;
-			positions.unions.set(unionId, { x: centerX, y: unionLineY });
+			for (const clusterUnionId of cluster.unionIds) {
+				const u = indexes.unionsById.get(clusterUnionId);
+				if (!u) continue;
+				const partnerXs = (u.partners ?? [])
+					.filter((pid) => positions.people.has(pid))
+					.map((pid) => positions.people.get(pid).x);
+				if (partnerXs.length === 0) continue;
+				const minX = Math.min(...partnerXs);
+				const maxX = Math.max(...partnerXs);
+				positions.unions.set(clusterUnionId, { x: (minX + maxX) / 2, y: unionLineY });
+			}
 
-			const childIds = union.children ?? [];
+			const childIds = cluster.childIds;
 			if (childIds.length === 0) {
 				stack.delete(unionId);
 				return;
 			}
+
+			const childToParentUnionIds = new Map();
+			for (const clusterUnionId of cluster.unionIds) {
+				const u = indexes.unionsById.get(clusterUnionId);
+				if (!u) continue;
+				for (const childId of u.children ?? []) {
+					if (!childToParentUnionIds.has(childId)) childToParentUnionIds.set(childId, []);
+					childToParentUnionIds.get(childId).push(clusterUnionId);
+				}
+			}
+			const edgeKeys = new Set();
+			const pushEdge = (fromUnionId, toPersonId) => {
+				const key = `${fromUnionId}|${toPersonId}`;
+				if (edgeKeys.has(key)) return;
+				edgeKeys.add(key);
+				edges.push({ fromUnionId, toPersonId });
+			};
 
 			const childGroups = childIds.map((childId) => {
 				const childUnionId = pickSingleUnionForPerson(childId, indexes);
@@ -514,7 +301,10 @@ function createLayoutEngine(data, indexes) {
 					layoutUnion(group.id, cursorX, depth + 1, stack);
 				}
 
-				edges.push({ fromUnionId: unionId, toPersonId: group.childId });
+				const parentUnionIds = childToParentUnionIds.get(group.childId) ?? [];
+				for (const parentUnionId of parentUnionIds) {
+					pushEdge(parentUnionId, group.childId);
+				}
 				cursorX += group.width + CONFIG.siblingGap;
 			}
 
@@ -631,11 +421,34 @@ function render({
 		onSelect?.(selectedPersonId, opts);
 	}
 
+	const visiblePersonIds = new Set(positions.people.keys());
+
 	// Render nodes.
 	for (const [personId, pos] of positions.people.entries()) {
 		const person = peopleById.get(personId) ?? { id: personId, name: personId };
 		const gender = normalizeGender(person.gender);
 		const displayName = formatDisplayName(person) || personId;
+
+		const hiddenImmediateFamilyIds = (() => {
+			// "Immediate family" for the Tree button means: parents or siblings.
+			// The Tree button is only shown if at least one of those relatives is NOT
+			// currently visible in the viewport.
+			const ids = new Set();
+			const parentUnionIds = indexes.parentUnionsByChild.get(personId) ?? [];
+			for (const uid of parentUnionIds) {
+				const union = indexes.unionsById.get(uid);
+				if (!union) continue;
+				for (const pid of union.partners ?? []) {
+					if (pid) ids.add(pid);
+				}
+				for (const cid of union.children ?? []) {
+					if (cid && cid !== personId) ids.add(cid);
+				}
+			}
+
+			return [...ids].filter((id) => !visiblePersonIds.has(id));
+		})();
+		const hasImmediateFamilyToShow = hiddenImmediateFamilyIds.length > 0;
 
 		const node = el("div", "node");
 		node.dataset.personId = personId;
@@ -667,10 +480,27 @@ function render({
 		meta.textContent = datesText || " ";
 
 		const actions = el("div", "node__actions");
+
+		let treeAction = null;
+		if (hasImmediateFamilyToShow) {
+			treeAction = document.createElement("button");
+			treeAction.type = "button";
+			treeAction.className = "icon-button node__tree-action";
+			treeAction.setAttribute("aria-label", "Open tree");
+			treeAction.setAttribute("data-tooltip", "Tree");
+			treeAction.appendChild(createBiIcon("diagram-3"));
+			treeAction.addEventListener("click", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				onTree?.({ personId });
+			});
+		}
+
 		const editAction = document.createElement("button");
 		editAction.type = "button";
 		editAction.className = "icon-button";
 		editAction.setAttribute("aria-label", "Edit person");
+		editAction.setAttribute("data-tooltip", "Edit");
 		editAction.appendChild(createBiIcon("pencil"));
 		editAction.addEventListener("click", (e) => {
 			e.preventDefault();
@@ -683,6 +513,7 @@ function render({
 		addAction.type = "button";
 		addAction.className = "icon-button";
 		addAction.setAttribute("aria-label", "Add relative");
+		addAction.setAttribute("data-tooltip", "Add");
 		addAction.appendChild(createBiIcon("plus-lg"));
 		addAction.addEventListener("click", (e) => {
 			e.preventDefault();
@@ -691,18 +522,9 @@ function render({
 			onAdd?.({ personId, anchorEl: addAction });
 		});
 
-		const treeAction = document.createElement("button");
-		treeAction.type = "button";
-		treeAction.className = "icon-button";
-		treeAction.setAttribute("aria-label", "Open tree");
-		treeAction.appendChild(createBiIcon("diagram-3"));
-		treeAction.addEventListener("click", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			onTree?.({ personId });
-		});
-
-		actions.append(editAction, addAction, treeAction);
+		// Order: Tree, Edit, Add (Tree omitted if nothing new to show)
+		if (treeAction) actions.append(treeAction);
+		actions.append(editAction, addAction);
 
 		content.append(name, meta);
 		node.append(avatar, content, actions);
@@ -765,11 +587,14 @@ function render({
 	return { setSelected, getContentBbox: () => contentBbox };
 }
 
-function createPanZoom({ viewport, scene }) {
+function createPanZoom({ viewport, scene, onChange }) {
 	const state = { x: 0, y: 0, scale: 1 };
+	const DRAG_THRESHOLD_PX = 6;
+	const dragThresholdSq = DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX;
 
 	function apply() {
 		scene.style.transform = `translate(${state.x}px, ${state.y}px) scale(${state.scale})`;
+		onChange?.({ ...state });
 	}
 
 	function setTransform(next) {
@@ -796,11 +621,15 @@ function createPanZoom({ viewport, scene }) {
 
 	let isPanning = false;
 	let panStart = null;
+	let panMoved = false;
+	let suppressNextClick = false;
 
 	viewport.addEventListener("pointerdown", (e) => {
 		if (e.button !== 0) return;
 		if (e.target && e.target.closest && e.target.closest(".node")) return;
+		suppressNextClick = false;
 		isPanning = true;
+		panMoved = false;
 		panStart = { x: e.clientX, y: e.clientY, startX: state.x, startY: state.y };
 		viewport.setPointerCapture(e.pointerId);
 	});
@@ -809,12 +638,27 @@ function createPanZoom({ viewport, scene }) {
 		if (!isPanning || !panStart) return;
 		const dx = e.clientX - panStart.x;
 		const dy = e.clientY - panStart.y;
+
+		if (!panMoved) {
+			const distSq = dx * dx + dy * dy;
+			if (distSq < dragThresholdSq) return;
+			panMoved = true;
+		}
+
 		setTransform({ x: panStart.startX + dx, y: panStart.startY + dy, scale: state.scale });
 	});
 
 	viewport.addEventListener("pointerup", () => {
+		if (isPanning && panMoved) suppressNextClick = true;
 		isPanning = false;
 		panStart = null;
+		panMoved = false;
+	});
+
+	viewport.addEventListener("pointercancel", () => {
+		isPanning = false;
+		panStart = null;
+		panMoved = false;
 	});
 
 	viewport.addEventListener(
@@ -829,6 +673,11 @@ function createPanZoom({ viewport, scene }) {
 
 	apply();
 	return {
+		consumeClickSuppression: () => {
+			const value = suppressNextClick;
+			suppressNextClick = false;
+			return value;
+		},
 		get: () => ({ ...state }),
 		set: (next) => setTransform(next),
 		zoomIn: () => {
@@ -906,16 +755,16 @@ function buildExportSvg({ data, indexes, layoutResult }) {
 	);
 	parts.push(
 		"<style><![CDATA[" +
-			`.link{stroke:#000;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.45}` +
-			`.node-rect{stroke:#666}` +
-			`.node-rect--M{fill:#e8f1ff}` +
-			`.node-rect--F{fill:#ffe8f3}` +
-			`.node-rect--U{fill:#f2f2f2}` +
-			`.avatar-divider{stroke:#666}` +
-			`.avatar-text{font:700 16px ${fontFamily};fill:#000;opacity:.85}` +
-			`.node-name{font:650 14px ${fontFamily};fill:#000}` +
-			`.node-meta{font:12px ${fontFamily};fill:#000;opacity:.75}` +
-			"]]></style>",
+		`.link{stroke:#000;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.45}` +
+		`.node-rect{stroke:#666}` +
+		`.node-rect--M{fill:#e8f1ff}` +
+		`.node-rect--F{fill:#ffe8f3}` +
+		`.node-rect--U{fill:#f2f2f2}` +
+		`.avatar-divider{stroke:#666}` +
+		`.avatar-text{font:700 16px ${fontFamily};fill:#000;opacity:.85}` +
+		`.node-name{font:650 14px ${fontFamily};fill:#000}` +
+		`.node-meta{font:12px ${fontFamily};fill:#000;opacity:.75}` +
+		"]]></style>",
 	);
 	parts.push('<rect width="100%" height="100%" fill="#fff"/>');
 
@@ -1025,7 +874,7 @@ async function svgToPngBlob({ svg, width, height, scale = 2 }) {
 	}
 }
 
-function main() {
+async function main() {
 	const mainLayout = document.getElementById("mainLayout");
 	const viewport = document.getElementById("viewport");
 	const scene = document.getElementById("scene");
@@ -1042,22 +891,71 @@ function main() {
 	if (!viewport || !scene || !svg || !nodesRoot) return;
 	if (relationMenu) relationMenu.classList.add("menu--hidden");
 
-	const indexes = buildIndexes(DATA);
-	const engine = createLayoutEngine(DATA, indexes);
-	let currentRootUnionId = DATA.rootUnionId;
+	let data = await loadTreeData(GEDCOM_DATA_URL);
+	let indexes = buildIndexes(data);
+	let engine = createLayoutEngine(data, indexes);
+	let currentRootUnionId = data.rootUnionId;
 	let layoutResult = null;
 	let rendered = null;
 	let contentBbox = null;
 	let defaultTransform = null;
-	const panZoom = createPanZoom({ viewport, scene });
 
-	viewport.addEventListener("click", () => rendered?.setSelected(null, { source: "viewport" }));
+	const treePeopleStats = document.getElementById("treePeopleStats");
+	let statsRaf = 0;
+	let statsTimer = 0;
+	const updateTreeStatsNow = () => {
+		if (!treePeopleStats) return;
+		const total = data?.people?.length ?? 0;
+		const viewportRect = viewport.getBoundingClientRect();
+		let onScreen = 0;
+		for (const node of nodesRoot.querySelectorAll(".node")) {
+			const r = node.getBoundingClientRect();
+			const intersects =
+				r.right > viewportRect.left &&
+				r.left < viewportRect.right &&
+				r.bottom > viewportRect.top &&
+				r.top < viewportRect.bottom;
+			if (intersects) onScreen += 1;
+		}
+		treePeopleStats.textContent = `People: ${total} total • ${onScreen} on screen`;
+	};
+	const scheduleTreeStatsUpdate = () => {
+		if (!treePeopleStats) return;
+		if (statsRaf || statsTimer) return;
+
+		statsTimer = window.setTimeout(() => {
+			statsTimer = 0;
+			if (statsRaf) {
+				cancelAnimationFrame(statsRaf);
+				statsRaf = 0;
+			}
+			updateTreeStatsNow();
+		}, 120);
+
+		statsRaf = requestAnimationFrame(() => {
+			if (statsTimer) {
+				clearTimeout(statsTimer);
+				statsTimer = 0;
+			}
+			statsRaf = 0;
+			updateTreeStatsNow();
+		});
+	};
+
+	const panZoom = createPanZoom({ viewport, scene, onChange: scheduleTreeStatsUpdate });
+
+	viewport.addEventListener("click", () => {
+		if (panZoom.consumeClickSuppression?.()) return;
+		rendered?.setSelected(null, { source: "viewport" });
+	});
 
 	const personById = (id) => indexes.peopleById.get(id) ?? { id, name: id, gender: "U" };
-	const genderLabel = (gender) => {
-		const g = normalizeGender(gender);
-		if (g === "M") return "Male";
-		if (g === "F") return "Female";
+	const sexLabel = (sex) => {
+		const s = String(sex ?? "U").toUpperCase();
+		if (s === "M") return "Male";
+		if (s === "F") return "Female";
+		if (s === "X") return "Intersex";
+		if (s === "N") return "Not recorded";
 		return "Unknown";
 	};
 
@@ -1339,7 +1237,7 @@ function main() {
 		const headerName = el("div", "sidebar__name");
 		headerName.textContent = formatDisplayName(person) || personId;
 		const subtitle = el("div", "sidebar__subtitle");
-		subtitle.textContent = `${genderLabel(gender)}${datesText ? ` • ${datesText}` : ""} • ${person.id}`;
+		subtitle.textContent = `${sexLabel(person.sex ?? gender)}${datesText ? ` • ${datesText}` : ""} • ${person.id}`;
 		topInfo.append(headerName, subtitle);
 		top.append(createSidebarAvatar(person), topInfo);
 		sidebarContent.append(top);
@@ -1356,9 +1254,11 @@ function main() {
 			v.textContent = value;
 			details.append(l, v);
 		};
-		addDetail("Birth:", typeof person.born === "number" ? String(person.born) : "—");
-		addDetail("Death:", typeof person.died === "number" ? String(person.died) : "—");
-		addDetail("Gender:", genderLabel(gender));
+		addDetail("Birth:", person.birthDate || (typeof person.born === "number" ? String(person.born) : "-"));
+		addDetail("Birth place:", person.birthPlace || "-");
+		addDetail("Death:", person.deathDate || (typeof person.died === "number" ? String(person.died) : "-"));
+		addDetail("Death place:", person.deathPlace || "-");
+		addDetail("Sex:", sexLabel(person.sex ?? gender));
 		if (typeof person.birthSurname === "string" && person.birthSurname.trim()) {
 			addDetail("Birth surname:", person.birthSurname.trim());
 		}
@@ -1430,14 +1330,8 @@ function main() {
 		const vh = viewport.clientHeight;
 		if (vw <= 0 || vh <= 0) return;
 
-		const pad = 90;
-		const maxScaleX = (vw - pad * 2) / CONFIG.nodeWidth;
-		const maxScaleY = (vh - pad * 2) / CONFIG.nodeHeight;
-		const maxScaleForNode = Math.max(CONFIG.minScale, Math.min(maxScaleX, maxScaleY, CONFIG.maxScale));
-
 		const current = panZoom.get();
-		const desired = Math.max(current.scale, 1.5);
-		const scale = clamp(Math.min(desired, maxScaleForNode), CONFIG.minScale, CONFIG.maxScale);
+		const scale = clamp(current.scale, CONFIG.minScale, CONFIG.maxScale);
 		const x = vw / 2 - pos.x * scale;
 		const y = vh / 2 - pos.y * scale;
 		panZoom.set({ x, y, scale });
@@ -1461,9 +1355,10 @@ function main() {
 
 	const renderTree = (opts = {}) => {
 		closeTreeSearch();
+		const prevTransform = panZoom.get();
 		layoutResult = engine.layout(currentRootUnionId);
 		rendered = render({
-			data: DATA,
+			data,
 			indexes,
 			layoutResult,
 			viewport,
@@ -1490,18 +1385,37 @@ function main() {
 
 		contentBbox = rendered.getContentBbox();
 		defaultTransform = fitToTransform({ viewport, contentBbox, padding: 36 });
-		panZoom.set(defaultTransform);
+
+		const transformMode = opts.transformMode ?? "fit";
+		if (transformMode === "fit") {
+			panZoom.set(defaultTransform);
+		} else {
+			const vw = viewport.clientWidth;
+			const vh = viewport.clientHeight;
+			const scale = clamp(prevTransform.scale, CONFIG.minScale, CONFIG.maxScale);
+			let x = prevTransform.x;
+			let y = prevTransform.y;
+			const focusId = opts.selectPersonId;
+			const pos = focusId ? layoutResult?.positions?.people?.get(focusId) : null;
+			if (pos && vw > 0 && vh > 0) {
+				x = vw / 2 - pos.x * scale;
+				y = vh / 2 - pos.y * scale;
+			}
+			panZoom.set({ x, y, scale });
+		}
 
 		if (opts.selectPersonId) {
 			rendered.setSelected(opts.selectPersonId, { source: opts.source ?? "tree" });
 		}
+
+		updateTreeStatsNow();
 	};
 
 	function openTreeForPerson(personId) {
 		if (!personId) return;
 		closeRelationMenu();
 		currentRootUnionId = getPreferredRootUnionIdForPerson(personId);
-		renderTree({ selectPersonId: personId, source: "tree" });
+		renderTree({ selectPersonId: personId, source: "tree", transformMode: "pan" });
 	}
 
 	renderTree();
@@ -1514,6 +1428,8 @@ function main() {
 
 	const fitBtn = document.getElementById("fitBtn");
 	const resetBtn = document.getElementById("resetBtn");
+	const importGedcomBtn = document.getElementById("importGedcomBtn");
+	const gedcomFileInput = document.getElementById("gedcomFileInput");
 	const downloadSvgBtn = document.getElementById("downloadSvgBtn");
 	const downloadPngBtn = document.getElementById("downloadPngBtn");
 	const zoomInBtn = document.getElementById("zoomInBtn");
@@ -1530,15 +1446,61 @@ function main() {
 		if (!defaultTransform) return;
 		panZoom.set(defaultTransform);
 	});
+
+	importGedcomBtn?.addEventListener("click", () => {
+		gedcomFileInput?.click();
+	});
+
+	gedcomFileInput?.addEventListener("change", async () => {
+		const file = gedcomFileInput.files?.[0] ?? null;
+		gedcomFileInput.value = "";
+		if (!file) return;
+
+		const api = window.GenipediaGedcom;
+		if (!api || typeof api.parseGedcom555FromBytes !== "function") {
+			console.error(
+				"GenipediaGedcom library not loaded. Ensure ../lib/gedcom.js is included before tree-test-1/index.js.",
+			);
+			return;
+		}
+
+		try {
+			if (importGedcomBtn) importGedcomBtn.disabled = true;
+			const buf = await file.arrayBuffer();
+			const gedcom = api.parseGedcom555FromBytes(buf);
+			const nextData = api.gedcomToTreeData(gedcom);
+
+			data = nextData;
+			indexes = buildIndexes(data);
+			engine = createLayoutEngine(data, indexes);
+			currentRootUnionId = data.rootUnionId;
+			layoutResult = null;
+			rendered = null;
+			contentBbox = null;
+			defaultTransform = null;
+			selectedPersonId = null;
+
+			closeRelationMenu();
+			closeTreeSearch();
+			if (treeSearchInput) treeSearchInput.value = "";
+			updateSidebar(null);
+			renderTree({ transformMode: "fit" });
+			viewport?.focus();
+		} catch (err) {
+			console.error(err);
+		} finally {
+			if (importGedcomBtn) importGedcomBtn.disabled = false;
+		}
+	});
 	downloadSvgBtn?.addEventListener("click", () => {
 		if (!layoutResult) return;
-		const { svg: exportSvg } = buildExportSvg({ data: DATA, indexes, layoutResult });
+		const { svg: exportSvg } = buildExportSvg({ data, indexes, layoutResult });
 		downloadBlob("family-tree.svg", new Blob([exportSvg], { type: "image/svg+xml;charset=utf-8" }));
 	});
 	downloadPngBtn?.addEventListener("click", async () => {
 		try {
 			if (!layoutResult) return;
-			const exported = buildExportSvg({ data: DATA, indexes, layoutResult });
+			const exported = buildExportSvg({ data, indexes, layoutResult });
 			const pngBlob = await svgToPngBlob({
 				svg: exported.svg,
 				width: exported.width,
@@ -1584,8 +1546,19 @@ function main() {
 		const wasAtDefault = isTransformNear(current, defaultTransform);
 		defaultTransform = fitToTransform({ viewport, contentBbox, padding: 36 });
 		if (wasAtDefault) panZoom.set(defaultTransform);
+		updateTreeStatsNow();
 	});
 	resizeObserver.observe(viewport);
 }
 
-main();
+main().catch((err) => {
+	console.error(err);
+	const nodesRoot = document.getElementById("nodes");
+	if (nodesRoot) {
+		const message = el("div", "node");
+		message.style.left = "180px";
+		message.style.top = "120px";
+		message.textContent = err instanceof Error ? err.message : "Unable to load GEDCOM data.";
+		nodesRoot.replaceChildren(message);
+	}
+});

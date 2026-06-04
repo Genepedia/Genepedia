@@ -350,12 +350,13 @@ full-page-toolbar .people-page__dropdown i {
 }
 
 /* Simple variant hides tabs/actions and uses a title underline instead. */
-/* Allow pages to force-show the tabs with the show-tabs attribute or by using variant="page". */
-full-page-toolbar:not([variant="people"]):not([variant="page"]):not([show-tabs]) .people-page__tabs-row {
+/* Allow pages to force-show the tabs with the show-tabs attribute or by using variant="page" or variant="notifications". */
+full-page-toolbar:not([variant="people"]):not([variant="page"]):not([variant="notifications"]):not([show-tabs]) .people-page__tabs-row {
 	display: none;
 }
 
-full-page-toolbar:not([variant="people"]):not([variant="page"]) .people-page__title-row {
+/* For simple variants (not people/page/notifications) underline the title row. */
+full-page-toolbar:not([variant="people"]):not([variant="page"]):not([variant="notifications"]) .people-page__title-row {
 	border-bottom: 1px solid var(--page-toolbar-border);
 }
 </style>
@@ -648,6 +649,50 @@ class FullPageToolbar extends HTMLElement {
 				try {
 					const currentHash = (window.location.hash || '').replace(/^#/, '');
 					const selectedTab = (currentHash === 'changes') ? 'changes' : 'page';
+					tabsList.querySelectorAll('.people-page__tab-link').forEach((link) => {
+						const isSelected = link.dataset.tab === selectedTab;
+						const tabItem = link.closest('.people-page__tab-item');
+						tabItem?.classList.toggle('is-selected', isSelected);
+						link.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+					});
+				} catch (e) {
+					// ignore selection errors
+				}
+			} else if (variant === 'notifications') {
+				// Notifications variant: messages, mentions, matches, edit requests
+				const notifTabs = String.raw`
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#messages" data-tab="messages" role="tab" aria-selected="false">
+							<i class="bi bi-envelope" aria-hidden="true"></i>
+							<span>Messages</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#mentions" data-tab="mentions" role="tab" aria-selected="false">
+							<i class="bi bi-at" aria-hidden="true"></i>
+							<span>Mentions</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#matches" data-tab="matches" role="tab" aria-selected="false">
+							<i class="bi bi-people" aria-hidden="true"></i>
+							<span>Matches</span>
+						</a>
+					</li>
+					<li class="people-page__tab-item" role="presentation">
+						<a class="people-page__tab-link" href="#edits" data-tab="edits" role="tab" aria-selected="false">
+							<i class="bi bi-pencil-square" aria-hidden="true"></i>
+							<span>Edit Requests</span>
+						</a>
+					</li>
+				`;
+				tabsList.innerHTML = notifTabs;
+
+				// Select tab based on current hash (defaults to 'messages')
+				try {
+					const currentHash = (window.location.hash || '').replace(/^#/, '');
+					const allowed = ['messages', 'mentions', 'matches', 'edits'];
+					const selectedTab = allowed.includes(currentHash) ? currentHash : 'messages';
 					tabsList.querySelectorAll('.people-page__tab-link').forEach((link) => {
 						const isSelected = link.dataset.tab === selectedTab;
 						const tabItem = link.closest('.people-page__tab-item');

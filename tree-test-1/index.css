@@ -13,6 +13,7 @@
     --gender-male-bg: color-mix(in srgb, Canvas 88%, #0d6efd 12%);
     --gender-female-bg: color-mix(in srgb, Canvas 88%, #d63384 12%);
     --gender-unknown-bg: color-mix(in srgb, Canvas 92%, GrayText 8%);
+
 }
 
 * {
@@ -80,6 +81,13 @@ body {
 .toolbar__right {
     display: flex;
     gap: 8px;
+}
+
+.toolbar__stats {
+    font-size: 12px;
+    opacity: 0.75;
+    white-space: nowrap;
+    align-self: center;
 }
 
 .tree-search {
@@ -180,9 +188,10 @@ button {
     width: 32px;
     height: 32px;
     padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-grid;
+    place-items: center;
+    box-sizing: border-box;
+    font-size: 0;
 }
 
 .icon-button svg {
@@ -193,12 +202,26 @@ button {
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
+    display: block;
 }
 
 .icon-button i {
+    width: 16px;
+    height: 16px;
+    display: grid;
+    place-items: center;
     font-size: 16px;
     line-height: 1;
+    margin: 0;
+    padding: 0;
+    font-style: normal;
 }
+
+.icon-button i::before {
+    display: block;
+    line-height: 1;
+}
+
 
 button:disabled {
     opacity: 0.55;
@@ -208,6 +231,37 @@ button:disabled {
 button:focus-visible {
     outline: 2px solid Highlight;
     outline-offset: 2px;
+}
+
+/* Tooltip for buttons with data-tooltip */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 1;
+    white-space: nowrap;
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid GrayText;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    z-index: 10;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
 }
 
 .viewport {
@@ -258,14 +312,16 @@ button:focus-visible {
     width: var(--node-w);
     height: var(--node-h);
     transform: translate(-50%, -50%);
-    display: flex;
-    align-items: stretch;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 1fr auto;
+    column-gap: var(--node-ui-gap);
+    row-gap: var(--node-ui-gap);
     border: 1px solid GrayText;
     border-radius: 0;
     background: var(--gender-unknown-bg);
     color: CanvasText;
-    padding: 0;
+    padding: var(--node-ui-gap);
     user-select: none;
     cursor: pointer;
     min-width: 0;
@@ -284,15 +340,17 @@ button:focus-visible {
 }
 
 .node__avatar {
-    width: calc(var(--node-h) - (var(--node-ui-gap) * 2));
-    height: calc(var(--node-h) - (var(--node-ui-gap) * 2));
-    flex: 0 0 calc(var(--node-h) - (var(--node-ui-gap) * 2));
-    margin: var(--node-ui-gap) 0 var(--node-ui-gap) var(--node-ui-gap);
+    width: auto;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    grid-column: 1;
+    grid-row: 1 / -1;
     border: 1px solid GrayText;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .node__avatar img {
@@ -305,21 +363,28 @@ button:focus-visible {
 .node__avatar-icon {
     font-size: 44px;
     opacity: 0.55;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: 0;
+    line-height: 1;
 }
 
 .node__content {
     min-width: 0;
-    flex: 1 1 auto;
-    padding: 8px 44px 28px 0;
+    grid-column: 2;
+    grid-row: 1;
+    padding: 0;
 }
 
 .node__actions {
-    position: absolute;
-    right: var(--node-ui-gap);
-    bottom: var(--node-ui-gap);
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
     display: flex;
     gap: var(--node-ui-gap);
-    flex: 0 0 auto;
 }
 
 .node__actions .icon-button {

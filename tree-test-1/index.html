@@ -25,6 +25,9 @@
                     <div id="treeSearchResults" class="tree-search__results tree-search__results--hidden" role="listbox"
                         aria-label="Search results"></div>
                 </div>
+                <div id="treePeopleStats" class="toolbar__stats" aria-live="polite"></div>
+                <button id="importGedcomBtn" type="button">Import GEDCOM</button>
+                <input id="gedcomFileInput" type="file" accept=".ged,.gedcom,text/plain" hidden />
                 <button id="fitBtn" type="button">Fit</button>
                 <button id="resetBtn" type="button">Reset</button>
                 <button id="downloadSvgBtn" type="button" aria-label="Download SVG">SVG</button>
@@ -57,6 +60,7 @@
 
     <div id="relationMenu" class="menu menu--hidden" role="menu" aria-label="Add relative menu"></div>
 
+    <script src="../lib/gedcom.js"></script>
     <script type="module" src="./index.js"></script>
 </body>
 

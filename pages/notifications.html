@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Notifications - Genipedia</title>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
+	<link rel="stylesheet" href="../lib/common.css">
+	<script defer src="../components/mini-header.js"></script>
+	<script defer src="../components/full-header.js"></script>
+	<script defer src="../components/full-page-toolbar.js"></script>
+	<script defer src="../lib/notifications.js"></script>
+	<script defer src="../components/full-footer.js"></script>
+	<style>
+		.notifications-page__intro { max-width: 48rem; margin-bottom: 1rem; }
+		.notifications-list { display: flex; flex-direction: column; gap: 0.5rem; }
+		.notification-item { display:flex; gap:0.75rem; align-items:flex-start; padding:0.6rem; border-radius:6px; background:var(--color-surface); box-shadow:var(--elev-0); }
+		.notification-item__icon { color:var(--color-primary); min-width:1.5rem; }
+		.notification-item__text { font-size:0.95rem; }
+		.notification-item__meta { color:var(--color-subtle); font-size:0.85rem; margin-top:0.25rem; }
+	</style>
+</head>
+
+<body>
+	<full-header></full-header>
+	<article>
+		<full-page-toolbar variant="notifications" title="Notifications"></full-page-toolbar>
+		<main class="main-content notifications-page">
+			<p class="notifications-page__intro">All of your active notifications are listed below. Click any item to view details.</p>
+
+			<section id="notifications-list" aria-live="polite"></section>
+		</main>
+		<full-footer></full-footer>
+	</article>
+	<script defer src="../index.js"></script>
+</body>
+
+</html>
