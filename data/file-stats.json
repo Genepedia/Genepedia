@@ -1,61 +1,415 @@
 [
-  {"path":"people/2/profile.html","size":822,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/2/data/profile.html","size":1448,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/2/data/tree.html","size":69,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/2/data/talk.html","size":67,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/2/data/changes.html","size":367,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/2/data/media.html","size":70,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/15/profile.html","size":818,"last_commit":"679a431832914790d565b1452f06a985a503e322","last_date":"2026-05-28T01:24:30+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/15/data/profile.html","size":13243,"last_commit":"679a431832914790d565b1452f06a985a503e322","last_date":"2026-05-28T01:24:30+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/15/data/tree.html","size":69,"last_commit":"679a431832914790d565b1452f06a985a503e322","last_date":"2026-05-28T01:24:30+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/15/data/talk.html","size":67,"last_commit":"679a431832914790d565b1452f06a985a503e322","last_date":"2026-05-28T01:24:30+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/15/data/changes.html","size":367,"last_commit":"679a431832914790d565b1452f06a985a503e322","last_date":"2026-05-28T01:24:30+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/15/data/media.html","size":70,"last_commit":"679a431832914790d565b1452f06a985a503e322","last_date":"2026-05-28T01:24:30+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/9/profile.html","size":3270,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/4/profile.html","size":3270,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/7/profile.html","size":3270,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/6/profile.html","size":3270,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/5/profile.html","size":3270,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/3/profile.html","size":832,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/3/data/profile.html","size":1837,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/3/data/tree.html","size":69,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/3/data/talk.html","size":67,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/3/data/changes.html","size":367,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/3/data/media.html","size":70,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/1/profile.html","size":822,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/1/data/profile.html","size":4967,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/1/data/tree.html","size":69,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/1/data/talk.html","size":67,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/1/data/changes.html","size":367,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/1/data/media.html","size":70,"last_commit":"","last_date":"","last_author":""},
-  {"path":"people/8/profile.html","size":3270,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"people/10/profile.html","size":3270,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"components/full-header.js","size":46306,"last_commit":"093dbc480ce16c6b32d5a22590900338f5c44cd7","last_date":"2026-05-28T01:39:48+02:00","last_author":"Shaun Roselt"},
-  {"path":"components/people-page-profile-table.js","size":3870,"last_commit":"","last_date":"","last_author":""},
-  {"path":"components/full-page-toolbar.js","size":30848,"last_commit":"fe6993cc1902f98e2ad462ff47b241698270a038","last_date":"2026-05-27T21:11:36+02:00","last_author":"Shaun Roselt"},
-  {"path":"components/mini-header.js","size":7597,"last_commit":"8ca43f35553a9543365268e8f54f8b0af759674e","last_date":"2026-05-26T20:37:31+02:00","last_author":"Shaun Roselt"},
-  {"path":"components/mini-footer.js","size":3727,"last_commit":"8ca43f35553a9543365268e8f54f8b0af759674e","last_date":"2026-05-26T20:37:31+02:00","last_author":"Shaun Roselt"},
-  {"path":"components/full-footer.js","size":11361,"last_commit":"679a431832914790d565b1452f06a985a503e322","last_date":"2026-05-28T01:24:30+02:00","last_author":"Shaun Roselt"},
-  {"path":"components/sister-projects.js","size":9245,"last_commit":"8ca43f35553a9543365268e8f54f8b0af759674e","last_date":"2026-05-26T20:37:31+02:00","last_author":"Shaun Roselt"},
-  {"path":"components/genepedia-button.js","size":2801,"last_commit":"","last_date":"","last_author":""},
-  {"path":"components/genepedia-search.js","size":17675,"last_commit":"","last_date":"","last_author":""},
-  {"path":"components/people-page.js","size":31884,"last_commit":"093dbc480ce16c6b32d5a22590900338f5c44cd7","last_date":"2026-05-28T01:39:48+02:00","last_author":"Shaun Roselt"},
-  {"path":"index.js","size":4925,"last_commit":"103b252d70ec65d282846fdc2dea2741b437a49c","last_date":"2026-05-25T21:42:22+02:00","last_author":"Shaun Roselt"},
-  {"path":"index.css","size":80727,"last_commit":"7cb0baff17a3535b8977d700a5c1c99e1f5fda2a","last_date":"2026-05-26T23:16:40+02:00","last_author":"Shaun Roselt"},
-  {"path":"pages/privacy_policy.html","size":3792,"last_commit":"7cb0baff17a3535b8977d700a5c1c99e1f5fda2a","last_date":"2026-05-26T23:16:40+02:00","last_author":"Shaun Roselt"},
-  {"path":"pages/settings.html","size":8903,"last_commit":"","last_date":"","last_author":""},
-  {"path":"pages/statistics.html","size":15432,"last_commit":"","last_date":"","last_author":""},
-  {"path":"pages/home.html","size":7653,"last_commit":"","last_date":"","last_author":""},
-  {"path":"pages/search.html","size":1826,"last_commit":"","last_date":"","last_author":""},
-  {"path":"pages/terms_of_use.html","size":4362,"last_commit":"7cb0baff17a3535b8977d700a5c1c99e1f5fda2a","last_date":"2026-05-26T23:16:40+02:00","last_author":"Shaun Roselt"},
-  {"path":"pages/404.html","size":7114,"last_commit":"","last_date":"","last_author":""},
-  {"path":"data/themes/light.css","size":0,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"data/themes/dark.css","size":0,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"data/themes/themes.js","size":0,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"data/languages/languages.js","size":0,"last_commit":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","last_date":"2026-05-27T21:15:10+02:00","last_author":"Shaun Roselt"},
-  {"path":"lib/common.css","size":30690,"last_commit":"","last_date":"","last_author":""},
-  {"path":"lib/routing.js","size":0,"last_commit":"","last_date":"","last_author":""},
-  {"path":"lib/download-manager.js","size":13343,"last_commit":"","last_date":"","last_author":""},
-  {"path":"404.html","size":7199,"last_commit":"","last_date":"","last_author":""},
-  {"path":"index.html","size":53005,"last_commit":"7cb0baff17a3535b8977d700a5c1c99e1f5fda2a","last_date":"2026-05-26T23:16:40+02:00","last_author":"Shaun Roselt"}
+  {
+    "path": "people/2/profile.html",
+    "size": 822,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/2/data/profile.html",
+    "size": 1448,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/2/data/tree.html",
+    "size": 69,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/2/data/talk.html",
+    "size": 67,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/2/data/changes.html",
+    "size": 367,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/2/data/media.html",
+    "size": 70,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/15/profile.html",
+    "size": 818,
+    "last_commit": "679a431832914790d565b1452f06a985a503e322",
+    "last_date": "2026-05-28T01:24:30+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/15/data/profile.html",
+    "size": 13243,
+    "last_commit": "679a431832914790d565b1452f06a985a503e322",
+    "last_date": "2026-05-28T01:24:30+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/15/data/tree.html",
+    "size": 69,
+    "last_commit": "679a431832914790d565b1452f06a985a503e322",
+    "last_date": "2026-05-28T01:24:30+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/15/data/talk.html",
+    "size": 67,
+    "last_commit": "679a431832914790d565b1452f06a985a503e322",
+    "last_date": "2026-05-28T01:24:30+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/15/data/changes.html",
+    "size": 367,
+    "last_commit": "679a431832914790d565b1452f06a985a503e322",
+    "last_date": "2026-05-28T01:24:30+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/15/data/media.html",
+    "size": 70,
+    "last_commit": "679a431832914790d565b1452f06a985a503e322",
+    "last_date": "2026-05-28T01:24:30+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/9/profile.html",
+    "size": 3270,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/4/profile.html",
+    "size": 3270,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/7/profile.html",
+    "size": 3270,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/6/profile.html",
+    "size": 3270,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/5/profile.html",
+    "size": 3270,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/3/profile.html",
+    "size": 832,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/3/data/profile.html",
+    "size": 1837,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/3/data/tree.html",
+    "size": 69,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/3/data/talk.html",
+    "size": 67,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/3/data/changes.html",
+    "size": 367,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/3/data/media.html",
+    "size": 70,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/1/profile.html",
+    "size": 822,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/1/data/profile.html",
+    "size": 4967,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/1/data/tree.html",
+    "size": 69,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/1/data/talk.html",
+    "size": 67,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/1/data/changes.html",
+    "size": 367,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/1/data/media.html",
+    "size": 70,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "people/8/profile.html",
+    "size": 3270,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "people/10/profile.html",
+    "size": 3270,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "components/full-header.js",
+    "size": 46306,
+    "last_commit": "093dbc480ce16c6b32d5a22590900338f5c44cd7",
+    "last_date": "2026-05-28T01:39:48+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "components/people-page-profile-table.js",
+    "size": 3870,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "components/full-page-toolbar.js",
+    "size": 30848,
+    "last_commit": "fe6993cc1902f98e2ad462ff47b241698270a038",
+    "last_date": "2026-05-27T21:11:36+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "components/mini-header.js",
+    "size": 7597,
+    "last_commit": "8ca43f35553a9543365268e8f54f8b0af759674e",
+    "last_date": "2026-05-26T20:37:31+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "components/mini-footer.js",
+    "size": 3727,
+    "last_commit": "8ca43f35553a9543365268e8f54f8b0af759674e",
+    "last_date": "2026-05-26T20:37:31+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "components/full-footer.js",
+    "size": 11361,
+    "last_commit": "679a431832914790d565b1452f06a985a503e322",
+    "last_date": "2026-05-28T01:24:30+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "components/sister-projects.js",
+    "size": 9245,
+    "last_commit": "8ca43f35553a9543365268e8f54f8b0af759674e",
+    "last_date": "2026-05-26T20:37:31+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "components/genepedia-button.js",
+    "size": 2801,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "components/genepedia-search.js",
+    "size": 17675,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "components/people-page.js",
+    "size": 31884,
+    "last_commit": "093dbc480ce16c6b32d5a22590900338f5c44cd7",
+    "last_date": "2026-05-28T01:39:48+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "index.js",
+    "size": 4925,
+    "last_commit": "103b252d70ec65d282846fdc2dea2741b437a49c",
+    "last_date": "2026-05-25T21:42:22+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "index.css",
+    "size": 80727,
+    "last_commit": "7cb0baff17a3535b8977d700a5c1c99e1f5fda2a",
+    "last_date": "2026-05-26T23:16:40+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "pages/privacy_policy.html",
+    "size": 3792,
+    "last_commit": "7cb0baff17a3535b8977d700a5c1c99e1f5fda2a",
+    "last_date": "2026-05-26T23:16:40+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "pages/settings.html",
+    "size": 8903,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "pages/statistics.html",
+    "size": 15432,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "pages/home.html",
+    "size": 7653,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "pages/search.html",
+    "size": 1826,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "pages/terms_of_use.html",
+    "size": 4362,
+    "last_commit": "7cb0baff17a3535b8977d700a5c1c99e1f5fda2a",
+    "last_date": "2026-05-26T23:16:40+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "pages/404.html",
+    "size": 7114,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "data/themes/light.css",
+    "size": 0,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "data/themes/dark.css",
+    "size": 0,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "data/themes/themes.js",
+    "size": 0,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "data/languages/languages.js",
+    "size": 0,
+    "last_commit": "2f9cb56dd009bca24e432974d0c3dab3c9ab8b46",
+    "last_date": "2026-05-27T21:15:10+02:00",
+    "last_author": "Shaun Roselt"
+  },
+  {
+    "path": "lib/common.css",
+    "size": 30690,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "lib/routing.js",
+    "size": 0,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "lib/download-manager.js",
+    "size": 13343,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "404.html",
+    "size": 7199,
+    "last_commit": "",
+    "last_date": "",
+    "last_author": ""
+  },
+  {
+    "path": "index.html",
+    "size": 53005,
+    "last_commit": "7cb0baff17a3535b8977d700a5c1c99e1f5fda2a",
+    "last_date": "2026-05-26T23:16:40+02:00",
+    "last_author": "Shaun Roselt"
+  }
 ]

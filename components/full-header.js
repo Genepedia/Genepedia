@@ -1174,8 +1174,8 @@ async function getRandomProfileCandidates() {
     const fromFileStats = await fetchJsonForHeader(resolveFromComponent('../data/file-stats.json'));
     const statsCandidates = Array.isArray(fromFileStats)
       ? fromFileStats
-          .map((entry) => String(entry?.path || '').match(/^people\/([^/]+)\/profile\.html$/)?.[1] || '')
-          .filter(Boolean)
+        .map((entry) => String(entry?.path || '').match(/^people\/([^/]+)\/profile\.html$/)?.[1] || '')
+        .filter(Boolean)
       : [];
 
     if (statsCandidates.length) {

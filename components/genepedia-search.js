@@ -2,6 +2,11 @@ const GENEPEDIA_SEARCH_INDEX_PATH = 'data/search-index.json';
 const GENEPEDIA_SEARCH_STYLE_ID = 'genepedia-search-styles';
 const GENEPEDIA_SEARCH_DROPDOWN_LIMIT = 6;
 
+function getAppName() {
+    const name = window.App?.Name;
+    return (typeof name === 'string' && name.trim()) ? name.trim() : 'Genepedia';
+}
+
 const GENEPEDIA_SEARCH_STYLES = String.raw`
 .genepedia-search-anchor {
   position: relative;
@@ -208,450 +213,454 @@ body:not(.theme-dark) {
 let searchIndexPromise = null;
 
 function normalizeSiteRootPrefix(prefix) {
-  if (!prefix || prefix === '/') {
-    return '';
-  }
+    if (!prefix || prefix === '/') {
+        return '';
+    }
 
-  return prefix;
+    return prefix;
 }
 
 function ensureSearchStyles() {
-  if (document.getElementById(GENEPEDIA_SEARCH_STYLE_ID)) {
-    return;
-  }
+    if (document.getElementById(GENEPEDIA_SEARCH_STYLE_ID)) {
+        return;
+    }
 
-  const style = document.createElement('style');
-  style.id = GENEPEDIA_SEARCH_STYLE_ID;
-  style.textContent = GENEPEDIA_SEARCH_STYLES;
-  document.head.append(style);
+    const style = document.createElement('style');
+    style.id = GENEPEDIA_SEARCH_STYLE_ID;
+    style.textContent = GENEPEDIA_SEARCH_STYLES;
+    document.head.append(style);
 }
 
 function getSiteRootPrefix() {
-  const pathname = window.location.pathname.replace(/\\/g, '/');
-  const nestedProfileMatch = pathname.match(/^(.*\/)people\/\d+\/[^/]+$/);
-  if (nestedProfileMatch) {
-    return normalizeSiteRootPrefix(nestedProfileMatch[1]);
-  }
+    const pathname = window.location.pathname.replace(/\\/g, '/');
+    const nestedProfileMatch = pathname.match(/^(.*\/)people\/\d+\/[^/]+$/);
+    if (nestedProfileMatch) {
+        return normalizeSiteRootPrefix(nestedProfileMatch[1]);
+    }
 
-  const peopleDirectoryMatch = pathname.match(/^(.*\/)people\/\d+\//);
-  if (peopleDirectoryMatch) {
-    return normalizeSiteRootPrefix(peopleDirectoryMatch[1]);
-  }
+    const peopleDirectoryMatch = pathname.match(/^(.*\/)people\/\d+\//);
+    if (peopleDirectoryMatch) {
+        return normalizeSiteRootPrefix(peopleDirectoryMatch[1]);
+    }
 
-  if (pathname.includes('/pages/')) {
-    return '../';
-  }
+    if (pathname.includes('/pages/')) {
+        return '../';
+    }
 
-  return '';
+    return '';
 }
 
 function resolveSearchIndexUrl() {
-  return new URL(GENEPEDIA_SEARCH_INDEX_PATH, new URL(getSiteRootPrefix(), window.location.href)).href;
+    return new URL(GENEPEDIA_SEARCH_INDEX_PATH, new URL(getSiteRootPrefix(), window.location.href)).href;
 }
 
 function resolvePersonProfileUrl(personId) {
-  return new URL(`people/${personId}/profile.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
+    return new URL(`people/${personId}/profile.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
 }
 
 function resolveSearchPageUrl(query = '') {
-  const pathname = window.location.pathname.replace(/\\/g, '/');
-  const searchPagePath = pathname.includes('/pages/') ? 'search.html' : 'pages/search.html';
-  const url = new URL(searchPagePath, new URL(getSiteRootPrefix(), window.location.href));
-  const trimmedQuery = query.trim();
+    const pathname = window.location.pathname.replace(/\\/g, '/');
+    const searchPagePath = pathname.includes('/pages/') ? 'search.html' : 'pages/search.html';
+    const url = new URL(searchPagePath, new URL(getSiteRootPrefix(), window.location.href));
+    const trimmedQuery = query.trim();
 
-  if (trimmedQuery) {
-    url.searchParams.set('q', trimmedQuery);
-  }
+    if (trimmedQuery) {
+        url.searchParams.set('q', trimmedQuery);
+    }
 
-  return url.href;
+    return url.href;
 }
 
 function normalizeSearchText(value) {
-  return (value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, ' ');
+    return (value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ');
 }
 
 function scorePersonEntry(query, entry) {
-  const normalizedQuery = normalizeSearchText(query);
-  if (!normalizedQuery) {
-    return 0;
-  }
-
-  const title = normalizeSearchText(entry.title);
-  const aliases = (entry.aliases || []).map(normalizeSearchText);
-  const description = normalizeSearchText(entry.description);
-  const id = String(entry.id || '').toLowerCase();
-  let score = 0;
-
-  if (title === normalizedQuery || id === normalizedQuery) {
-    score = Math.max(score, 120);
-  }
-
-  if (title.startsWith(normalizedQuery) || id.startsWith(normalizedQuery)) {
-    score = Math.max(score, 95);
-  }
-
-  if (title.includes(normalizedQuery)) {
-    score = Math.max(score, 80);
-  }
-
-  if (description.includes(normalizedQuery)) {
-    score = Math.max(score, 55);
-  }
-
-  aliases.forEach((alias) => {
-    if (alias === normalizedQuery) {
-      score = Math.max(score, 90);
-    } else if (alias.startsWith(normalizedQuery)) {
-      score = Math.max(score, 75);
-    } else if (alias.includes(normalizedQuery)) {
-      score = Math.max(score, 60);
+    const normalizedQuery = normalizeSearchText(query);
+    if (!normalizedQuery) {
+        return 0;
     }
-  });
 
-  const queryTokens = normalizedQuery.split(' ').filter(Boolean);
-  if (queryTokens.length > 1) {
-    const haystack = [title, description, ...aliases].join(' ');
-    const allTokensMatch = queryTokens.every((token) => haystack.includes(token));
-    if (allTokensMatch) {
-      score = Math.max(score, 70);
+    const title = normalizeSearchText(entry.title);
+    const aliases = (entry.aliases || []).map(normalizeSearchText);
+    const description = normalizeSearchText(entry.description);
+    const id = String(entry.id || '').toLowerCase();
+    let score = 0;
+
+    if (title === normalizedQuery || id === normalizedQuery) {
+        score = Math.max(score, 120);
     }
-  }
 
-  return score;
+    if (title.startsWith(normalizedQuery) || id.startsWith(normalizedQuery)) {
+        score = Math.max(score, 95);
+    }
+
+    if (title.includes(normalizedQuery)) {
+        score = Math.max(score, 80);
+    }
+
+    if (description.includes(normalizedQuery)) {
+        score = Math.max(score, 55);
+    }
+
+    aliases.forEach((alias) => {
+        if (alias === normalizedQuery) {
+            score = Math.max(score, 90);
+        } else if (alias.startsWith(normalizedQuery)) {
+            score = Math.max(score, 75);
+        } else if (alias.includes(normalizedQuery)) {
+            score = Math.max(score, 60);
+        }
+    });
+
+    const queryTokens = normalizedQuery.split(' ').filter(Boolean);
+    if (queryTokens.length > 1) {
+        const haystack = [title, description, ...aliases].join(' ');
+        const allTokensMatch = queryTokens.every((token) => haystack.includes(token));
+        if (allTokensMatch) {
+            score = Math.max(score, 70);
+        }
+    }
+
+    return score;
 }
 
 async function loadSearchIndex() {
-  if (!searchIndexPromise) {
-    searchIndexPromise = fetch(resolveSearchIndexUrl())
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to load search index: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((data) => data?.people || [])
-      .catch((error) => {
-        console.error(error);
-        return [];
-      });
-  }
+    if (!searchIndexPromise) {
+        searchIndexPromise = fetch(resolveSearchIndexUrl())
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Failed to load search index: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then((data) => data?.people || [])
+            .catch((error) => {
+                console.error(error);
+                return [];
+            });
+    }
 
-  return searchIndexPromise;
+    return searchIndexPromise;
 }
 
 async function findPersonMatches(query, { limit = 8 } = {}) {
-  const people = await loadSearchIndex();
+    const people = await loadSearchIndex();
 
-  return people
-    .map((entry) => ({
-      entry,
-      score: scorePersonEntry(query, entry),
-      url: resolvePersonProfileUrl(entry.id),
-    }))
-    .filter((result) => result.score > 0)
-    .sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title))
-    .slice(0, limit);
+    return people
+        .map((entry) => ({
+            entry,
+            score: scorePersonEntry(query, entry),
+            url: resolvePersonProfileUrl(entry.id),
+        }))
+        .filter((result) => result.score > 0)
+        .sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title))
+        .slice(0, limit);
 }
 
 function getSearchInput(form) {
-  return form.querySelector('input[name="search"], input[type="search"]');
+    return form.querySelector('input[name="search"], input[type="search"]');
 }
 
 function getDropdownAnchor(form) {
-  return form.querySelector('.search-input') || form;
+    return form.querySelector('.search-input') || form;
 }
 
 function createDropdown(anchor) {
-  const dropdown = document.createElement('ul');
-  dropdown.className = 'genepedia-search__dropdown';
-  dropdown.setAttribute('role', 'listbox');
-  dropdown.hidden = true;
-  anchor.append(dropdown);
-  return dropdown;
+    const dropdown = document.createElement('ul');
+    dropdown.className = 'genepedia-search__dropdown';
+    dropdown.setAttribute('role', 'listbox');
+    dropdown.hidden = true;
+    anchor.append(dropdown);
+    return dropdown;
 }
 
 function renderDropdownItems(dropdown, matches, query) {
-  dropdown.textContent = '';
+    dropdown.textContent = '';
 
-  if (matches.length === 0) {
-    const empty = document.createElement('li');
-    empty.className = 'genepedia-search__dropdown-empty';
-    empty.textContent = query.trim() ? `No profiles match "${query.trim()}".` : 'Type to search Genepedia.';
-    dropdown.append(empty);
-    return;
-  }
+    const appName = getAppName();
 
-  matches.forEach((match, index) => {
-    const item = document.createElement('li');
-    item.className = 'genepedia-search__option';
-    item.setAttribute('role', 'option');
-    item.dataset.index = String(index);
-
-    const link = document.createElement('a');
-    link.className = 'genepedia-search__option-link';
-    link.href = match.url;
-
-    const title = document.createElement('span');
-    title.className = 'genepedia-search__option-title';
-    title.textContent = match.entry.title;
-    link.append(title);
-
-    if (match.entry.description) {
-      const description = document.createElement('span');
-      description.className = 'genepedia-search__option-description';
-      description.textContent = match.entry.description;
-      link.append(description);
+    if (matches.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'genepedia-search__dropdown-empty';
+        empty.textContent = query.trim() ? `No profiles match "${query.trim()}".` : `Type to search ${appName}.`;
+        dropdown.append(empty);
+        return;
     }
 
-    item.append(link);
-    dropdown.append(item);
-  });
+    matches.forEach((match, index) => {
+        const item = document.createElement('li');
+        item.className = 'genepedia-search__option';
+        item.setAttribute('role', 'option');
+        item.dataset.index = String(index);
 
-  const footer = document.createElement('li');
-  footer.className = 'genepedia-search__dropdown-footer';
-  footer.setAttribute('role', 'presentation');
+        const link = document.createElement('a');
+        link.className = 'genepedia-search__option-link';
+        link.href = match.url;
 
-  const viewAll = document.createElement('a');
-  viewAll.className = 'genepedia-search__dropdown-all';
-  viewAll.href = resolveSearchPageUrl(query);
-  viewAll.textContent = `View all results for “${query.trim()}”`;
-  footer.append(viewAll);
-  dropdown.append(footer);
+        const title = document.createElement('span');
+        title.className = 'genepedia-search__option-title';
+        title.textContent = match.entry.title;
+        link.append(title);
+
+        if (match.entry.description) {
+            const description = document.createElement('span');
+            description.className = 'genepedia-search__option-description';
+            description.textContent = match.entry.description;
+            link.append(description);
+        }
+
+        item.append(link);
+        dropdown.append(item);
+    });
+
+    const footer = document.createElement('li');
+    footer.className = 'genepedia-search__dropdown-footer';
+    footer.setAttribute('role', 'presentation');
+
+    const viewAll = document.createElement('a');
+    viewAll.className = 'genepedia-search__dropdown-all';
+    viewAll.href = resolveSearchPageUrl(query);
+    viewAll.textContent = `View all results for “${query.trim()}”`;
+    footer.append(viewAll);
+    dropdown.append(footer);
 }
 
 function setActiveDropdownOption(dropdown, index) {
-  const options = [...dropdown.querySelectorAll('.genepedia-search__option')];
-  options.forEach((option, optionIndex) => {
-    const isActive = optionIndex === index;
-    option.classList.toggle('is-active', isActive);
-    option.setAttribute('aria-selected', isActive ? 'true' : 'false');
-  });
-  return options[index] || null;
+    const options = [...dropdown.querySelectorAll('.genepedia-search__option')];
+    options.forEach((option, optionIndex) => {
+        const isActive = optionIndex === index;
+        option.classList.toggle('is-active', isActive);
+        option.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    return options[index] || null;
 }
 
 function bindGenepediaSearchForm(form) {
-  if (!form || form.dataset.genepediaSearchBound === 'true') {
-    return;
-  }
+    if (!form || form.dataset.genepediaSearchBound === 'true') {
+        return;
+    }
 
-  ensureSearchStyles();
-  form.dataset.genepediaSearchBound = 'true';
+    ensureSearchStyles();
+    form.dataset.genepediaSearchBound = 'true';
 
-  const input = getSearchInput(form);
-  if (!input) {
-    return;
-  }
+    const input = getSearchInput(form);
+    if (!input) {
+        return;
+    }
 
-  const anchor = getDropdownAnchor(form);
-  anchor.classList.add('genepedia-search-anchor');
-  const dropdown = createDropdown(anchor);
+    const anchor = getDropdownAnchor(form);
+    anchor.classList.add('genepedia-search-anchor');
+    const dropdown = createDropdown(anchor);
 
-  let activeIndex = -1;
-  let debounceTimer = null;
-  let latestMatches = [];
+    let activeIndex = -1;
+    let debounceTimer = null;
+    let latestMatches = [];
 
-  const closeDropdown = () => {
-    dropdown.hidden = true;
-    activeIndex = -1;
+    const closeDropdown = () => {
+        dropdown.hidden = true;
+        activeIndex = -1;
+        input.setAttribute('aria-expanded', 'false');
+    };
+
+    const openDropdown = () => {
+        dropdown.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
+    };
+
+    const updateDropdown = async () => {
+        const query = input.value;
+        const trimmedQuery = query.trim();
+
+        if (!trimmedQuery) {
+            closeDropdown();
+            return;
+        }
+
+        latestMatches = await findPersonMatches(trimmedQuery, { limit: GENEPEDIA_SEARCH_DROPDOWN_LIMIT });
+        renderDropdownItems(dropdown, latestMatches, trimmedQuery);
+        activeIndex = -1;
+        openDropdown();
+    };
+
+    const scheduleUpdate = () => {
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => {
+            void updateDropdown();
+        }, 150);
+    };
+
+    const goToSearchPage = (query) => {
+        const trimmedQuery = (query || '').trim();
+        window.location.assign(resolveSearchPageUrl(trimmedQuery));
+    };
+
+    form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        closeDropdown();
+
+        if (activeIndex >= 0 && latestMatches[activeIndex]) {
+            window.location.assign(latestMatches[activeIndex].url);
+            return;
+        }
+
+        goToSearchPage(input.value);
+    });
+
+    input.addEventListener('input', scheduleUpdate);
+
+    input.addEventListener('focus', () => {
+        if (input.value.trim()) {
+            scheduleUpdate();
+        }
+    });
+
+    input.addEventListener('keydown', (event) => {
+        const options = dropdown.hidden ? [] : [...dropdown.querySelectorAll('.genepedia-search__option')];
+
+        if (event.key === 'ArrowDown') {
+            if (!options.length) {
+                return;
+            }
+
+            event.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, options.length - 1);
+            setActiveDropdownOption(dropdown, activeIndex)?.scrollIntoView({ block: 'nearest' });
+            return;
+        }
+
+        if (event.key === 'ArrowUp') {
+            if (!options.length) {
+                return;
+            }
+
+            event.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            setActiveDropdownOption(dropdown, activeIndex)?.scrollIntoView({ block: 'nearest' });
+            return;
+        }
+
+        if (event.key === 'Escape') {
+            closeDropdown();
+            return;
+        }
+    });
+
+    dropdown.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!form.contains(event.target)) {
+            closeDropdown();
+        }
+    });
+
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-controls', dropdown.id || '');
+    if (!dropdown.id) {
+        dropdown.id = `genepedia-search-dropdown-${Math.random().toString(36).slice(2, 9)}`;
+        input.setAttribute('aria-controls', dropdown.id);
+    }
     input.setAttribute('aria-expanded', 'false');
-  };
-
-  const openDropdown = () => {
-    dropdown.hidden = false;
-    input.setAttribute('aria-expanded', 'true');
-  };
-
-  const updateDropdown = async () => {
-    const query = input.value;
-    const trimmedQuery = query.trim();
-
-    if (!trimmedQuery) {
-      closeDropdown();
-      return;
-    }
-
-    latestMatches = await findPersonMatches(trimmedQuery, { limit: GENEPEDIA_SEARCH_DROPDOWN_LIMIT });
-    renderDropdownItems(dropdown, latestMatches, trimmedQuery);
-    activeIndex = -1;
-    openDropdown();
-  };
-
-  const scheduleUpdate = () => {
-    window.clearTimeout(debounceTimer);
-    debounceTimer = window.setTimeout(() => {
-      void updateDropdown();
-    }, 150);
-  };
-
-  const goToSearchPage = (query) => {
-    const trimmedQuery = (query || '').trim();
-    window.location.assign(resolveSearchPageUrl(trimmedQuery));
-  };
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    closeDropdown();
-
-    if (activeIndex >= 0 && latestMatches[activeIndex]) {
-      window.location.assign(latestMatches[activeIndex].url);
-      return;
-    }
-
-    goToSearchPage(input.value);
-  });
-
-  input.addEventListener('input', scheduleUpdate);
-
-  input.addEventListener('focus', () => {
-    if (input.value.trim()) {
-      scheduleUpdate();
-    }
-  });
-
-  input.addEventListener('keydown', (event) => {
-    const options = dropdown.hidden ? [] : [...dropdown.querySelectorAll('.genepedia-search__option')];
-
-    if (event.key === 'ArrowDown') {
-      if (!options.length) {
-        return;
-      }
-
-      event.preventDefault();
-      activeIndex = Math.min(activeIndex + 1, options.length - 1);
-      setActiveDropdownOption(dropdown, activeIndex)?.scrollIntoView({ block: 'nearest' });
-      return;
-    }
-
-    if (event.key === 'ArrowUp') {
-      if (!options.length) {
-        return;
-      }
-
-      event.preventDefault();
-      activeIndex = Math.max(activeIndex - 1, 0);
-      setActiveDropdownOption(dropdown, activeIndex)?.scrollIntoView({ block: 'nearest' });
-      return;
-    }
-
-    if (event.key === 'Escape') {
-      closeDropdown();
-      return;
-    }
-  });
-
-  dropdown.addEventListener('mousedown', (event) => {
-    event.preventDefault();
-  });
-
-  document.addEventListener('click', (event) => {
-    if (!form.contains(event.target)) {
-      closeDropdown();
-    }
-  });
-
-  input.setAttribute('aria-autocomplete', 'list');
-  input.setAttribute('aria-controls', dropdown.id || '');
-  if (!dropdown.id) {
-    dropdown.id = `genepedia-search-dropdown-${Math.random().toString(36).slice(2, 9)}`;
-    input.setAttribute('aria-controls', dropdown.id);
-  }
-  input.setAttribute('aria-expanded', 'false');
 }
 
 async function renderSearchResultsPage() {
-  const resultsRoot = document.getElementById('genepedia-search-results');
-  if (!resultsRoot) {
-    return;
-  }
+    const resultsRoot = document.getElementById('genepedia-search-results');
+    if (!resultsRoot) {
+        return;
+    }
 
-  ensureSearchStyles();
+    ensureSearchStyles();
 
-  const params = new URLSearchParams(window.location.search);
-  const query = (params.get('q') || params.get('search') || '').trim();
-  const titleEl = document.getElementById('genepedia-search-page-title');
-  const metaEl = document.getElementById('genepedia-search-page-meta');
-  const formInput = document.querySelector('#search-page-form input[name="search"], #search-page-form input[type="search"]');
+    const params = new URLSearchParams(window.location.search);
+    const query = (params.get('q') || params.get('search') || '').trim();
+    const titleEl = document.getElementById('genepedia-search-page-title');
+    const metaEl = document.getElementById('genepedia-search-page-meta');
+    const formInput = document.querySelector('#search-page-form input[name="search"], #search-page-form input[type="search"]');
 
-  if (formInput) {
-    formInput.value = query;
-  }
+    if (formInput) {
+        formInput.value = query;
+    }
 
-  if (titleEl) {
-    titleEl.textContent = query ? `Search results for “${query}”` : 'Search Genepedia';
-  }
+    const appName = getAppName();
 
-  document.title = query ? `Search: ${query} - Genepedia` : 'Search - Genepedia';
+    if (titleEl) {
+        titleEl.textContent = query ? `Search results for “${query}”` : `Search ${appName}`;
+    }
 
-  if (!query) {
+    document.title = query ? `Search: ${query} - ${appName}` : `Search - ${appName}`;
+
+    if (!query) {
+        if (metaEl) {
+            metaEl.textContent = `Enter a name or keyword to find people in ${appName}.`;
+        }
+        resultsRoot.innerHTML = '<p class="search-page__empty">Try searching for Shaun Roselt, Hanli, wife, or Mandela.</p>';
+        return;
+    }
+
+    const matches = await findPersonMatches(query, { limit: 100 });
+
     if (metaEl) {
-      metaEl.textContent = 'Enter a name or keyword to find people in Genepedia.';
-    }
-    resultsRoot.innerHTML = '<p class="search-page__empty">Try searching for Shaun Roselt, Hanli, wife, or Mandela.</p>';
-    return;
-  }
-
-  const matches = await findPersonMatches(query, { limit: 100 });
-
-  if (metaEl) {
-    metaEl.textContent = matches.length === 1
-      ? '1 result'
-      : `${matches.length} results`;
-  }
-
-  if (matches.length === 0) {
-    resultsRoot.innerHTML = `<p class="search-page__empty">No profiles matched “${query}”. Try another spelling or a shorter keyword.</p>`;
-    return;
-  }
-
-  const list = document.createElement('ul');
-  list.className = 'search-page__results';
-
-  matches.forEach((match) => {
-    const item = document.createElement('li');
-    item.className = 'search-page__result';
-
-    const link = document.createElement('a');
-    link.className = 'search-page__result-link';
-    link.href = match.url;
-
-    const title = document.createElement('span');
-    title.className = 'search-page__result-title';
-    title.textContent = match.entry.title;
-    link.append(title);
-
-    if (match.entry.description) {
-      const description = document.createElement('span');
-      description.className = 'search-page__result-description';
-      description.textContent = match.entry.description;
-      link.append(description);
+        metaEl.textContent = matches.length === 1
+            ? '1 result'
+            : `${matches.length} results`;
     }
 
-    item.append(link);
-    list.append(item);
-  });
+    if (matches.length === 0) {
+        resultsRoot.innerHTML = `<p class="search-page__empty">No profiles matched “${query}”. Try another spelling or a shorter keyword.</p>`;
+        return;
+    }
 
-  resultsRoot.replaceChildren(list);
+    const list = document.createElement('ul');
+    list.className = 'search-page__results';
+
+    matches.forEach((match) => {
+        const item = document.createElement('li');
+        item.className = 'search-page__result';
+
+        const link = document.createElement('a');
+        link.className = 'search-page__result-link';
+        link.href = match.url;
+
+        const title = document.createElement('span');
+        title.className = 'search-page__result-title';
+        title.textContent = match.entry.title;
+        link.append(title);
+
+        if (match.entry.description) {
+            const description = document.createElement('span');
+            description.className = 'search-page__result-description';
+            description.textContent = match.entry.description;
+            link.append(description);
+        }
+
+        item.append(link);
+        list.append(item);
+    });
+
+    resultsRoot.replaceChildren(list);
 }
 
 function initGenepediaSearch() {
-  document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindGenepediaSearchForm);
-  void renderSearchResultsPage();
+    document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindGenepediaSearchForm);
+    void renderSearchResultsPage();
 }
 
 window.GenepediaSearch = {
-  findPersonMatches,
-  resolveSearchPageUrl,
-  resolvePersonProfileUrl,
-  bindGenepediaSearchForm,
-  renderSearchResultsPage,
-  initGenepediaSearch,
+    findPersonMatches,
+    resolveSearchPageUrl,
+    resolvePersonProfileUrl,
+    bindGenepediaSearchForm,
+    renderSearchResultsPage,
+    initGenepediaSearch,
 };
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initGenepediaSearch, { once: true });
+    document.addEventListener('DOMContentLoaded', initGenepediaSearch, { once: true });
 } else {
-  initGenepediaSearch();
+    initGenepediaSearch();
 }

@@ -6,13 +6,54 @@ function getHomePageHref() {
   return window.location.pathname.includes('/pages/') ? '../index.html' : 'index.html';
 }
 
+function getMiniHeaderAppName() {
+  const name = window.App?.Name;
+  return (typeof name === 'string' && name.trim()) ? name.trim() : 'Genepedia';
+}
+
+function syncMiniHeaderWordmark(homeLink) {
+  if (!homeLink) {
+    return;
+  }
+
+  const first = homeLink.querySelector('[data-wordmark="first"]');
+  const middle = homeLink.querySelector('[data-wordmark="middle"]');
+  const last = homeLink.querySelector('[data-wordmark="last"]');
+  if (!first || !middle || !last) {
+    return;
+  }
+
+  const appName = getMiniHeaderAppName();
+  if (!appName) {
+    first.textContent = '';
+    middle.textContent = '';
+    last.textContent = '';
+    return;
+  }
+
+  // Preserve the original wordmark style (e.g. G + ENEPEDI + A)
+  // while still sourcing the base name from App.Name.
+  const displayName = appName.toUpperCase();
+
+  if (displayName.length === 1) {
+    first.textContent = displayName;
+    middle.textContent = '';
+    last.textContent = '';
+    return;
+  }
+
+  first.textContent = displayName.slice(0, 1);
+  middle.textContent = displayName.slice(1, -1);
+  last.textContent = displayName.slice(-1);
+}
+
 const MINI_HEADER_TEMPLATE = `
 <div class="central-textlogo">
   <img class="central-textlogo__logo" src="" alt="" aria-hidden="true">
   <h1 class="central-textlogo-wrapper">
     <span class="central-textlogo__wordmark">
       <a href="" class="central-textlogo__home-link" aria-label="Home">
-        <span class="central-textlogo__wordmark-accent">G</span>ENEPEDI<span class="central-textlogo__wordmark-accent">A</span>
+        <span class="central-textlogo__wordmark-accent" data-wordmark="first"></span><span data-wordmark="middle"></span><span class="central-textlogo__wordmark-accent" data-wordmark="last"></span>
       </a>
     </span>
     <strong class="localized-slogan">The Free Geneology Encyclopedia</strong>
@@ -256,6 +297,13 @@ class MiniHeader extends HTMLElement {
       homeLink.href = getHomePageHref();
     }
 
+    syncMiniHeaderWordmark(homeLink);
+
+    this._appNameChangeHandler = () => {
+      syncMiniHeaderWordmark(homeLink);
+    };
+    window.addEventListener('app:namechange', this._appNameChangeHandler);
+
     const slogan = this.querySelector('.localized-slogan');
     const container = this.querySelector('.central-textlogo');
     if (!slogan || !container) {
@@ -288,6 +336,11 @@ class MiniHeader extends HTMLElement {
     if (this._sloganWindowResizeHandler) {
       window.removeEventListener('resize', this._sloganWindowResizeHandler);
       this._sloganWindowResizeHandler = null;
+    }
+
+    if (this._appNameChangeHandler) {
+      window.removeEventListener('app:namechange', this._appNameChangeHandler);
+      this._appNameChangeHandler = null;
     }
   }
 }

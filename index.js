@@ -105,8 +105,9 @@
 
     const showComingSoon = (platform) => {
         const modal = createComingSoonModal();
+        const appName = window.App?.Name || 'Genepedia';
         modal.querySelector('#genepedia-modal-message').textContent =
-            `The Genepedia app is coming soon to the ${platform}. We're actively building it - check back soon for release details.`;
+            `The ${appName} app is coming soon to the ${platform}. We're actively building it - check back soon for release details.`;
         previousActiveElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         modal.classList.add('open');
         modal.querySelector('.genepedia-modal-close').focus();

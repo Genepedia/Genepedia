@@ -284,7 +284,8 @@ class PeoplePage extends HTMLElement {
     }
 
     if (title) {
-      document.title = `${title} - Genepedia`;
+      const appName = window.App?.Name || 'Genepedia';
+      document.title = `${title} - ${appName}`;
     }
   }
 
@@ -367,6 +368,12 @@ class PeoplePage extends HTMLElement {
     } catch (e) {
       // non-fatal; leave document as-is on error
       console.warn('Could not prune profile sections', e);
+    }
+
+    try {
+      window.App?.applyBranding?.(doc);
+    } catch (e) {
+      // ignore
     }
 
     return doc.body.innerHTML;
