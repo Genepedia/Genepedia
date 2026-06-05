@@ -1,5 +1,5 @@
 (function () {
-    const BRANDING_SOURCE_NAME = 'Roselt';
+    const BRANDING_SOURCE_NAME = 'Genepedia';
     const BRAND_TOKEN = '{{APP_NAME}}';
 
     const existing = (typeof window !== 'undefined') ? window.App : null;
