@@ -284,8 +284,8 @@ class PeoplePage extends HTMLElement {
     }
 
     if (title) {
-      const appName = window.App?.Name || 'Genepedia';
-      document.title = `${title} - ${appName}`;
+      const appName = window.App?.getName?.() || window.App?.Name || '';
+      document.title = appName ? `${title} - ${appName}` : title;
     }
   }
 
@@ -482,7 +482,7 @@ class PeoplePage extends HTMLElement {
     const downloadDropdown = this.querySelector('#people-page-download-menu');
     if (downloadDropdown) {
       const ensureManager = async () => {
-        if (window.GenepediaDownloads) return window.GenepediaDownloads;
+        if (window.AppDownloads) return window.AppDownloads;
         // try to resolve components base from the people-page script tag
         const scripts = Array.from(document.querySelectorAll('script[src]'));
         let base = new URL('.', window.location.href).href;
@@ -510,7 +510,7 @@ class PeoplePage extends HTMLElement {
         } catch (e) {
           console.warn('Could not load download manager', e);
         }
-        return window.GenepediaDownloads;
+        return window.AppDownloads;
       };
 
       downloadDropdown.addEventListener('click', async (event) => {

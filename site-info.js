@@ -1,9 +1,6 @@
 (function () {
     const BRANDING_SOURCE_NAME = 'Roselt';
-    // Seed with the original names used throughout the static HTML/templates,
-    // so a single App.Name (or BRANDING_SOURCE_NAME) change can rebrand the site.
-    const BUILTIN_BRAND_NAMES = ['Genepedia', 'Genipedia'];
-    const brandingNames = new Set([...BUILTIN_BRAND_NAMES, BRANDING_SOURCE_NAME]);
+    const BRAND_TOKEN = '{{APP_NAME}}';
 
     const existing = (typeof window !== 'undefined') ? window.App : null;
     const app = (existing && typeof existing === 'object') ? existing : {};
@@ -15,33 +12,137 @@
         Description: `${BRANDING_SOURCE_NAME} is a home for family stories, a place to discover, document, and share your family history.`,
     };
 
+    const textTemplates = new WeakMap();
+    const attributeTemplates = new WeakMap();
+    const titleTemplates = new WeakMap();
+
     function normalizeName(value) {
         return (typeof value === 'string') ? value.trim() : '';
     }
 
-    function rememberBrandName(name) {
-        const normalized = normalizeName(name);
-        if (normalized) {
-            brandingNames.add(normalized);
+    function getAppName() {
+        const name = (app && typeof app.Name === 'string') ? app.Name.trim() : '';
+        return name || BRANDING_SOURCE_NAME;
+    }
+
+    function replaceBrandTokens(value, nextName) {
+        if (typeof value !== 'string') {
+            return value;
         }
+
+        return value.split(BRAND_TOKEN).join(nextName);
     }
 
-    // Apply defaults (without clobbering a pre-configured window.App).
-    if (!normalizeName(app.Name)) {
-        app.Name = DEFAULTS.Name;
-    }
-    if (!normalizeName(app.Version)) {
-        app.Version = DEFAULTS.Version;
-    }
-    if (!normalizeName(app.ReleaseDate)) {
-        app.ReleaseDate = DEFAULTS.ReleaseDate;
-    }
-    if (!normalizeName(app.Description)) {
-        app.Description = DEFAULTS.Description;
+    function getTextTemplate(node) {
+        if (textTemplates.has(node)) {
+            return textTemplates.get(node);
+        }
+
+        const raw = node?.nodeValue;
+        if (typeof raw === 'string' && raw.includes(BRAND_TOKEN)) {
+            textTemplates.set(node, raw);
+            return raw;
+        }
+
+        return null;
     }
 
-    // Seed branding replacements from the initial name.
-    rememberBrandName(app.Name);
+    function getAttributeTemplate(el, attr) {
+        let templates = attributeTemplates.get(el);
+        if (!templates) {
+            templates = {};
+            attributeTemplates.set(el, templates);
+        }
+
+        if (typeof templates[attr] === 'string') {
+            return templates[attr];
+        }
+
+        const raw = el.getAttribute && el.getAttribute(attr);
+        if (typeof raw === 'string' && raw.includes(BRAND_TOKEN)) {
+            templates[attr] = raw;
+            return raw;
+        }
+
+        return null;
+    }
+
+    function shouldSkipTextNode(textNode) {
+        const parent = textNode && textNode.parentNode;
+        if (!parent || !parent.nodeName) {
+            return false;
+        }
+
+        const tag = String(parent.nodeName).toLowerCase();
+        return tag === 'script' || tag === 'style' || tag === 'noscript' || tag === 'textarea';
+    }
+
+    function applyBranding(root) {
+        const nextName = getAppName();
+        const target = root || document;
+
+        try {
+            if ((!root || target === document) && typeof document !== 'undefined') {
+                const sourceTitle = titleTemplates.get(document)
+                    || (typeof document.title === 'string' && document.title.includes(BRAND_TOKEN) ? document.title : null);
+
+                if (sourceTitle) {
+                    titleTemplates.set(document, sourceTitle);
+                    document.title = replaceBrandTokens(sourceTitle, nextName);
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        try {
+            const showText = (typeof NodeFilter !== 'undefined' && NodeFilter.SHOW_TEXT) ? NodeFilter.SHOW_TEXT : 4;
+            const walkerHost = (target && typeof target.createTreeWalker === 'function')
+                ? target
+                : (target && target.ownerDocument && typeof target.ownerDocument.createTreeWalker === 'function')
+                    ? target.ownerDocument
+                    : document;
+
+            const walker = walkerHost.createTreeWalker(target, showText);
+            let node = walker.nextNode();
+            while (node) {
+                if (!shouldSkipTextNode(node)) {
+                    const template = getTextTemplate(node);
+                    if (template) {
+                        const nextValue = replaceBrandTokens(template, nextName);
+                        if (nextValue !== node.nodeValue) {
+                            node.nodeValue = nextValue;
+                        }
+                    }
+                }
+                node = walker.nextNode();
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        try {
+            const hasQsa = target && typeof target.querySelectorAll === 'function';
+            if (hasQsa) {
+                const attributeNames = ['title', 'aria-label', 'placeholder', 'alt', 'content', 'value'];
+                target.querySelectorAll('*').forEach((el) => {
+                    attributeNames.forEach((attr) => {
+                        const template = getAttributeTemplate(el, attr);
+                        if (!template) return;
+
+                        const nextValue = replaceBrandTokens(template, nextName);
+                        if (el.getAttribute(attr) !== nextValue) {
+                            el.setAttribute(attr, nextValue);
+                        }
+                    });
+                });
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        return nextName;
+    }
 
     function dispatchNameChange(nextName) {
         try {
@@ -59,116 +160,23 @@
         }
     }
 
-    function getAppName() {
-        const name = (app && typeof app.Name === 'string') ? app.Name.trim() : '';
-        return name || BRANDING_SOURCE_NAME;
+    if (!normalizeName(app.Name)) {
+        app.Name = DEFAULTS.Name;
+    }
+    if (!normalizeName(app.Version)) {
+        app.Version = DEFAULTS.Version;
+    }
+    if (!normalizeName(app.ReleaseDate)) {
+        app.ReleaseDate = DEFAULTS.ReleaseDate;
+    }
+    if (!normalizeName(app.Description)) {
+        app.Description = DEFAULTS.Description;
     }
 
-    function replaceBrandingInString(value, nextName) {
-        if (typeof value !== 'string') {
-            return value;
-        }
-
-        let updated = value;
-        for (const previousName of brandingNames) {
-            if (previousName && previousName !== nextName) {
-                updated = updated.split(previousName).join(nextName);
-            }
-        }
-
-        return updated;
-    }
-
-    function shouldSkipTextNode(textNode) {
-        const parent = textNode && textNode.parentNode;
-        if (!parent || !parent.nodeName) {
-            return false;
-        }
-
-        const tag = String(parent.nodeName).toLowerCase();
-        return tag === 'script' || tag === 'style' || tag === 'noscript' || tag === 'textarea';
-    }
-
-    function applyBranding(root) {
-        const nextName = getAppName();
-        rememberBrandName(nextName);
-        const target = root || document;
-
-        // Update document.title (common case) only when targeting the live document.
-        try {
-            if (!root || target === document) {
-                if (typeof document !== 'undefined' && document.title) {
-                    document.title = replaceBrandingInString(document.title, nextName);
-                }
-            }
-        } catch (e) {
-            // ignore
-        }
-
-        // Replace text nodes.
-        try {
-            const showText = (typeof NodeFilter !== 'undefined' && NodeFilter.SHOW_TEXT) ? NodeFilter.SHOW_TEXT : 4;
-            const walkerHost = (target && typeof target.createTreeWalker === 'function')
-                ? target
-                : (target && target.ownerDocument && typeof target.ownerDocument.createTreeWalker === 'function')
-                    ? target.ownerDocument
-                    : document;
-
-            const walker = walkerHost.createTreeWalker(target, showText);
-            let node = walker.nextNode();
-            while (node) {
-                if (!shouldSkipTextNode(node)) {
-                    const nextValue = replaceBrandingInString(node.nodeValue, nextName);
-                    if (nextValue !== node.nodeValue) {
-                        node.nodeValue = nextValue;
-                    }
-                }
-                node = walker.nextNode();
-            }
-        } catch (e) {
-            // ignore
-        }
-
-        // Replace common attributes.
-        try {
-            const hasQsa = target && typeof target.querySelectorAll === 'function';
-            if (hasQsa) {
-                const attributeNames = ['title', 'aria-label', 'placeholder', 'alt'];
-                target.querySelectorAll('*').forEach((el) => {
-                    attributeNames.forEach((attr) => {
-                        const raw = el.getAttribute && el.getAttribute(attr);
-                        if (!raw) return;
-                        const nextValue = replaceBrandingInString(raw, nextName);
-                        if (nextValue !== raw) {
-                            el.setAttribute(attr, nextValue);
-                        }
-                    });
-                });
-
-                target.querySelectorAll('meta[content]').forEach((meta) => {
-                    const metaKey = String(meta.getAttribute('property') || meta.getAttribute('name') || '').toLowerCase();
-                    if (metaKey.includes('image')) {
-                        return;
-                    }
-
-                    const raw = meta.getAttribute('content');
-                    if (!raw) return;
-                    const nextValue = replaceBrandingInString(raw, nextName);
-                    if (nextValue !== raw) {
-                        meta.setAttribute('content', nextValue);
-                    }
-                });
-            }
-        } catch (e) {
-            // ignore
-        }
-
-        return nextName;
-    }
-
+    app.getName = getAppName;
     app.applyBranding = applyBranding;
+    app.BrandToken = BRAND_TOKEN;
 
-    // Make App.Name reactive: changing it rebrands the current document.
     try {
         const initialName = getAppName();
         let internalName = initialName;
@@ -185,9 +193,7 @@
                     return;
                 }
 
-                rememberBrandName(internalName);
                 internalName = nextName;
-                rememberBrandName(internalName);
 
                 try {
                     if (typeof document !== 'undefined') {

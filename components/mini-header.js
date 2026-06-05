@@ -7,8 +7,8 @@ function getHomePageHref() {
 }
 
 function getMiniHeaderAppName() {
-  const name = window.App?.Name;
-  return (typeof name === 'string' && name.trim()) ? name.trim() : 'Genepedia';
+  const name = window.App?.getName?.() || window.App?.Name;
+  return (typeof name === 'string' && name.trim()) ? name.trim() : '';
 }
 
 function syncMiniHeaderWordmark(homeLink) {
@@ -61,7 +61,7 @@ const MINI_HEADER_TEMPLATE = `
 </div>
 `;
 
-const MINI_HEADER_STYLE_ELEMENT_ID = 'genepedia-mini-header-styles';
+const MINI_HEADER_STYLE_ELEMENT_ID = 'app-mini-header-styles';
 const MINI_HEADER_STYLES = String.raw`
 mini-header .central-textlogo-wrapper {
   display: inline-block;

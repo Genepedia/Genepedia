@@ -49,7 +49,7 @@
     height: 42px
 }
 
-.svg-Genepedia_wordmark {
+.svg-app_wordmark {
     background-position: 0 -304px;
     width: 176px;
     height: 32px
@@ -1765,7 +1765,7 @@ a.suggestion-link:focus {
 }
 
 /* Coming soon modal styles for app-badges */
-.genepedia-modal {
+.app-modal {
     position: fixed;
     inset: 0;
     display: none;
@@ -1774,17 +1774,17 @@ a.suggestion-link:focus {
     z-index: 99999;
 }
 
-.genepedia-modal.open {
+.app-modal.open {
     display: flex;
 }
 
-.genepedia-modal-backdrop {
+.app-modal-backdrop {
     position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
 }
 
-.genepedia-modal-dialog {
+.app-modal-dialog {
     position: relative;
     background: var(--background-color-base);
     color: var(--color-base);
@@ -1796,21 +1796,21 @@ a.suggestion-link:focus {
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
-.genepedia-modal-body h2 {
+.app-modal-body h2 {
     margin: 0 0 .5rem;
     font-size: 1.6rem;
 }
 
-.genepedia-modal-body p {
+.app-modal-body p {
     margin: 0 0 1rem;
     color: var(--color-subtle);
 }
 
-.genepedia-modal-actions {
+.app-modal-actions {
     text-align: right
 }
 
-.genepedia-modal-close {
+.app-modal-close {
     background: var(--background-color-interactive);
     border: 1px solid var(--border-color-base);
     color: var(--color-base);
@@ -1819,7 +1819,7 @@ a.suggestion-link:focus {
     cursor: pointer;
 }
 
-.genepedia-modal-close:focus {
+.app-modal-close:focus {
     outline: 2px solid var(--color-progressive);
     outline-offset: 2px
 }

@@ -12,7 +12,7 @@ const MINI_FOOTER_TEMPLATE = `
 </p>
 `;
 
-const MINI_FOOTER_STYLE_ELEMENT_ID = 'genepedia-mini-footer-styles';
+const MINI_FOOTER_STYLE_ELEMENT_ID = 'app-mini-footer-styles';
 const MINI_FOOTER_STYLES = String.raw`
 mini-footer .site-license {
   color: var(--color-subtle);

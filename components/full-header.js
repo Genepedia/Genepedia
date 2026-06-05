@@ -1049,8 +1049,8 @@ full-header.sidebar-open .header-chrome__backdrop {
           class="header-chrome__search-input"
           type="search"
           name="search"
-          placeholder="Search Genepedia..."
-          aria-label="Search Genepedia"
+          placeholder="Search {{APP_NAME}}..."
+          aria-label="Search {{APP_NAME}}"
           autocomplete="off"
         >
     </form>
@@ -1090,7 +1090,7 @@ full-header.sidebar-open .header-chrome__backdrop {
 
 const FULL_HEADER_SCRIPT_URL = document.currentScript?.src || '';
 const FULL_HEADER_SLOGAN = 'Free Geneology Encyclopedia';
-const FULL_HEADER_SESSION_KEY = 'genepedia-header-session';
+const FULL_HEADER_SESSION_KEY = 'app-header-session';
 
 const FULL_HEADER_DEMO_USER = {
   givenName: 'Shaun',
@@ -1123,7 +1123,7 @@ function ensureActionButtonScript() {
   document.head.append(script);
 }
 
-const THEME_STORAGE_KEY = 'genepedia-theme';
+const THEME_STORAGE_KEY = 'app-theme';
 
 function readStoredTheme() {
   try {
@@ -1298,7 +1298,7 @@ class FullHeader extends HTMLElement {
     this.#initTheme();
     this.#initSidebar();
     this.#initSearch();
-    this.#initGenepediaSearch();
+    this.#initAppSearch();
     this.#initNotifications();
     this.#initAuth();
     // Mark the document so CSS can safely offset content below this fixed header
@@ -1410,29 +1410,29 @@ class FullHeader extends HTMLElement {
     document.addEventListener('keydown', this._notificationsEscapeHandler);
   }
 
-  #initGenepediaSearch() {
+  #initAppSearch() {
     const searchForm = this.querySelector('#header-chrome-search-form');
     if (!searchForm) {
       return;
     }
 
     const bindSearch = () => {
-      window.GenepediaSearch?.bindGenepediaSearchForm?.(searchForm);
+      window.AppSearch?.bindAppSearchForm?.(searchForm);
     };
 
-    if (window.GenepediaSearch) {
+    if (window.AppSearch) {
       bindSearch();
       return;
     }
 
-    const existingScript = document.querySelector('script[src*="genepedia-search.js"]');
+    const existingScript = document.querySelector('script[src*="app-search.js"]');
     if (existingScript) {
       existingScript.addEventListener('load', bindSearch, { once: true });
       return;
     }
 
     const script = document.createElement('script');
-    script.src = resolveFromComponent('genepedia-search.js');
+    script.src = resolveFromComponent('app-search.js');
     script.defer = true;
     script.addEventListener('load', bindSearch, { once: true });
     document.head.append(script);

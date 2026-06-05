@@ -266,14 +266,7 @@
     "last_author": "Shaun Roselt"
   },
   {
-    "path": "components/genepedia-button.js",
-    "size": 2801,
-    "last_commit": "",
-    "last_date": "",
-    "last_author": ""
-  },
-  {
-    "path": "components/genepedia-search.js",
+    "path": "components/app-search.js",
     "size": 17675,
     "last_commit": "",
     "last_date": "",

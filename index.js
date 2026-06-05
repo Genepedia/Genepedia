@@ -1,5 +1,5 @@
 (() => {
-    const THEME_KEY = 'genepedia-theme';
+    const THEME_KEY = 'app-theme';
     const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
 
     const readStoredTheme = () => {
@@ -68,32 +68,32 @@
     };
 
     const createComingSoonModal = () => {
-        const existingModal = document.getElementById('genepedia-coming-soon-modal');
+        const existingModal = document.getElementById('app-coming-soon-modal');
         if (existingModal) {
             return existingModal;
         }
 
         const modal = document.createElement('div');
-        modal.id = 'genepedia-coming-soon-modal';
-        modal.className = 'genepedia-modal';
+        modal.id = 'app-coming-soon-modal';
+        modal.className = 'app-modal';
         modal.innerHTML = `
-            <div class="genepedia-modal-backdrop" tabindex="-1"></div>
-            <div class="genepedia-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="genepedia-modal-title">
-                <div class="genepedia-modal-body">
-                    <h2 id="genepedia-modal-title">Coming soon</h2>
-                    <p id="genepedia-modal-message"></p>
-                    <div class="genepedia-modal-actions">
-                        <button type="button" class="genepedia-modal-close">Close</button>
+            <div class="app-modal-backdrop" tabindex="-1"></div>
+            <div class="app-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="app-modal-title">
+                <div class="app-modal-body">
+                    <h2 id="app-modal-title">Coming soon</h2>
+                    <p id="app-modal-message"></p>
+                    <div class="app-modal-actions">
+                        <button type="button" class="app-modal-close">Close</button>
                     </div>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
 
-        modal.querySelector('.genepedia-modal-close').addEventListener('click', () => {
+        modal.querySelector('.app-modal-close').addEventListener('click', () => {
             closeModal(modal);
         });
-        modal.querySelector('.genepedia-modal-backdrop').addEventListener('click', () => {
+        modal.querySelector('.app-modal-backdrop').addEventListener('click', () => {
             closeModal(modal);
         });
         modal.close = () => {
@@ -105,12 +105,12 @@
 
     const showComingSoon = (platform) => {
         const modal = createComingSoonModal();
-        const appName = window.App?.Name || 'Genepedia';
-        modal.querySelector('#genepedia-modal-message').textContent =
+        const appName = window.App?.getName?.() || window.App?.Name || 'app';
+        modal.querySelector('#app-modal-message').textContent =
             `The ${appName} app is coming soon to the ${platform}. We're actively building it - check back soon for release details.`;
         previousActiveElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         modal.classList.add('open');
-        modal.querySelector('.genepedia-modal-close').focus();
+        modal.querySelector('.app-modal-close').focus();
 
         const keyHandler = ({ key }) => {
             if (key === 'Escape') {

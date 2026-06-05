@@ -146,7 +146,7 @@ const SISTER_PROJECTS_TEMPLATE = `
 </nav>
 `;
 
-const SISTER_PROJECTS_STYLE_ELEMENT_ID = 'genepedia-sister-projects-styles';
+const SISTER_PROJECTS_STYLE_ELEMENT_ID = 'app-sister-projects-styles';
 const SISTER_PROJECTS_STYLES = String.raw`
 sister-projects .other-projects {
   display: inline-block;

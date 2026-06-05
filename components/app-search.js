@@ -1,18 +1,18 @@
-const GENEPEDIA_SEARCH_INDEX_PATH = 'data/search-index.json';
-const GENEPEDIA_SEARCH_STYLE_ID = 'genepedia-search-styles';
-const GENEPEDIA_SEARCH_DROPDOWN_LIMIT = 6;
+const APP_SEARCH_INDEX_PATH = 'data/search-index.json';
+const APP_SEARCH_STYLE_ID = 'app-search-styles';
+const APP_SEARCH_DROPDOWN_LIMIT = 6;
 
 function getAppName() {
-    const name = window.App?.Name;
-    return (typeof name === 'string' && name.trim()) ? name.trim() : 'Genepedia';
+    const name = window.App?.getName?.() || window.App?.Name;
+    return (typeof name === 'string' && name.trim()) ? name.trim() : '';
 }
 
-const GENEPEDIA_SEARCH_STYLES = String.raw`
-.genepedia-search-anchor {
+const APP_SEARCH_STYLES = String.raw`
+.app-search-anchor {
   position: relative;
 }
 
-.genepedia-search__dropdown {
+.app-search__dropdown {
   position: absolute;
   top: calc(100% + 0.25rem);
   left: 0;
@@ -21,103 +21,103 @@ const GENEPEDIA_SEARCH_STYLES = String.raw`
   margin: 0;
   padding: 0.35rem 0;
   list-style: none;
-  border: 1px solid var(--genepedia-search-border, rgba(0, 0, 0, 0.12));
+  border: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
   border-radius: 0.125rem;
-  background: var(--genepedia-search-dropdown-bg, #fff);
+  background: var(--app-search-dropdown-bg, #fff);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
   max-height: 18rem;
   overflow: auto;
 }
 
-.genepedia-search__dropdown[hidden] {
+.app-search__dropdown[hidden] {
   display: none !important;
 }
 
-.genepedia-search__option {
+.app-search__option {
   margin: 0;
   padding: 0;
 }
 
-.genepedia-search__option-link {
+.app-search__option-link {
   display: block;
   padding: 0.55rem 0.85rem;
-  color: var(--genepedia-search-fg, #202122);
+  color: var(--app-search-fg, #202122);
   font: 0.9375rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
   text-decoration: none;
   text-align: left;
 }
 
-.genepedia-search__option-link:hover,
-.genepedia-search__option.is-active .genepedia-search__option-link {
-  background: var(--genepedia-search-hover, rgba(0, 0, 0, 0.05));
-  color: var(--genepedia-search-fg, #202122);
+.app-search__option-link:hover,
+.app-search__option.is-active .app-search__option-link {
+  background: var(--app-search-hover, rgba(0, 0, 0, 0.05));
+  color: var(--app-search-fg, #202122);
   text-decoration: none;
 }
 
-.genepedia-search__option-title {
+.app-search__option-title {
   display: block;
   font-weight: 600;
 }
 
-.genepedia-search__option-description {
+.app-search__option-description {
   display: block;
   margin-top: 0.15rem;
-  color: var(--genepedia-search-muted, #54595d);
+  color: var(--app-search-muted, #54595d);
   font-size: 0.8125rem;
   line-height: 1.35;
 }
 
-.genepedia-search__dropdown-footer {
+.app-search__dropdown-footer {
   margin: 0.35rem 0 0;
   padding: 0.35rem 0 0;
-  border-top: 1px solid var(--genepedia-search-border, rgba(0, 0, 0, 0.12));
+  border-top: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
 }
 
-.genepedia-search__dropdown-all {
+.app-search__dropdown-all {
   display: block;
   padding: 0.55rem 0.85rem;
-  color: var(--genepedia-search-link, #3366cc);
+  color: var(--app-search-link, #3366cc);
   font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
   text-align: left;
   text-decoration: none;
 }
 
-.genepedia-search__dropdown-all:hover {
-  background: var(--genepedia-search-hover, rgba(0, 0, 0, 0.05));
+.app-search__dropdown-all:hover {
+  background: var(--app-search-hover, rgba(0, 0, 0, 0.05));
   text-decoration: none;
 }
 
-.genepedia-search__dropdown-empty {
+.app-search__dropdown-empty {
   padding: 0.65rem 0.85rem;
-  color: var(--genepedia-search-muted, #54595d);
+  color: var(--app-search-muted, #54595d);
   font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
 }
 
 body.theme-dark {
-  --genepedia-search-border: rgba(255, 255, 255, 0.12);
-  --genepedia-search-dropdown-bg: #313438;
-  --genepedia-search-fg: #eaecf0;
-  --genepedia-search-muted: #a7adb4;
-  --genepedia-search-hover: rgba(255, 255, 255, 0.08);
-  --genepedia-search-link: #6b9eff;
+  --app-search-border: rgba(255, 255, 255, 0.12);
+  --app-search-dropdown-bg: #313438;
+  --app-search-fg: #eaecf0;
+  --app-search-muted: #a7adb4;
+  --app-search-hover: rgba(255, 255, 255, 0.08);
+  --app-search-link: #6b9eff;
 }
 
 body:not(.theme-dark) {
-  --genepedia-search-border: rgba(0, 0, 0, 0.12);
-  --genepedia-search-dropdown-bg: #ffffff;
-  --genepedia-search-fg: #202122;
-  --genepedia-search-muted: #54595d;
-  --genepedia-search-hover: rgba(0, 0, 0, 0.05);
-  --genepedia-search-link: #3366cc;
+  --app-search-border: rgba(0, 0, 0, 0.12);
+  --app-search-dropdown-bg: #ffffff;
+  --app-search-fg: #202122;
+  --app-search-muted: #54595d;
+  --app-search-hover: rgba(0, 0, 0, 0.05);
+  --app-search-link: #3366cc;
 }
 
-.header-chrome__search-form.genepedia-search-anchor {
+.header-chrome__search-form.app-search-anchor {
   position: relative;
   overflow: visible;
 }
 
-.header-chrome__search-form .genepedia-search__dropdown {
+.header-chrome__search-form .app-search__dropdown {
   min-width: 16rem;
 }
 
@@ -162,7 +162,7 @@ body:not(.theme-dark) {
 
 .search-page__meta {
   margin: 0 0 1rem;
-  color: var(--genepedia-search-muted, #54595d);
+  color: var(--app-search-muted, #54595d);
   font-size: 0.9375rem;
 }
 
@@ -170,17 +170,17 @@ body:not(.theme-dark) {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--genepedia-search-border, rgba(0, 0, 0, 0.12));
+  border-top: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
 }
 
 .search-page__result {
-  border-bottom: 1px solid var(--genepedia-search-border, rgba(0, 0, 0, 0.12));
+  border-bottom: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
 }
 
 .search-page__result-link {
   display: block;
   padding: 1rem 0.25rem;
-  color: var(--genepedia-search-link, #3366cc);
+  color: var(--app-search-link, #3366cc);
   text-decoration: none;
 }
 
@@ -198,14 +198,14 @@ body:not(.theme-dark) {
 .search-page__result-description {
   display: block;
   margin-top: 0.35rem;
-  color: var(--genepedia-search-fg, #202122);
+  color: var(--app-search-fg, #202122);
   font-size: 0.9375rem;
   line-height: 1.5;
 }
 
 .search-page__empty {
   padding: 2rem 0;
-  color: var(--genepedia-search-muted, #54595d);
+  color: var(--app-search-muted, #54595d);
   text-align: center;
 }
 `;
@@ -221,13 +221,13 @@ function normalizeSiteRootPrefix(prefix) {
 }
 
 function ensureSearchStyles() {
-    if (document.getElementById(GENEPEDIA_SEARCH_STYLE_ID)) {
+    if (document.getElementById(APP_SEARCH_STYLE_ID)) {
         return;
     }
 
     const style = document.createElement('style');
-    style.id = GENEPEDIA_SEARCH_STYLE_ID;
-    style.textContent = GENEPEDIA_SEARCH_STYLES;
+    style.id = APP_SEARCH_STYLE_ID;
+    style.textContent = APP_SEARCH_STYLES;
     document.head.append(style);
 }
 
@@ -251,7 +251,7 @@ function getSiteRootPrefix() {
 }
 
 function resolveSearchIndexUrl() {
-    return new URL(GENEPEDIA_SEARCH_INDEX_PATH, new URL(getSiteRootPrefix(), window.location.href)).href;
+    return new URL(APP_SEARCH_INDEX_PATH, new URL(getSiteRootPrefix(), window.location.href)).href;
 }
 
 function resolvePersonProfileUrl(personId) {
@@ -371,7 +371,7 @@ function getDropdownAnchor(form) {
 
 function createDropdown(anchor) {
     const dropdown = document.createElement('ul');
-    dropdown.className = 'genepedia-search__dropdown';
+    dropdown.className = 'app-search__dropdown';
     dropdown.setAttribute('role', 'listbox');
     dropdown.hidden = true;
     anchor.append(dropdown);
@@ -385,7 +385,7 @@ function renderDropdownItems(dropdown, matches, query) {
 
     if (matches.length === 0) {
         const empty = document.createElement('li');
-        empty.className = 'genepedia-search__dropdown-empty';
+        empty.className = 'app-search__dropdown-empty';
         empty.textContent = query.trim() ? `No profiles match "${query.trim()}".` : `Type to search ${appName}.`;
         dropdown.append(empty);
         return;
@@ -393,22 +393,22 @@ function renderDropdownItems(dropdown, matches, query) {
 
     matches.forEach((match, index) => {
         const item = document.createElement('li');
-        item.className = 'genepedia-search__option';
+        item.className = 'app-search__option';
         item.setAttribute('role', 'option');
         item.dataset.index = String(index);
 
         const link = document.createElement('a');
-        link.className = 'genepedia-search__option-link';
+        link.className = 'app-search__option-link';
         link.href = match.url;
 
         const title = document.createElement('span');
-        title.className = 'genepedia-search__option-title';
+        title.className = 'app-search__option-title';
         title.textContent = match.entry.title;
         link.append(title);
 
         if (match.entry.description) {
             const description = document.createElement('span');
-            description.className = 'genepedia-search__option-description';
+            description.className = 'app-search__option-description';
             description.textContent = match.entry.description;
             link.append(description);
         }
@@ -418,11 +418,11 @@ function renderDropdownItems(dropdown, matches, query) {
     });
 
     const footer = document.createElement('li');
-    footer.className = 'genepedia-search__dropdown-footer';
+    footer.className = 'app-search__dropdown-footer';
     footer.setAttribute('role', 'presentation');
 
     const viewAll = document.createElement('a');
-    viewAll.className = 'genepedia-search__dropdown-all';
+    viewAll.className = 'app-search__dropdown-all';
     viewAll.href = resolveSearchPageUrl(query);
     viewAll.textContent = `View all results for “${query.trim()}”`;
     footer.append(viewAll);
@@ -430,7 +430,7 @@ function renderDropdownItems(dropdown, matches, query) {
 }
 
 function setActiveDropdownOption(dropdown, index) {
-    const options = [...dropdown.querySelectorAll('.genepedia-search__option')];
+    const options = [...dropdown.querySelectorAll('.app-search__option')];
     options.forEach((option, optionIndex) => {
         const isActive = optionIndex === index;
         option.classList.toggle('is-active', isActive);
@@ -439,13 +439,13 @@ function setActiveDropdownOption(dropdown, index) {
     return options[index] || null;
 }
 
-function bindGenepediaSearchForm(form) {
-    if (!form || form.dataset.genepediaSearchBound === 'true') {
+function bindAppSearchForm(form) {
+    if (!form || form.dataset.appSearchBound === 'true') {
         return;
     }
 
     ensureSearchStyles();
-    form.dataset.genepediaSearchBound = 'true';
+    form.dataset.appSearchBound = 'true';
 
     const input = getSearchInput(form);
     if (!input) {
@@ -453,7 +453,7 @@ function bindGenepediaSearchForm(form) {
     }
 
     const anchor = getDropdownAnchor(form);
-    anchor.classList.add('genepedia-search-anchor');
+    anchor.classList.add('app-search-anchor');
     const dropdown = createDropdown(anchor);
 
     let activeIndex = -1;
@@ -480,7 +480,7 @@ function bindGenepediaSearchForm(form) {
             return;
         }
 
-        latestMatches = await findPersonMatches(trimmedQuery, { limit: GENEPEDIA_SEARCH_DROPDOWN_LIMIT });
+        latestMatches = await findPersonMatches(trimmedQuery, { limit: APP_SEARCH_DROPDOWN_LIMIT });
         renderDropdownItems(dropdown, latestMatches, trimmedQuery);
         activeIndex = -1;
         openDropdown();
@@ -519,7 +519,7 @@ function bindGenepediaSearchForm(form) {
     });
 
     input.addEventListener('keydown', (event) => {
-        const options = dropdown.hidden ? [] : [...dropdown.querySelectorAll('.genepedia-search__option')];
+        const options = dropdown.hidden ? [] : [...dropdown.querySelectorAll('.app-search__option')];
 
         if (event.key === 'ArrowDown') {
             if (!options.length) {
@@ -562,14 +562,14 @@ function bindGenepediaSearchForm(form) {
     input.setAttribute('aria-autocomplete', 'list');
     input.setAttribute('aria-controls', dropdown.id || '');
     if (!dropdown.id) {
-        dropdown.id = `genepedia-search-dropdown-${Math.random().toString(36).slice(2, 9)}`;
+        dropdown.id = `app-search-dropdown-${Math.random().toString(36).slice(2, 9)}`;
         input.setAttribute('aria-controls', dropdown.id);
     }
     input.setAttribute('aria-expanded', 'false');
 }
 
 async function renderSearchResultsPage() {
-    const resultsRoot = document.getElementById('genepedia-search-results');
+    const resultsRoot = document.getElementById('app-search-results');
     if (!resultsRoot) {
         return;
     }
@@ -578,8 +578,8 @@ async function renderSearchResultsPage() {
 
     const params = new URLSearchParams(window.location.search);
     const query = (params.get('q') || params.get('search') || '').trim();
-    const titleEl = document.getElementById('genepedia-search-page-title');
-    const metaEl = document.getElementById('genepedia-search-page-meta');
+    const titleEl = document.getElementById('app-search-page-title');
+    const metaEl = document.getElementById('app-search-page-meta');
     const formInput = document.querySelector('#search-page-form input[name="search"], #search-page-form input[type="search"]');
 
     if (formInput) {
@@ -645,22 +645,22 @@ async function renderSearchResultsPage() {
     resultsRoot.replaceChildren(list);
 }
 
-function initGenepediaSearch() {
-    document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindGenepediaSearchForm);
+function initAppSearch() {
+    document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindAppSearchForm);
     void renderSearchResultsPage();
 }
 
-window.GenepediaSearch = {
+window.AppSearch = {
     findPersonMatches,
     resolveSearchPageUrl,
     resolvePersonProfileUrl,
-    bindGenepediaSearchForm,
+    bindAppSearchForm,
     renderSearchResultsPage,
-    initGenepediaSearch,
+    initAppSearch,
 };
 
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initGenepediaSearch, { once: true });
+    document.addEventListener('DOMContentLoaded', initAppSearch, { once: true });
 } else {
-    initGenepediaSearch();
+    initAppSearch();
 }
