@@ -664,7 +664,7 @@ body>article .people-page__inner {
 }
 
 /* Theme override
-   The base palette supports `prefers-color-scheme`, but Genipedia also allows an explicit
+  The base palette supports `prefers-color-scheme`, but Genepedia also allows an explicit
    user-selected theme via `body.theme-dark` (stored in localStorage).
    Re-apply the palette on `body` so the user's choice always wins over OS preference. */
 body:not(.theme-dark) {

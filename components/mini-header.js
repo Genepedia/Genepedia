@@ -12,7 +12,7 @@ const MINI_HEADER_TEMPLATE = `
   <h1 class="central-textlogo-wrapper">
     <span class="central-textlogo__wordmark">
       <a href="" class="central-textlogo__home-link" aria-label="Home">
-        <span class="central-textlogo__wordmark-accent">G</span>ENIPEDI<span class="central-textlogo__wordmark-accent">A</span>
+        <span class="central-textlogo__wordmark-accent">G</span>ENEPEDI<span class="central-textlogo__wordmark-accent">A</span>
       </a>
     </span>
     <strong class="localized-slogan">The Free Geneology Encyclopedia</strong>
@@ -20,7 +20,7 @@ const MINI_HEADER_TEMPLATE = `
 </div>
 `;
 
-const MINI_HEADER_STYLE_ELEMENT_ID = 'genipedia-mini-header-styles';
+const MINI_HEADER_STYLE_ELEMENT_ID = 'genepedia-mini-header-styles';
 const MINI_HEADER_STYLES = String.raw`
 mini-header .central-textlogo-wrapper {
   display: inline-block;

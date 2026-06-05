@@ -345,7 +345,7 @@ body:not(.theme-dark) .page-footer__brand mini-header .localized-slogan {
 
     <div class="page-footer__meta">
       <ul class="page-footer__links">
-        <li><a href="#">Contact Genipedia</a></li>
+        <li><a href="#">Contact Genepedia</a></li>
         <li><a href="#">Privacy policy</a></li>
         <li><a href="#">Terms of Use</a></li>
         <li><a href="#">Cookie statement</a></li>

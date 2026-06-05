@@ -4,16 +4,16 @@
 2 FORM LINEAGE-LINKED
 3 VERS 5.5.5
 1 CHAR UTF-8
-1 SOUR GENIPEDIA
-2 NAME Genipedia Tree Test
+1 SOUR GENEPEDIA
+2 NAME Genepedia Tree Test
 2 VERS 0.1.0
-1 DEST GENIPEDIA
+1 DEST GENEPEDIA
 1 DATE 4 JUN 2026
 1 FILE family-tree.ged
 1 LANG English
 1 SUBM @U1@
 0 @U1@ SUBM
-1 NAME Genipedia Demo
+1 NAME Genepedia Demo
 0 @P100@ INDI
 1 NAME Robert /Johnson/
 2 GIVN Robert

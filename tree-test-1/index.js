@@ -12,10 +12,10 @@ const CONFIG = {
 const GEDCOM_DATA_URL = "./family-tree.ged";
 
 async function loadTreeData(url) {
-	const api = window.GenipediaGedcom;
+	const api = window.GenepediaGedcom;
 	if (!api || typeof api.loadTreeData !== "function") {
 		throw new Error(
-			"GenipediaGedcom library not loaded. Ensure ../lib/gedcom.js is included before tree-test-1/index.js.",
+			"GenepediaGedcom library not loaded. Ensure ../lib/gedcom.js is included before tree-test-1/index.js.",
 		);
 	}
 
@@ -1456,10 +1456,10 @@ async function main() {
 		gedcomFileInput.value = "";
 		if (!file) return;
 
-		const api = window.GenipediaGedcom;
+		const api = window.GenepediaGedcom;
 		if (!api || typeof api.parseGedcom555FromBytes !== "function") {
 			console.error(
-				"GenipediaGedcom library not loaded. Ensure ../lib/gedcom.js is included before tree-test-1/index.js.",
+				"GenepediaGedcom library not loaded. Ensure ../lib/gedcom.js is included before tree-test-1/index.js.",
 			);
 			return;
 		}

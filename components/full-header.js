@@ -1046,13 +1046,13 @@ full-header.sidebar-open .header-chrome__backdrop {
         <i class="bi bi-search"></i>
       </span>
       <input
-        class="header-chrome__search-input"
-        type="search"
-        name="search"
-        placeholder="Search Genipedia..."
-        aria-label="Search Genipedia"
-        autocomplete="off"
-      >
+          class="header-chrome__search-input"
+          type="search"
+          name="search"
+          placeholder="Search Genepedia..."
+          aria-label="Search Genepedia"
+          autocomplete="off"
+        >
     </form>
   </div>
 </header>
@@ -1090,7 +1090,7 @@ full-header.sidebar-open .header-chrome__backdrop {
 
 const FULL_HEADER_SCRIPT_URL = document.currentScript?.src || '';
 const FULL_HEADER_SLOGAN = 'Free Geneology Encyclopedia';
-const FULL_HEADER_SESSION_KEY = 'genipedia-header-session';
+const FULL_HEADER_SESSION_KEY = 'genepedia-header-session';
 
 const FULL_HEADER_DEMO_USER = {
   givenName: 'Shaun',
@@ -1123,7 +1123,7 @@ function ensureActionButtonScript() {
   document.head.append(script);
 }
 
-const THEME_STORAGE_KEY = 'genipedia-theme';
+const THEME_STORAGE_KEY = 'genepedia-theme';
 
 function readStoredTheme() {
   try {
@@ -1298,7 +1298,7 @@ class FullHeader extends HTMLElement {
     this.#initTheme();
     this.#initSidebar();
     this.#initSearch();
-    this.#initGenipediaSearch();
+    this.#initGenepediaSearch();
     this.#initNotifications();
     this.#initAuth();
     // Mark the document so CSS can safely offset content below this fixed header
@@ -1410,29 +1410,29 @@ class FullHeader extends HTMLElement {
     document.addEventListener('keydown', this._notificationsEscapeHandler);
   }
 
-  #initGenipediaSearch() {
+  #initGenepediaSearch() {
     const searchForm = this.querySelector('#header-chrome-search-form');
     if (!searchForm) {
       return;
     }
 
     const bindSearch = () => {
-      window.GenipediaSearch?.bindGenipediaSearchForm?.(searchForm);
+      window.GenepediaSearch?.bindGenepediaSearchForm?.(searchForm);
     };
 
-    if (window.GenipediaSearch) {
+    if (window.GenepediaSearch) {
       bindSearch();
       return;
     }
 
-    const existingScript = document.querySelector('script[src*="genipedia-search.js"]');
+    const existingScript = document.querySelector('script[src*="genepedia-search.js"]');
     if (existingScript) {
       existingScript.addEventListener('load', bindSearch, { once: true });
       return;
     }
 
     const script = document.createElement('script');
-    script.src = resolveFromComponent('genipedia-search.js');
+    script.src = resolveFromComponent('genepedia-search.js');
     script.defer = true;
     script.addEventListener('load', bindSearch, { once: true });
     document.head.append(script);

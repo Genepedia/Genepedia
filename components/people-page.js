@@ -284,7 +284,7 @@ class PeoplePage extends HTMLElement {
     }
 
     if (title) {
-      document.title = `${title} - Genipedia`;
+      document.title = `${title} - Genepedia`;
     }
   }
 
@@ -475,7 +475,7 @@ class PeoplePage extends HTMLElement {
     const downloadDropdown = this.querySelector('#people-page-download-menu');
     if (downloadDropdown) {
       const ensureManager = async () => {
-        if (window.GenipediaDownloads) return window.GenipediaDownloads;
+        if (window.GenepediaDownloads) return window.GenepediaDownloads;
         // try to resolve components base from the people-page script tag
         const scripts = Array.from(document.querySelectorAll('script[src]'));
         let base = new URL('.', window.location.href).href;
@@ -503,7 +503,7 @@ class PeoplePage extends HTMLElement {
         } catch (e) {
           console.warn('Could not load download manager', e);
         }
-        return window.GenipediaDownloads;
+        return window.GenepediaDownloads;
       };
 
       downloadDropdown.addEventListener('click', async (event) => {

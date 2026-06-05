@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="84 -20 1382 1450" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Genipedia G logo">
-	<title>Genipedia G</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="84 -20 1382 1450" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Genepedia G logo">
+	<title>Genepedia G</title>
 	<path fill="#1462AF" transform="translate(0 1410) scale(1 -1)" d="M806 211Q921 211 1029 244.5Q1137 278 1196 330V525H852V743H1466V225Q1354 110 1174.5 45Q995 -20 798 -20Q454 -20 269 170.5Q84 361 84 711Q84 1059 270 1244.5Q456 1430 805 1430Q1301 1430 1436 1063L1164 981Q1120 1088 1026 1143Q932 1198 805 1198Q597 1198 489 1072Q381 946 381 711Q381 472 492.5 341.5Q604 211 806 211Z"/>
 </svg>
 
