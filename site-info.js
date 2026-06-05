@@ -1,6 +1,9 @@
 (function () {
-    const BRANDING_SOURCE_NAME = 'Genepedia';
-    const brandingNames = new Set([BRANDING_SOURCE_NAME]);
+    const BRANDING_SOURCE_NAME = 'Roselt';
+    // Seed with the original names used throughout the static HTML/templates,
+    // so a single App.Name (or BRANDING_SOURCE_NAME) change can rebrand the site.
+    const BUILTIN_BRAND_NAMES = ['Genepedia', 'Genipedia'];
+    const brandingNames = new Set([...BUILTIN_BRAND_NAMES, BRANDING_SOURCE_NAME]);
 
     const existing = (typeof window !== 'undefined') ? window.App : null;
     const app = (existing && typeof existing === 'object') ? existing : {};
@@ -9,7 +12,7 @@
         Name: BRANDING_SOURCE_NAME,
         Version: '1.0.0',
         ReleaseDate: '2026-07-01',
-        Description: 'Genepedia is a home for family stories, a place to discover, document, and share your family history.',
+        Description: `${BRANDING_SOURCE_NAME} is a home for family stories, a place to discover, document, and share your family history.`,
     };
 
     function normalizeName(value) {
