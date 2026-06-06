@@ -360,7 +360,10 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
   padding: 0 0.85rem;
   cursor: pointer;
   white-space: nowrap;
+  line-height: 1;
   box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .header-chrome__login:hover {
@@ -397,9 +400,12 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
   background: rgba(255, 255, 255, 0.04);
   color: var(--header-chrome-fg);
   font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  line-height: 1;
   cursor: pointer;
   white-space: nowrap;
   box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .header-chrome__user-trigger:hover,
