@@ -8,6 +8,13 @@ html {
   font-size: 100%;
 }
 
+/* Keep shared pages hidden until the bootstrap scripts finish applying
+   branding, theme, and custom-element chrome. This prevents a flash of raw
+   HTML before the styled shell is ready. */
+html:not([data-app-ready="true"]) body {
+  visibility: hidden;
+}
+
 /* Site-wide body base reset */
 body {
   margin: 0;

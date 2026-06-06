@@ -16,6 +16,14 @@
     const attributeTemplates = new WeakMap();
     const titleTemplates = new WeakMap();
 
+    function markAppReady() {
+        try {
+            document.documentElement.setAttribute('data-app-ready', 'true');
+        } catch (e) {
+            // ignore
+        }
+    }
+
     function normalizeName(value) {
         return (typeof value === 'string') ? value.trim() : '';
     }
@@ -221,13 +229,19 @@
                     applyBranding(document);
                 } catch (e) {
                     // ignore
+                } finally {
+                    markAppReady();
                 }
             }, { once: true });
+
+            window.addEventListener('load', markAppReady, { once: true });
         } else {
             try {
                 applyBranding(document);
             } catch (e) {
                 // ignore
+            } finally {
+                markAppReady();
             }
         }
     }

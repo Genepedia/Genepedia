@@ -831,7 +831,7 @@ full-header.sidebar-open .header-chrome__backdrop {
     width: auto;
     max-width: 18rem;
     margin-left: auto;
-    margin-right: var(--header-chrome-toolbar-gap);
+    margin-right: 0;
   }
 
   .header-chrome__tools {
