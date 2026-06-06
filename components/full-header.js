@@ -371,6 +371,10 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
 }
 
 .header-chrome__auth {
+  display: flex;
+  align-items: center;
+  min-height: var(--header-chrome-control-height);
+  line-height: 1;
   position: relative;
 }
 
@@ -383,6 +387,10 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
 }
 
 .header-chrome__user-menu {
+  display: flex;
+  align-items: center;
+  min-height: var(--header-chrome-control-height);
+  line-height: 1;
   position: relative;
 }
 
@@ -414,6 +422,9 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
 }
 
 .header-chrome__user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: var(--header-chrome-avatar-size);
   height: var(--header-chrome-avatar-size);
   border-radius: 50%;
@@ -447,10 +458,11 @@ body:not(.theme-dark) .header-chrome__user-avatar--placeholder {
 
 .header-chrome__user-name {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.3rem;
   min-width: 0;
   overflow: hidden;
+  line-height: 1;
 }
 
 .header-chrome__user-given,
@@ -499,6 +511,8 @@ body:not(.theme-dark) .header-chrome__user-dropdown {
 .header-chrome__notifications {
   display: inline-flex;
   align-items: center;
+  min-height: var(--header-chrome-control-height);
+  line-height: 1;
   position: relative;
   margin: 0;
 }
@@ -1287,6 +1301,14 @@ class FullHeader extends HTMLElement {
   connectedCallback() {
     if (this.__rendered) return;
     this.__rendered = true;
+    const showDesktopSidebar = window.matchMedia('(min-width: 992px)').matches;
+    this.classList.toggle('sidebar-open', showDesktopSidebar);
+    try {
+      document.body.setAttribute('data-has-full-header', 'true');
+      document.body.classList.toggle('header-chrome-content-offset', showDesktopSidebar);
+    } catch (e) {
+      // ignore
+    }
     applyDocumentTheme();
     ensureActionButtonScript();
     this.innerHTML = FULL_HEADER_TEMPLATE;
@@ -1317,7 +1339,9 @@ class FullHeader extends HTMLElement {
     if (randomProfileLink) {
       randomProfileLink.addEventListener('click', (event) => {
         event.preventDefault();
-        this._closeSidebar?.();
+        if (!window.matchMedia('(min-width: 992px)').matches) {
+          this._closeSidebar?.();
+        }
         void navigateToRandomProfile();
       });
     }
@@ -1373,12 +1397,6 @@ class FullHeader extends HTMLElement {
     this.#initAppSearch();
     this.#initNotifications();
     this.#initAuth();
-    // Mark the document so CSS can safely offset content below this fixed header
-    try {
-      document.body.setAttribute('data-has-full-header', 'true');
-    } catch (e) {
-      // ignore
-    }
   }
 
   disconnectedCallback() {
