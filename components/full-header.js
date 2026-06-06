@@ -1091,12 +1091,78 @@ full-header.sidebar-open .header-chrome__backdrop {
 const FULL_HEADER_SCRIPT_URL = document.currentScript?.src || '';
 const FULL_HEADER_SLOGAN = 'Free Geneology Encyclopedia';
 const FULL_HEADER_SESSION_KEY = 'app-header-session';
+const FULL_HEADER_DEFAULT_GITHUB_API_BASE = 'https://api.shaunroselt.com/genepedia';
 
-const FULL_HEADER_DEMO_USER = {
-  givenName: 'Shaun',
-  familyName: 'Roselt',
-  photoUrl: '',
-};
+function normalizeHeaderApiBaseUrl(value) {
+  const rawValue = String(value || '').trim();
+  if (!rawValue) {
+    return '';
+  }
+
+  try {
+    const href = new URL(rawValue, window.location.href).href;
+    return href.replace(/\/+$/, '');
+  } catch {
+    return rawValue.replace(/\/+$/, '');
+  }
+}
+
+function resolveHeaderGitHubApiBase() {
+  const configuredBase = normalizeHeaderApiBaseUrl(
+    window.GENEPEDIA_GITHUB_API_BASE
+    || document.documentElement?.dataset?.genepediaGithubApiBase
+    || ''
+  );
+
+  if (configuredBase) {
+    return configuredBase;
+  }
+
+  const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  if (window.location.protocol === 'file:' || isLocalHost) {
+    return normalizeHeaderApiBaseUrl(resolveFromComponent('../api'));
+  }
+
+  return FULL_HEADER_DEFAULT_GITHUB_API_BASE;
+}
+
+function resolveHeaderGitHubApiUrl(fileName) {
+  return new URL(fileName, `${resolveHeaderGitHubApiBase()}/`).href;
+}
+
+const FULL_HEADER_GITHUB_LOGIN_URL = resolveHeaderGitHubApiUrl('github-login.php');
+const FULL_HEADER_GITHUB_SESSION_URL = resolveHeaderGitHubApiUrl('github-session.php');
+const FULL_HEADER_GITHUB_LOGOUT_URL = resolveHeaderGitHubApiUrl('github-logout.php');
+
+function normalizeHeaderUser(user) {
+  const displayName = String(user?.displayName || user?.name || '').trim();
+  let givenName = String(user?.givenName || '').trim();
+  let familyName = String(user?.familyName || '').trim();
+  const login = String(user?.login || '').trim();
+
+  if ((!givenName && !familyName) && displayName) {
+    const parts = displayName.split(/\s+/).filter(Boolean);
+    if (parts.length === 1) {
+      givenName = parts[0];
+    } else if (parts.length > 1) {
+      givenName = parts.shift() || '';
+      familyName = parts.join(' ');
+    }
+  }
+
+  if (!givenName && !familyName && login) {
+    givenName = login;
+  }
+
+  return {
+    givenName,
+    familyName,
+    displayName: `${givenName} ${familyName}`.trim() || displayName || login || 'GitHub User',
+    login,
+    photoUrl: String(user?.photoUrl || user?.avatarUrl || '').trim(),
+    profileUrl: String(user?.profileUrl || '').trim(),
+  };
+}
 
 function resolveFromComponent(relativePath) {
   try {
@@ -1585,15 +1651,21 @@ class FullHeader extends HTMLElement {
     const avatar = this.querySelector('.header-chrome__user-avatar');
     const givenNameEl = this.querySelector('.header-chrome__user-given');
     const familyNameEl = this.querySelector('.header-chrome__user-family');
+    const profileLink = Array.from(userDropdown?.querySelectorAll('a[role="menuitem"]') || [])
+      .find((link) => link.textContent.trim().toLowerCase().includes('view your profile'));
+    const defaultProfileHref = profileLink?.getAttribute('href') || '#';
 
     if (!auth || !loginButton || !userMenu || !userTrigger || !userDropdown) {
       return;
     }
 
+    loginButton.setAttribute('aria-label', 'Log in with GitHub');
+    loginButton.setAttribute('title', 'Log in with GitHub');
+
     const readSession = () => {
       try {
         const raw = localStorage.getItem(FULL_HEADER_SESSION_KEY);
-        return raw ? JSON.parse(raw) : null;
+        return raw ? normalizeHeaderUser(JSON.parse(raw)) : null;
       } catch {
         return null;
       }
@@ -1602,7 +1674,7 @@ class FullHeader extends HTMLElement {
     const writeSession = (user) => {
       try {
         if (user) {
-          localStorage.setItem(FULL_HEADER_SESSION_KEY, JSON.stringify(user));
+          localStorage.setItem(FULL_HEADER_SESSION_KEY, JSON.stringify(normalizeHeaderUser(user)));
         } else {
           localStorage.removeItem(FULL_HEADER_SESSION_KEY);
         }
@@ -1614,7 +1686,7 @@ class FullHeader extends HTMLElement {
     const setAvatar = (user) => {
       if (!avatar) return;
 
-      const label = `${user.givenName || ''} ${user.familyName || ''}`.trim();
+      const label = user.displayName || `${user.givenName || ''} ${user.familyName || ''}`.trim() || 'GitHub User';
 
       if (user.photoUrl) {
         const photo = document.createElement('img');
@@ -1635,6 +1707,23 @@ class FullHeader extends HTMLElement {
       }
 
       userTrigger.setAttribute('aria-label', `${label}, account menu`);
+    };
+
+    const clearUser = () => {
+      if (givenNameEl) givenNameEl.textContent = '';
+      if (familyNameEl) familyNameEl.textContent = '';
+      if (profileLink) {
+        profileLink.href = defaultProfileHref;
+        profileLink.removeAttribute('target');
+        profileLink.removeAttribute('rel');
+      }
+
+      setAvatar({
+        givenName: '',
+        familyName: '',
+        displayName: 'Account',
+        photoUrl: '',
+      });
     };
 
     const closeUserMenu = () => {
@@ -1658,7 +1747,7 @@ class FullHeader extends HTMLElement {
     this._openUserMenu = openUserMenu;
 
     const setLoggedIn = (loggedIn, user = null) => {
-      const sessionUser = user || FULL_HEADER_DEMO_USER;
+      const sessionUser = normalizeHeaderUser(user || {});
       auth.dataset.loggedIn = loggedIn ? 'true' : 'false';
       closeUserMenu();
 
@@ -1666,14 +1755,22 @@ class FullHeader extends HTMLElement {
         if (givenNameEl) givenNameEl.textContent = sessionUser.givenName || '';
         if (familyNameEl) familyNameEl.textContent = sessionUser.familyName || '';
         setAvatar(sessionUser);
+        if (profileLink && sessionUser.profileUrl) {
+          profileLink.href = sessionUser.profileUrl;
+          profileLink.target = '_blank';
+          profileLink.rel = 'noreferrer';
+        }
         writeSession(sessionUser);
       } else {
+        clearUser();
         writeSession(null);
       }
     };
 
     loginButton.addEventListener('click', () => {
-      setLoggedIn(true, FULL_HEADER_DEMO_USER);
+      const loginUrl = new URL(FULL_HEADER_GITHUB_LOGIN_URL, window.location.href);
+      loginUrl.searchParams.set('return_to', window.location.href);
+      window.location.assign(loginUrl.toString());
     });
 
     userTrigger.addEventListener('click', (event) => {
@@ -1688,7 +1785,19 @@ class FullHeader extends HTMLElement {
       }
     });
 
-    logoutButton?.addEventListener('click', () => {
+    logoutButton?.addEventListener('click', async () => {
+      try {
+        await fetch(FULL_HEADER_GITHUB_LOGOUT_URL, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+          },
+          credentials: 'include',
+        });
+      } catch {
+        // ignore logout transport errors and still clear local state
+      }
+
       setLoggedIn(false);
     });
 
@@ -1719,10 +1828,47 @@ class FullHeader extends HTMLElement {
     };
     document.addEventListener('keydown', this._authEscapeHandler);
 
+    const syncSession = async () => {
+      try {
+        const response = await fetch(FULL_HEADER_GITHUB_SESSION_URL, {
+          credentials: 'include',
+          cache: 'no-store',
+          headers: {
+            Accept: 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          setLoggedIn(false);
+          return;
+        }
+
+        const payload = await response.json();
+        if (payload?.authenticated && payload.user) {
+          setLoggedIn(true, payload.user);
+          return;
+        }
+
+        setLoggedIn(false);
+      } catch {
+        const cachedSession = readSession();
+        if (cachedSession) {
+          setLoggedIn(true, cachedSession);
+          return;
+        }
+
+        setLoggedIn(false);
+      }
+    };
+
     const existingSession = readSession();
     if (existingSession) {
-      setLoggedIn(true, { ...FULL_HEADER_DEMO_USER, ...existingSession });
+      setLoggedIn(true, existingSession);
+    } else {
+      clearUser();
     }
+
+    void syncSession();
   }
 
   disconnectedCallback() {

@@ -1,3 +1,77 @@
+# Genepedia .gitignore
+# Keeps secrets, build artifacts, and editor files out of commits.
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build / output
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime
+tmp/
+temp/
+.cache/
+pids/
+*.pid
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors / IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Environment / Secrets
+.env
+.env.*.local
+api/.env
+api/.env.local
+*.secret
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# SSL certs
+*.crt
+*.cer
+*.key
+
+# Databases
+*.sqlite
+*.sqlite3
+*.db
+
+# Composer / PHP
+vendor/
+composer.phar
+composer.lock
+
+# Tools / binaries (ignore runtime binaries)
+.tools/
+.tools/**/frankenphp*
+.tools/**/php-*
+
+# Coverage / reports
+coverage/
+.nyc_output/
+
+# Misc
+*.swp
+*~
+.project
 tree-test-1/example.js
 tree-example.js
 tree-test-1/GEDCOM 5.5.5.pdf
