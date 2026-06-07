@@ -323,13 +323,13 @@ body:not(.theme-dark) .page-footer__brand mini-header .localized-slogan {
       </div>
       <ul class="page-footer__social">
         <li>
-          <action-button href="#" icon="bi-youtube" aria-label="YouTube" title="YouTube"></action-button>
+          <action-button href="https://www.youtube.com/@Genepedia" target="_blank" rel="noopener noreferrer" icon="bi-youtube" aria-label="YouTube" title="YouTube"></action-button>
         </li>
         <li>
           <action-button href="#" icon="bi-facebook" aria-label="Facebook" title="Facebook"></action-button>
         </li>
         <li>
-          <action-button href="#" icon="bi-instagram" aria-label="Instagram" title="Instagram"></action-button>
+          <action-button href="https://www.instagram.com/genepedia_org/" target="_blank" rel="noopener noreferrer" icon="bi-instagram" aria-label="Instagram" title="Instagram"></action-button>
         </li>
         <li>
           <action-button href="#" icon="bi-tiktok" aria-label="TikTok" title="TikTok"></action-button>
@@ -338,7 +338,7 @@ body:not(.theme-dark) .page-footer__brand mini-header .localized-slogan {
           <action-button href="#" icon="bi-twitter-x" aria-label="X" title="X"></action-button>
         </li>
         <li>
-          <action-button href="#" icon="bi-github" aria-label="GitHub" title="GitHub"></action-button>
+          <action-button href="https://github.com/Genepedia" target="_blank" rel="noopener noreferrer" icon="bi-github" aria-label="GitHub" title="GitHub"></action-button>
         </li>
       </ul>
     </div>

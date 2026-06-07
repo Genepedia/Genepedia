@@ -386,6 +386,10 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
   display: none;
 }
 
+full-header[data-logged-in="false"] .header-chrome__notifications {
+  display: none;
+}
+
 .header-chrome__user-menu {
   display: flex;
   align-items: center;
@@ -1330,6 +1334,7 @@ class FullHeader extends HTMLElement {
     applyDocumentTheme();
     ensureActionButtonScript();
     this.innerHTML = FULL_HEADER_TEMPLATE;
+    this.dataset.loggedIn = 'false';
 
     // Dynamically resolve links in the user dropdown
     this.querySelectorAll('a[role="menuitem"]').forEach((link) => {
@@ -1790,7 +1795,9 @@ class FullHeader extends HTMLElement {
 
     const setLoggedIn = (loggedIn, user = null) => {
       const sessionUser = normalizeHeaderUser(user || {});
-      auth.dataset.loggedIn = loggedIn ? 'true' : 'false';
+      const loggedInValue = loggedIn ? 'true' : 'false';
+      auth.dataset.loggedIn = loggedInValue;
+      this.dataset.loggedIn = loggedInValue;
       closeUserMenu();
 
       if (loggedIn) {
