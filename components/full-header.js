@@ -110,28 +110,46 @@ body:not(.theme-dark) .header-container.header-chrome {
 .header-chrome__tools {
   flex: 1 1 auto;
   justify-content: flex-end;
+  align-items: center;
   gap: var(--header-chrome-toolbar-gap);
+  min-height: var(--header-chrome-control-height);
 }
 
 .header-chrome__search {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   justify-content: flex-end;
+  align-items: center;
+  height: var(--header-chrome-control-height);
 }
 
 .header-chrome__end {
   flex: 0 0 auto;
   justify-content: flex-end;
+  align-items: center;
   gap: var(--header-chrome-toolbar-gap);
+  height: var(--header-chrome-control-height);
 }
 
-.header-chrome__menu {
+.header-chrome__menu,
+.header-chrome__search-toggle,
+.header-chrome__notifications-trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75em;
-  height: 2.75em;
+  flex: 0 0 auto;
+  width: var(--header-chrome-control-height);
+  height: var(--header-chrome-control-height);
+  min-width: var(--header-chrome-control-height);
+  min-height: var(--header-chrome-control-height);
+  max-width: var(--header-chrome-control-height);
+  max-height: var(--header-chrome-control-height);
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.header-chrome__menu {
   border: 0;
   border-radius: 0.125em;
   background: transparent;
@@ -143,8 +161,10 @@ body:not(.theme-dark) .header-container.header-chrome {
   background: rgba(255, 255, 255, 0.06);
 }
 
-.header-chrome__menu-icon {
-  font-size: 1.35em;
+.header-chrome__menu-icon,
+.header-chrome__search-toggle i,
+.header-chrome__notifications-trigger .action-button__icon i {
+  font-size: 1em;
   line-height: 1;
 }
 
@@ -307,20 +327,11 @@ body:not(.theme-dark) .header-chrome__user-trigger {
 
 .header-chrome__search-toggle {
   display: none;
-  align-items: center;
-  justify-content: center;
-  width: var(--header-chrome-control-height);
-  height: var(--header-chrome-control-height);
-  min-height: var(--header-chrome-control-height);
-  flex-shrink: 0;
-  margin: 0;
-  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 0.125em;
   background: rgba(255, 255, 255, 0.04);
   color: inherit;
   cursor: pointer;
-  box-sizing: border-box;
 }
 
 body:not(.theme-dark) .header-chrome__search-toggle {
@@ -336,11 +347,6 @@ body:not(.theme-dark) .header-chrome__search-toggle:hover {
   background: rgba(0, 0, 0, 0.06);
 }
 
-.header-chrome__search-toggle i {
-  font-size: 1em;
-  line-height: 1;
-}
-
 .header-chrome__search-toggle-icon--close {
   display: none;
 }
@@ -354,6 +360,9 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
 }
 
 .header-chrome__login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 4.75em;
   min-height: var(--header-chrome-control-height);
   height: var(--header-chrome-control-height);
@@ -521,12 +530,10 @@ body:not(.theme-dark) .header-chrome__user-dropdown {
 .header-chrome__notifications {
   display: inline-flex;
   align-items: center;
-  min-height: var(--header-chrome-control-height);
+  justify-content: center;
+  height: var(--header-chrome-control-height);
   line-height: 1;
   position: relative;
-  margin: 0;
-}
-.header-chrome__notifications-trigger {
   margin: 0;
 }
 
@@ -534,9 +541,10 @@ body:not(.theme-dark) .header-chrome__user-dropdown {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--header-chrome-control-height);
-  height: var(--header-chrome-control-height);
-  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.04);
@@ -590,8 +598,6 @@ body:not(.theme-dark) .header-chrome__notifications-trigger .action-button__cont
 .header-chrome__notifications-trigger .action-button__icon i {
   position: relative;
   z-index: 1;
-  font-size: 1.05em;
-  line-height: 1;
 }
 
 body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px 24px rgba(0,0,0,0.12) }
@@ -910,18 +916,20 @@ full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
     max-width: 18em;
     margin-left: auto;
     margin-right: 0;
+    align-self: center;
   }
 
   .header-chrome__tools {
     order: 3;
     flex: 0 0 auto;
+    align-self: center;
   }
 }
 
 @media (max-width: 720px) {
   .header-chrome__row {
     flex-wrap: wrap;
-    align-items: stretch;
+    align-items: center;
     gap: var(--header-chrome-toolbar-gap);
     padding: 0.35em 0.5em 0.5em;
     min-height: auto;
