@@ -79,10 +79,7 @@
 			border-radius: 0 !important;
 		}
 
-		/* Hide the toolbar's title so only the page H1 is visible */
-		full-page-toolbar .people-page__title {
-			display: none !important;
-		}
+		/* toolbar title should remain visible */
 	</style>
 </head>
 
@@ -91,27 +88,23 @@
 	<article class="no-radius">
 		<full-page-toolbar title="People {{APP_NAME}}" edit-text="Edit Page" edit-href="#" variant="people"></full-page-toolbar>
 		<main class="main-content people-page">
-			<section class="card people-list">
-				<h1>People</h1>
+			<div class="people-list__controls">
+				<input id="peopleSearch" type="search" placeholder="Search ID, first or last name" aria-label="Search people">
+				<div id="count" aria-live="polite"></div>
+			</div>
 
-				<div class="people-list__controls">
-					<input id="peopleSearch" type="search" placeholder="Search ID, first or last name" aria-label="Search people">
-					<div id="count" aria-live="polite"></div>
-				</div>
-
-				<div class="people-list__table-wrap">
-					<table id="peopleTable" class="site-table">
-						<thead>
-							<tr>
-								<th scope="col" data-key="id" tabindex="0" role="button" aria-sort="none">ID <span class="sort-indicator" aria-hidden="true"></span></th>
-								<th scope="col" data-key="firstName" tabindex="0" role="button" aria-sort="none">First name <span class="sort-indicator" aria-hidden="true"></span></th>
-								<th scope="col" data-key="lastName" tabindex="0" role="button" aria-sort="none">Last name <span class="sort-indicator" aria-hidden="true"></span></th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-				</div>
-			</section>
+			<div class="people-list__table-wrap">
+				<table id="peopleTable" class="site-table">
+					<thead>
+						<tr>
+							<th scope="col" data-key="id" tabindex="0" role="button" aria-sort="none">ID <span class="sort-indicator" aria-hidden="true"></span></th>
+							<th scope="col" data-key="firstName" tabindex="0" role="button" aria-sort="none">First name <span class="sort-indicator" aria-hidden="true"></span></th>
+							<th scope="col" data-key="lastName" tabindex="0" role="button" aria-sort="none">Last name <span class="sort-indicator" aria-hidden="true"></span></th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
 		</main>
 		<full-footer></full-footer>
 	</article>
