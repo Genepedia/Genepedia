@@ -1189,7 +1189,8 @@ hr {
     word-spacing: -4px
 }
 
-.search-container button {
+.search-container button,
+.search-container a.app-search-submit {
     min-height: 4.4rem;
     margin: 0;
     border-radius: 0 var(--border-radius-base) var(--border-radius-base) 0;
@@ -1256,7 +1257,8 @@ hr {
         margin-right: -6.6rem
     }
 
-    .search-container .pure-form button {
+    .search-container .pure-form button,
+    .search-container .pure-form a.app-search-submit {
         float: right;
         right: -5.6rem
     }
@@ -2197,7 +2199,8 @@ body:not(.theme-dark) .search-container .styled-select .hide-arrow select {
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-body:not(.theme-dark) .search-container button {
+body:not(.theme-dark) .search-container button,
+body:not(.theme-dark) .search-container a.app-search-submit {
     border-left: 0;
 }
 
@@ -2242,7 +2245,8 @@ body.theme-dark #searchInput:focus {
 }
 
 /* Slightly adjust the search button border so it blends with input in dark mode */
-body.theme-dark .search-container button {
+body.theme-dark .search-container button,
+body.theme-dark .search-container a.app-search-submit {
     border-left: 0;
 }
 

@@ -540,16 +540,20 @@ class FullPageToolbar extends HTMLElement {
 	}
 
 	#sync() {
+		const variant = (this.getAttribute('variant') || '').trim().toLowerCase();
 		const titleEl = this.querySelector('.people-page__title');
 		const titleAttr = this.getAttribute('title');
 		const legacyTitleAttr = this.getAttribute('page-title');
 		const rawTitle = titleAttr ?? legacyTitleAttr;
-		if (titleEl && (rawTitle !== null || !titleEl.textContent?.trim())) {
-			const next = (rawTitle ?? '').trim();
-			titleEl.textContent = next || 'Untitled';
-		}
 
-		const variant = (this.getAttribute('variant') || '').trim().toLowerCase();
+		if (titleEl) {
+			if (rawTitle !== null) {
+				const next = rawTitle.trim();
+				titleEl.textContent = next || (variant === 'people' ? '' : 'Untitled');
+			} else if (!titleEl.textContent?.trim() && variant !== 'people') {
+				titleEl.textContent = 'Untitled';
+			}
+		}
 		const editHref = this.getAttribute('edit-href')?.trim() || '';
 		const editText = this.getAttribute('edit-text');
 

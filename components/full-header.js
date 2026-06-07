@@ -25,9 +25,9 @@ full-header {
   z-index: 110;
   font-size: 16.5px;
   --header-chrome-height: 55px;
-  --header-chrome-control-height: 2.375em;
-  --header-chrome-avatar-size: calc(var(--header-chrome-control-height) - 0.4em);
-  --header-chrome-toolbar-gap: 0.5em;
+  --header-chrome-control-height: 39px;
+  --header-chrome-avatar-size: 33px;
+  --header-chrome-toolbar-gap: 8px;
   --header-chrome-bg: #27292d;
   --header-chrome-fg: #eaecf0;
   --header-chrome-search-bg: #1e2125;
@@ -108,45 +108,138 @@ body:not(.theme-dark) .header-container.header-chrome {
 }
 
 .header-chrome__tools {
-  flex: 1 1 auto;
-  justify-content: flex-end;
+  flex: 0 0 auto;
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
+  align-self: center;
   gap: var(--header-chrome-toolbar-gap);
+  height: var(--header-chrome-control-height);
+  margin-left: auto;
+}
+
+/* Flatten wrapper divs so gap applies evenly between each toolbar control. */
+.header-chrome__tools > .header-chrome__search,
+.header-chrome__tools > .header-chrome__notifications,
+.header-chrome__tools > .header-chrome__end,
+.header-chrome__tools > .header-chrome__end > .header-chrome__auth {
+  display: contents;
+}
+
+.header-chrome__notifications-trigger {
+  position: relative;
+}
+
+.header-chrome__user-menu {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  flex: 0 0 auto;
+  height: var(--header-chrome-control-height);
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.header-chrome__search-form,
+.header-chrome__menu,
+.header-chrome__search-toggle,
+.header-chrome__notifications-trigger,
+.header-chrome__login,
+.header-chrome__user-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  align-self: center;
+  box-sizing: border-box;
+  height: var(--header-chrome-control-height);
   min-height: var(--header-chrome-control-height);
+  max-height: var(--header-chrome-control-height);
+  margin: 0;
+  padding: 0;
+  line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.header-chrome__menu,
+.header-chrome__search-toggle,
+.header-chrome__notifications-trigger {
+  width: var(--header-chrome-control-height);
+  min-width: var(--header-chrome-control-height);
+  max-width: var(--header-chrome-control-height);
+}
+
+.header-chrome__login,
+.header-chrome__user-trigger {
+  width: auto;
+  min-width: var(--header-chrome-control-height);
+  max-width: 14em;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--header-chrome-fg);
+  cursor: pointer;
+  white-space: nowrap;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.header-chrome__user-trigger {
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 0 8px 0 4px;
+}
+
+full-header .header-chrome__tools button,
+full-header .header-chrome__tools action-button.header-chrome__notifications-trigger {
+  font: 14px/1 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+full-header .header-chrome__tools .header-chrome__search-form,
+full-header .header-chrome__tools .header-chrome__search-toggle,
+full-header .header-chrome__tools .header-chrome__notifications-trigger,
+full-header .header-chrome__tools .header-chrome__login,
+full-header .header-chrome__tools .header-chrome__user-trigger {
+  height: var(--header-chrome-control-height);
+  min-height: var(--header-chrome-control-height);
+  max-height: var(--header-chrome-control-height);
+}
+
+full-header .header-chrome__tools action-button.header-chrome__notifications-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+full-header .header-chrome__tools .header-chrome__notifications-trigger .action-button__control {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.header-chrome__user-menu .header-chrome__user-trigger {
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
 }
 
 .header-chrome__search {
   flex: 0 0 auto;
   justify-content: flex-end;
   align-items: center;
-  height: var(--header-chrome-control-height);
 }
 
 .header-chrome__end {
   flex: 0 0 auto;
   justify-content: flex-end;
   align-items: center;
-  gap: var(--header-chrome-toolbar-gap);
-  height: var(--header-chrome-control-height);
-}
-
-.header-chrome__menu,
-.header-chrome__search-toggle,
-.header-chrome__notifications-trigger {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: var(--header-chrome-control-height);
-  height: var(--header-chrome-control-height);
-  min-width: var(--header-chrome-control-height);
-  min-height: var(--header-chrome-control-height);
-  max-width: var(--header-chrome-control-height);
-  max-height: var(--header-chrome-control-height);
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  line-height: 1;
 }
 
 .header-chrome__menu {
@@ -280,14 +373,12 @@ body:not(.theme-dark) .header-chrome__user-trigger {
 .header-chrome__search-form {
   width: 100%;
   max-width: 18em;
-  display: flex;
-  align-items: center;
-  min-height: var(--header-chrome-control-height);
-  height: var(--header-chrome-control-height);
+  flex: 0 1 18em;
+  justify-content: flex-start;
+  padding: 0;
   background: var(--header-chrome-search-bg);
   border: 1px solid var(--header-chrome-search-border);
-  border-radius: 0.125em;
-  box-sizing: border-box;
+  border-radius: 2px;
   overflow: visible;
   position: relative;
 }
@@ -328,7 +419,7 @@ body:not(.theme-dark) .header-chrome__user-trigger {
 .header-chrome__search-toggle {
   display: none;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.125em;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.04);
   color: inherit;
   cursor: pointer;
@@ -359,38 +450,12 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
   display: inline-block;
 }
 
-.header-chrome__login {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 4.75em;
-  min-height: var(--header-chrome-control-height);
-  height: var(--header-chrome-control-height);
-  margin: 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.125em;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--header-chrome-fg);
-  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
-  padding: 0 0.85em;
-  cursor: pointer;
-  white-space: nowrap;
-  line-height: 1;
-  box-sizing: border-box;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
 .header-chrome__login:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
 .header-chrome__auth {
-  display: flex;
-  align-items: center;
-  min-height: var(--header-chrome-control-height);
   line-height: 1;
-  position: relative;
 }
 
 .header-chrome__auth[data-logged-in="true"] .header-chrome__login {
@@ -403,36 +468,6 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
 
 full-header[data-logged-in="false"] .header-chrome__notifications {
   display: none;
-}
-
-.header-chrome__user-menu {
-  display: flex;
-  align-items: center;
-  min-height: var(--header-chrome-control-height);
-  line-height: 1;
-  position: relative;
-}
-
-.header-chrome__user-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5em;
-  max-width: 14em;
-  min-height: var(--header-chrome-control-height);
-  height: var(--header-chrome-control-height);
-  margin: 0;
-  padding: 0 0.55em 0 0.2em;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.125em;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--header-chrome-fg);
-  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
-  line-height: 1;
-  cursor: pointer;
-  white-space: nowrap;
-  box-sizing: border-box;
-  appearance: none;
-  -webkit-appearance: none;
 }
 
 .header-chrome__user-trigger:hover,
@@ -467,7 +502,7 @@ full-header[data-logged-in="false"] .header-chrome__notifications {
 }
 
 .header-chrome__user-avatar--placeholder i {
-  font-size: 1.15em;
+  font-size: 1em;
   line-height: 1;
 }
 
@@ -527,16 +562,6 @@ body:not(.theme-dark) .header-chrome__user-dropdown {
   display: none !important;
 }
 
-.header-chrome__notifications {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: var(--header-chrome-control-height);
-  line-height: 1;
-  position: relative;
-  margin: 0;
-}
-
 .header-chrome__notifications-trigger .action-button__control {
   display: inline-flex;
   align-items: center;
@@ -545,13 +570,14 @@ body:not(.theme-dark) .header-chrome__user-dropdown {
   height: 100%;
   min-width: 0;
   min-height: 0;
+  gap: 0;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.04);
   color: inherit;
-  border-radius: 0.125em;
+  border-radius: 2px;
   box-sizing: border-box;
-  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font: inherit;
 }
 
 .header-chrome__notifications-trigger .action-button__control:hover { background: rgba(255,255,255,0.08) }
@@ -677,6 +703,15 @@ body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px
 }
 
 .header-chrome__user-dropdown a:hover,
+.header-chrome__user-dropdown a:focus,
+.header-chrome__user-dropdown a:active,
+.header-chrome__user-dropdown button:hover,
+.header-chrome__user-dropdown button:focus,
+.header-chrome__user-dropdown button:active {
+  text-decoration: none;
+}
+
+.header-chrome__user-dropdown a:hover,
 .header-chrome__user-dropdown button:hover {
   background: rgba(255, 255, 255, 0.08);
 }
@@ -738,10 +773,25 @@ full-header.sidebar-open .header-chrome__sidebar {
   display: inline-flex;
   align-items: center;
   gap: 0.35em;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
   font: 0.8125em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
   color: var(--header-chrome-fg);
   opacity: 0.88;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.header-chrome__theme-switch-label:hover {
+  opacity: 1;
+}
+
+.header-chrome__theme-switch-label:focus-visible {
+  outline: 2px solid #6b9eff;
+  outline-offset: 2px;
+  border-radius: 0.125em;
 }
 
 .header-chrome__theme-switch-label i {
@@ -822,6 +872,12 @@ body:not(.theme-dark) .header-chrome__theme-input:checked + .header-chrome__them
   color: inherit;
   text-decoration: none;
   font: 0.9em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+.header-chrome__sidebar-link:hover,
+.header-chrome__sidebar-link:focus,
+.header-chrome__sidebar-link:active {
+  text-decoration: none;
 }
 
 .header-chrome__sidebar-link:hover {
@@ -905,28 +961,20 @@ full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
     display: none;
   }
 
-  .header-chrome__start {
-    order: 1;
-  }
-
   .header-chrome__search-form {
-    order: 2;
-    flex: 0 1 18em;
-    width: auto;
-    max-width: 18em;
-    margin-left: auto;
-    margin-right: 0;
-    align-self: center;
-  }
-
-  .header-chrome__tools {
-    order: 3;
-    flex: 0 0 auto;
-    align-self: center;
+    display: flex;
   }
 }
 
 @media (max-width: 720px) {
+  .header-chrome__tools {
+    margin-left: 0;
+  }
+
+  .header-chrome__search-form {
+    display: none;
+  }
+
   .header-chrome__row {
     flex-wrap: wrap;
     align-items: center;
@@ -952,17 +1000,19 @@ full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
     display: inline-flex;
   }
 
-  .header-chrome__search-form {
-    display: none;
+  full-header.search-open .header-chrome__tools {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  full-header.search-open .header-chrome__search-form {
+    display: flex;
     flex: 1 1 100%;
     width: 100%;
     max-width: none;
     margin: 0;
     box-sizing: border-box;
-  }
-
-  full-header.search-open .header-chrome__search-form {
-    display: flex;
   }
 
   .header-chrome__brand mini-header .localized-slogan {
@@ -991,8 +1041,9 @@ full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
   }
 
   .header-chrome__user-trigger {
-    min-width: var(--header-chrome-control-height);
     width: var(--header-chrome-control-height);
+    min-width: var(--header-chrome-control-height);
+    max-width: var(--header-chrome-control-height);
     padding: 0;
     justify-content: center;
   }
@@ -1056,6 +1107,25 @@ full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
       </div>
     </div>
     <div class="header-chrome__tools">
+      <form
+        id="header-chrome-search-form"
+        class="header-chrome__search-form"
+        role="search"
+        action="#"
+        method="get"
+      >
+        <span class="header-chrome__search-icon" aria-hidden="true">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+            class="header-chrome__search-input"
+            type="search"
+            name="search"
+            placeholder="Search {{APP_NAME}}..."
+            aria-label="Search {{APP_NAME}}"
+            autocomplete="off"
+          >
+      </form>
       <div class="header-chrome__search">
         <button
           class="header-chrome__search-toggle"
@@ -1123,25 +1193,6 @@ full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
       </div>
       </div>
     </div>
-    <form
-      id="header-chrome-search-form"
-      class="header-chrome__search-form"
-      role="search"
-      action="#"
-      method="get"
-    >
-      <span class="header-chrome__search-icon" aria-hidden="true">
-        <i class="bi bi-search"></i>
-      </span>
-      <input
-          class="header-chrome__search-input"
-          type="search"
-          name="search"
-          placeholder="Search {{APP_NAME}}..."
-          aria-label="Search {{APP_NAME}}"
-          autocomplete="off"
-        >
-    </form>
   </div>
 </header>
 <button class="header-chrome__backdrop" type="button" aria-label="Close menu" hidden></button>
@@ -1154,10 +1205,10 @@ full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
   </nav>
   <div class="header-chrome__sidebar-footer">
     <div class="header-chrome__theme-switch">
-      <span class="header-chrome__theme-switch-label">
+      <button type="button" class="header-chrome__theme-switch-label" data-theme="light">
         <i class="bi bi-sun" aria-hidden="true"></i>
         <span>Light</span>
-      </span>
+      </button>
       <label class="header-chrome__theme-switch-control">
         <input
           type="checkbox"
@@ -1167,10 +1218,10 @@ full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
         >
         <span class="header-chrome__theme-switch-slider" aria-hidden="true"></span>
       </label>
-      <span class="header-chrome__theme-switch-label">
+      <button type="button" class="header-chrome__theme-switch-label" data-theme="dark">
         <i class="bi bi-moon-stars" aria-hidden="true"></i>
         <span>Dark</span>
-      </span>
+      </button>
     </div>
   </div>
 </aside>
@@ -1704,14 +1755,27 @@ class FullHeader extends HTMLElement {
 
     applyDocumentTheme();
 
-    themeInput.addEventListener('change', () => {
-      const nextTheme = themeInput.checked ? 'dark' : 'light';
+    const setTheme = (nextTheme) => {
+      if (nextTheme !== 'light' && nextTheme !== 'dark') {
+        return;
+      }
+
       try {
         localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
       } catch {
         // ignore storage errors
       }
       applyDocumentTheme(nextTheme);
+    };
+
+    themeInput.addEventListener('change', () => {
+      setTheme(themeInput.checked ? 'dark' : 'light');
+    });
+
+    this.querySelectorAll('.header-chrome__theme-switch-label[data-theme]').forEach((button) => {
+      button.addEventListener('click', () => {
+        setTheme(button.dataset.theme);
+      });
     });
   }
 
@@ -1868,8 +1932,6 @@ class FullHeader extends HTMLElement {
         const photo = document.createElement('img');
         photo.src = user.photoUrl;
         photo.alt = label;
-        photo.width = 32;
-        photo.height = 32;
         avatar.className = 'header-chrome__user-avatar';
         avatar.replaceChildren(photo);
       } else {

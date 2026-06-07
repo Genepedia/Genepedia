@@ -145,10 +145,10 @@ body:not(.theme-dark) {
   width: max(16rem, 100%);
 }
 
-.search-page {
+.main-content.search-page {
   box-sizing: border-box;
   width: 100%;
-  padding-top: 0;
+  padding: 1rem 1rem 2rem;
 }
 
 .search-page__panel {
@@ -610,6 +610,49 @@ function setActiveDropdownOption(dropdown, index) {
     return options[index] || null;
 }
 
+function bindAppSearchSubmitLink(form, input, { closeDropdown, getActiveMatch, goToSearchPage }) {
+    const submitControl = form.querySelector('a.app-search-submit') || form.querySelector('button[type="submit"]');
+    if (!submitControl) {
+        return;
+    }
+
+    const syncSubmitHref = () => {
+        if (submitControl.tagName === 'A') {
+            submitControl.href = resolveSearchPageUrl(input.value);
+        }
+    };
+
+    input.addEventListener('input', syncSubmitHref);
+    syncSubmitHref();
+
+    if (submitControl.tagName !== 'A') {
+        return;
+    }
+
+    submitControl.addEventListener('click', (event) => {
+        if (event.defaultPrevented) {
+            return;
+        }
+
+        // Let the browser handle open-in-new-tab and other modified clicks.
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+            syncSubmitHref();
+            return;
+        }
+
+        event.preventDefault();
+        closeDropdown();
+
+        const activeMatch = getActiveMatch();
+        if (activeMatch) {
+            window.location.assign(activeMatch.url);
+            return;
+        }
+
+        goToSearchPage(input.value);
+    });
+}
+
 function bindAppSearchForm(form) {
     if (!form || form.dataset.appSearchBound === 'true') {
         return;
@@ -679,6 +722,12 @@ function bindAppSearchForm(form) {
         }
 
         goToSearchPage(input.value);
+    });
+
+    bindAppSearchSubmitLink(form, input, {
+        closeDropdown,
+        getActiveMatch: () => (activeIndex >= 0 ? latestMatches[activeIndex] : null),
+        goToSearchPage,
     });
 
     input.addEventListener('input', scheduleUpdate);

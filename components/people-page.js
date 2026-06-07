@@ -244,6 +244,10 @@ class PeoplePage extends HTMLElement {
     this.#syncEditHref();
     this.#bindMenus();
     this.#bindTabs();
+    this.__titleLoadPromise = Promise.all([
+      this.#seedTitleFromRegistry(),
+      this.#loadPageTitle(),
+    ]);
     void this.#init();
     window.addEventListener('hashchange', this.#onHashChange);
   }
@@ -271,21 +275,73 @@ class PeoplePage extends HTMLElement {
   }
 
   async #init() {
-    await this.#loadPageTitle();
+    await this.__titleLoadPromise;
     const initialTab = this.#getInitialTab();
     this.#selectTab(initialTab, { updateHash: Boolean(this.#getTabFromHash()) });
     await this.#loadTab(initialTab);
   }
 
   #setTitle(title) {
+    const next = (title || '').trim();
     const titleEl = this.querySelector('.people-page__title');
     if (titleEl) {
-      titleEl.textContent = title || 'Untitled';
+      titleEl.textContent = next;
     }
 
-    if (title) {
+    if (next) {
       const appName = window.App?.getName?.() || window.App?.Name || '';
-      document.title = appName ? `${title} - ${appName}` : title;
+      document.title = appName ? `${next} - ${appName}` : next;
+    }
+  }
+
+  #resolvePersonId() {
+    const pathname = window.location.pathname.replace(/\\/g, '/');
+    const match = pathname.match(/\/people\/([^/]+)\/[^/]+$/);
+    return match?.[1]?.trim() || '';
+  }
+
+  #resolvePeopleJsonUrl() {
+    if (window.PeopleRegistry?.resolvePeopleJsonUrl) {
+      return window.PeopleRegistry.resolvePeopleJsonUrl();
+    }
+
+    const pathname = window.location.pathname.replace(/\\/g, '/');
+    const nestedMatch = pathname.match(/^(.*\/)people\/[^/]+\/[^/]+$/);
+    const prefix = nestedMatch?.[1] || '';
+    return new URL('people/people.json', new URL(prefix, window.location.href)).href;
+  }
+
+  async #seedTitleFromRegistry() {
+    const personId = this.#resolvePersonId();
+    if (!personId) {
+      return;
+    }
+
+    try {
+      let people;
+      if (window.PeopleRegistry?.loadPeopleRegistry) {
+        people = await window.PeopleRegistry.loadPeopleRegistry();
+      } else {
+        const response = await fetch(this.#resolvePeopleJsonUrl(), { cache: 'no-store' });
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        people = Array.isArray(data?.people) ? data.people : [];
+      }
+
+      const entry = people.find((person) => String(person?.id) === personId);
+      if (!entry) {
+        return;
+      }
+
+      const name = [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim();
+      if (name && !this.querySelector('.people-page__title')?.textContent?.trim()) {
+        this.#setTitle(name);
+      }
+    } catch (error) {
+      console.error(error);
     }
   }
 
