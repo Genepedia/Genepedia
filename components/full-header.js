@@ -23,7 +23,7 @@ full-header {
   right: 0;
   width: 100%;
   z-index: 110;
-  font-size: 16px;
+  font-size: 16.5px;
   --header-chrome-height: 55px;
   --header-chrome-control-height: 2.375em;
   --header-chrome-avatar-size: calc(var(--header-chrome-control-height) - 0.4em);
