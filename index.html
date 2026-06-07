@@ -18,8 +18,8 @@
         content="{{APP_NAME}} is a free online encyclopedia, created and edited by volunteers around the world and hosted by the {{APP_NAME}} Foundation.">
     <meta property="og:image" content="assets/Genepedia-logo-v2.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="lib/common.css">
-    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="lib/Web-Framework/styles/common.css">
+    <link rel="stylesheet" href="lib/Web-Framework/styles/portal-index.css">
 </head>
 
 <body>
@@ -194,7 +194,7 @@
             </div>
         </nav>
         <div role="search" class="search-container">
-            <form class="pure-form" id="search-form" action="#" role="search" data-el-section="search">
+            <form class="pure-form" id="search-form" action="pages/search.html" method="get" role="search" data-el-section="search">
                 <fieldset>
                     <input type="hidden" name="family" value="genepedia">
                     <div class="search-input" id="search-input">
@@ -603,7 +603,7 @@
                     <img class="sprite footer-sidebar-icon footer-logo-icon" src="assets/Logo.png" alt=""
                         aria-hidden="true">
                     <strong>
-                        <a href="https:assets/en.genepedia.org_wiki/List_of_Genepedia_mobile_applications">
+                        <a href="pages/home.html">
                             Get the {{APP_NAME}} app
                         </a>
                     </strong>
@@ -679,11 +679,11 @@
     <script src="site-info.js"></script>
     <script src="lib/Web-Framework/components/mini-header.js"></script>
     <script src="lib/Web-Framework/components/full-header.js"></script>
-    <script src="components/mini-footer.js"></script>
-    <script src="components/sister-projects.js"></script>
+    <script src="lib/Web-Framework/components/mini-footer.js"></script>
+    <script src="lib/Web-Framework/components/sister-projects.js"></script>
     <script defer src="lib/people-registry.js"></script>
     <script defer src="components/app-search.js"></script>
-    <script src="index.js"></script>
+    <script src="lib/Web-Framework/site-runtime.js"></script>
 </body>
 
 </html>

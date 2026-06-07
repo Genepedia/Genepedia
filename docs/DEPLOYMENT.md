@@ -5,8 +5,8 @@ the Genepedia API endpoints and make the GitHub OAuth login flow work in
 production. Keep these details out of the public-facing `README.md`.
 
 Overview
- - Deploy the `api/` PHP files to a web host that serves them under a
-   dedicated host or path (the repository expects endpoints like
+ - Deploy the PHP files from the sibling `API` repository to a web host
+   that serves them under a dedicated host or path (the sites expect endpoints like
    `/genepedia/github-session.php`).
  - Provide a `GITHUB_CLIENT_SECRET` (server-only secret) and any optional
    environment overrides described below.
@@ -34,22 +34,22 @@ Optional (recommended)
  - `GITHUB_DEFAULT_RETURN_TO` — the default page to land on after login.
  - `GITHUB_SESSION_SAMESITE` — `None|Lax|Strict` to override cookie SameSite.
 
-Files to deploy
- - `api/github-auth.php`
- - `api/github-login.php`
- - `api/github-callback.php`
- - `api/github-session.php`
- - `api/github-logout.php`
+Files to deploy from `/home/deck/Documents/Development/Genepedia/API`
+ - `github-auth.php`
+ - `github-login.php`
+ - `github-callback.php`
+ - `github-session.php`
+ - `github-logout.php`
 
 Recommended deployment layout
- - Copy the repository contents (or at least the `api/` folder) to
-   `/var/www/genepedia/` on the API host. The API endpoints should be
+ - Copy the contents of the `API` repository to `/var/www/genepedia/`
+   on the API host. The API endpoints should be
   reachable at `https://api.shaunroselt.com/genepedia/{file}.php`.
 
-Nginx example (serve `api/` under `/genepedia`)
+Nginx example (serve API files under `/genepedia`)
 
-Place your site files at `/var/www/genepedia` (so `api/github-session.php`
-is at `/var/www/genepedia/api/github-session.php`) and use an Nginx server
+Place the API files at `/var/www/genepedia` (so `github-session.php`
+is at `/var/www/genepedia/github-session.php`) and use an Nginx server
 block like this (adapt `fastcgi_pass` to your PHP-FPM socket):
 
 ```nginx
