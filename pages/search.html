@@ -20,26 +20,36 @@
 	<article>
 		<full-page-toolbar title="Search {{APP_NAME}}"></full-page-toolbar>
 		<main class="main-content search-page">
-			<p class="search-page__meta" id="app-search-page-meta">Enter a name or keyword to find people in
-				{{APP_NAME}}.</p>
+			<section class="search-page__panel" aria-label="Search profiles">
+				<p class="search-page__lead" id="app-search-page-meta">Enter a name or keyword to find people in
+					{{APP_NAME}}.</p>
 
-			<div role="search" class="search-container search-page__form">
-				<form class="pure-form" id="search-page-form" action="#" role="search">
-					<fieldset>
-						<div class="search-input app-search-anchor">
-							<label for="searchPageInput" class="screen-reader-text">Search {{APP_NAME}}</label>
-							<input id="searchPageInput" name="search" type="search" size="20" autofocus="autofocus"
-								dir="auto" autocomplete="off" placeholder="Search {{APP_NAME}}...">
-						</div>
-						<button class="pure-button pure-button-primary-progressive" type="submit" aria-label="Search">
-							<i class="bi bi-search" aria-hidden="true"></i>
-							<span class="screen-reader-text">Search</span>
+				<form class="search-page__form" id="search-page-form" action="#" role="search">
+					<div class="search-page__bar app-search-anchor">
+						<label for="searchPageInput" class="screen-reader-text">Search {{APP_NAME}}</label>
+						<i class="bi bi-search search-page__bar-icon" aria-hidden="true"></i>
+						<input id="searchPageInput" class="search-page__input" name="search" type="search"
+							autofocus="autofocus" dir="auto" autocomplete="off"
+							placeholder="Search by name, place, or keyword…">
+						<button class="search-page__submit" type="submit" aria-label="Search">
+							<span class="search-page__submit-text">Search</span>
+							<i class="bi bi-arrow-right" aria-hidden="true"></i>
 						</button>
-					</fieldset>
+					</div>
 				</form>
-			</div>
 
-			<div id="app-search-results" aria-live="polite"></div>
+				<div class="search-page__suggestions" id="app-search-suggestions">
+					<p class="search-page__suggestions-label">Popular searches</p>
+					<div class="search-page__chips">
+						<a class="site-chip search-page__chip" href="#" data-query="Shaun Roselt">Shaun Roselt</a>
+						<a class="site-chip search-page__chip" href="#" data-query="Hanli">Hanli</a>
+						<a class="site-chip search-page__chip" href="#" data-query="wife">wife</a>
+						<a class="site-chip search-page__chip" href="#" data-query="Mandela">Mandela</a>
+					</div>
+				</div>
+			</section>
+
+			<div id="app-search-results" class="search-page__results-root" aria-live="polite"></div>
 		</main>
 		<full-footer></full-footer>
 	</article>

@@ -16,13 +16,13 @@
 <body>
     <full-header></full-header>
     <article>
-        <main class="main-content">
-            <section class="card hero" style="padding:2rem; margin-bottom:1.5rem;">
-                <div style="display:flex; flex-direction:column; gap:1rem;">
-                    <h1 style="margin:0; font-size:2.25rem;">Welcome to {{APP_NAME}}</h1>
-                    <p style="margin:0; color:var(--color-subtle); font-size:1.05rem;">A free genealogy encyclopedia —
+        <main class="main-content home-page">
+            <section class="card home-page__hero">
+                <div class="home-page__hero-inner">
+                    <h1 class="home-page__hero-title">Welcome to {{APP_NAME}}</h1>
+                    <p class="home-page__hero-text">A free genealogy encyclopedia —
                         explore people, families, histories, and contribute your knowledge.</p>
-                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                    <div class="home-page__actions">
                         <a class="pure-button" href="../pages/search.html">Search Profiles</a>
                         <a class="pure-button" href="../people/15/profile.html">Featured: Nelson Mandela</a>
                         <a class="pure-button" href="../pages/settings.html">App Settings</a>
@@ -30,87 +30,78 @@
                 </div>
             </section>
 
-            <section class="card" style="padding:1rem; margin-bottom:1rem;">
-                <h2 style="margin-top:0;">Featured Profiles</h2>
-                <div
-                    style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem; margin-top:0.75rem;">
-                    <article class="card" style="padding:0.75rem;">
-                        <h3 style="margin:0 0 0.35rem;"><a href="../people/15/profile.html">Nelson Mandela</a></h3>
-                        <p style="margin:0;color:var(--color-subtle);">South African anti-apartheid revolutionary and
+            <section class="card home-page__section">
+                <h2 class="home-page__section-title">Featured Profiles</h2>
+                <div class="home-page__grid">
+                    <article class="card home-page__tile">
+                        <h3 class="home-page__tile-title"><a href="../people/15/profile.html">Nelson Mandela</a></h3>
+                        <p class="home-page__tile-text">South African anti-apartheid revolutionary and
                             statesman.</p>
                     </article>
-                    <article class="card" style="padding:0.75rem;">
-                        <h3 style="margin:0 0 0.35rem;"><a href="../people/1/profile.html">Profile 1</a></h3>
-                        <p style="margin:0;color:var(--color-subtle);">Sample profile listing.</p>
+                    <article class="card home-page__tile">
+                        <h3 class="home-page__tile-title"><a href="../people/1/profile.html">Profile 1</a></h3>
+                        <p class="home-page__tile-text">Sample profile listing.</p>
                     </article>
-                    <article class="card" style="padding:0.75rem;">
-                        <h3 style="margin:0 0 0.35rem;"><a href="../people/2/profile.html">Profile 2</a></h3>
-                        <p style="margin:0;color:var(--color-subtle);">Another recent profile.</p>
+                    <article class="card home-page__tile">
+                        <h3 class="home-page__tile-title"><a href="../people/2/profile.html">Profile 2</a></h3>
+                        <p class="home-page__tile-text">Another recent profile.</p>
                     </article>
-                    <article class="card" style="padding:0.75rem;">
-                        <h3 style="margin:0 0 0.35rem;"><a href="../people/3/profile.html">Profile 3</a></h3>
-                        <p style="margin:0;color:var(--color-subtle);">Explore family connections and records.</p>
+                    <article class="card home-page__tile">
+                        <h3 class="home-page__tile-title"><a href="../people/3/profile.html">Profile 3</a></h3>
+                        <p class="home-page__tile-text">Explore family connections and records.</p>
                     </article>
                 </div>
             </section>
 
-            <section class="card" style="padding:1rem; margin-bottom:1rem;">
-                <h2 style="margin-top:0;">Latest Updates</h2>
-                <ul style="margin:0; padding-left:0; list-style:none; margin-top:0.5rem;">
-                    <li style="padding:0.5rem 0;"><a href="../people/15/profile.html">Nelson Mandela — added images and
-                            timeline</a></li>
-                    <li style="padding:0.5rem 0;"><a href="../people/2/profile.html">Profile 2 — updated family tree</a>
-                    </li>
-                    <li style="padding:0.5rem 0;"><a href="../people/3/profile.html">Profile 3 — new sources added</a>
-                    </li>
+            <section class="card home-page__section">
+                <h2 class="home-page__section-title">Latest Updates</h2>
+                <ul class="home-page__updates">
+                    <li><a href="../people/15/profile.html">Nelson Mandela — added images and timeline</a></li>
+                    <li><a href="../people/2/profile.html">Profile 2 — updated family tree</a></li>
+                    <li><a href="../people/3/profile.html">Profile 3 — new sources added</a></li>
                 </ul>
             </section>
 
-            <section class="card" style="padding:1rem; margin-bottom:1rem;">
-                <h2 style="margin-top:0;">Community Stories</h2>
-                <div
-                    style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1rem; margin-top:0.75rem;">
-                    <article class="card" style="padding:0.75rem;">
-                        <h3 style="margin:0 0 0.5rem;">Tracing a Migration</h3>
-                        <p style="margin:0;color:var(--color-subtle);">How one contributor pieced together a century-old
+            <section class="card home-page__section">
+                <h2 class="home-page__section-title">Community Stories</h2>
+                <div class="home-page__grid home-page__grid--wide">
+                    <article class="card home-page__tile">
+                        <h3 class="home-page__tile-title">Tracing a Migration</h3>
+                        <p class="home-page__tile-text">How one contributor pieced together a century-old
                             migration story using ship records.</p>
                     </article>
-                    <article class="card" style="padding:0.75rem;">
-                        <h3 style="margin:0 0 0.5rem;">Preserving Oral Histories</h3>
-                        <p style="margin:0;color:var(--color-subtle);">Tips for recording interviews and attaching them
+                    <article class="card home-page__tile">
+                        <h3 class="home-page__tile-title">Preserving Oral Histories</h3>
+                        <p class="home-page__tile-text">Tips for recording interviews and attaching them
                             to profiles.</p>
                     </article>
                 </div>
             </section>
 
-            <section class="card" style="padding:1rem; margin-bottom:1rem;">
-                <h2 style="margin-top:0;">Popular Searches</h2>
-                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.6rem;">
-                    <a href="../pages/search.html?query=mandela" class="chip"
-                        style="padding:0.35rem 0.6rem; border-radius:999px; background:rgba(0,0,0,0.06); text-decoration:none;">Mandela</a>
-                    <a href="../pages/search.html?query=smith" class="chip"
-                        style="padding:0.35rem 0.6rem; border-radius:999px; background:rgba(0,0,0,0.06); text-decoration:none;">Smith</a>
-                    <a href="../pages/search.html?query=2026" class="chip"
-                        style="padding:0.35rem 0.6rem; border-radius:999px; background:rgba(0,0,0,0.06); text-decoration:none;">Census
-                        2026</a>
+            <section class="card home-page__section">
+                <h2 class="home-page__section-title">Popular Searches</h2>
+                <div class="home-page__chips">
+                    <a href="../pages/search.html?query=mandela" class="site-chip">Mandela</a>
+                    <a href="../pages/search.html?query=smith" class="site-chip">Smith</a>
+                    <a href="../pages/search.html?query=2026" class="site-chip">Census 2026</a>
                 </div>
             </section>
 
-            <section class="card" style="padding:1rem; margin-bottom:1rem;">
-                <h2 style="margin-top:0;">Newsletter</h2>
-                <p style="margin:0 0 0.5rem; color:var(--color-subtle);">Get occasional updates about major data imports
+            <section class="card home-page__section">
+                <h2 class="home-page__section-title">Newsletter</h2>
+                <p class="home-page__section-text">Get occasional updates about major data imports
                     and featured stories.</p>
-                <form onsubmit="event.preventDefault(); alert('Thanks — you\\'re subscribed (demo).');"
-                    style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <input type="email" name="email" placeholder="you@example.com" required
-                        style="padding:0.5rem 0.75rem; border:1px solid rgba(0,0,0,0.08); border-radius:0.25rem; min-width:220px;">
+                <form class="home-page__newsletter-form"
+                    onsubmit="event.preventDefault(); alert('Thanks — you\'re subscribed (demo).');">
+                    <input class="home-page__newsletter-input" type="email" name="email"
+                        placeholder="you@example.com" required>
                     <button class="pure-button" type="submit">Subscribe</button>
                 </form>
             </section>
 
-            <section class="card" style="padding:1rem; margin-bottom:1rem;">
-                <h2 style="margin-top:0;">About & Contribute</h2>
-                <p style="margin:0 0 0.5rem; color:var(--color-subtle);">{{APP_NAME}} is maintained by community
+            <section class="card home-page__section">
+                <h2 class="home-page__section-title">About &amp; Contribute</h2>
+                <p class="home-page__section-text">{{APP_NAME}} is maintained by community
                     contributions. Add sources, photos, or correct records to improve the historical record.</p>
                 <p style="margin:0;">
                     <a href="../pages/privacy_policy.html">Privacy Policy</a> · <a

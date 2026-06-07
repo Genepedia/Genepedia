@@ -1,0 +1,34 @@
+name: Update people.json
+
+on:
+  push:
+    paths:
+      - 'people/**'
+      - '!people/people.json'
+      - 'scripts/generate-people-json.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-people-json:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Generate people.json
+        run: node scripts/generate-people-json.mjs
+
+      - name: Commit and push people.json
+        run: |
+          git config user.name "Shaun Roselt"
+          git config user.email "Me@ShaunRoselt.com"
+          git add people/people.json
+          if git diff --staged --quiet; then
+            echo "people.json is already up to date."
+            exit 0
+          fi
+          git commit -m "chore: update people.json from people folder"
+          git push

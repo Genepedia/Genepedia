@@ -1258,55 +1258,61 @@ function applyDocumentTheme(theme = readStoredTheme()) {
   return theme;
 }
 
-let randomProfileCandidatesPromise = null;
+const PEOPLE_REGISTRY_SCRIPT_URL = resolveFromComponent('../lib/people-registry.js');
+let peopleRegistryScriptPromise = null;
 
-async function fetchJsonForHeader(url) {
-  try {
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) {
-      return null;
-    }
-
-    return await response.json();
-  } catch {
-    return null;
+function ensurePeopleRegistryScript() {
+  if (window.PeopleRegistry) {
+    return Promise.resolve();
   }
+
+  if (peopleRegistryScriptPromise) {
+    return peopleRegistryScriptPromise;
+  }
+
+  const existingScript = document.querySelector('script[src*="people-registry.js"]');
+  if (existingScript) {
+    peopleRegistryScriptPromise = new Promise((resolve, reject) => {
+      existingScript.addEventListener('load', resolve, { once: true });
+      existingScript.addEventListener('error', reject, { once: true });
+    });
+    return peopleRegistryScriptPromise;
+  }
+
+  peopleRegistryScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = PEOPLE_REGISTRY_SCRIPT_URL;
+    script.defer = true;
+    script.addEventListener('load', resolve, { once: true });
+    script.addEventListener('error', reject, { once: true });
+    document.head.append(script);
+  });
+
+  return peopleRegistryScriptPromise;
 }
 
 async function getRandomProfileCandidates() {
-  if (randomProfileCandidatesPromise) {
-    return randomProfileCandidatesPromise;
-  }
-
-  randomProfileCandidatesPromise = (async () => {
-    const fromFileStats = await fetchJsonForHeader(resolveFromComponent('../data/file-stats.json'));
-    const statsCandidates = Array.isArray(fromFileStats)
-      ? fromFileStats
-        .map((entry) => String(entry?.path || '').match(/^people\/([^/]+)\/profile\.html$/)?.[1] || '')
-        .filter(Boolean)
-      : [];
-
-    if (statsCandidates.length) {
-      return [...new Set(statsCandidates)];
-    }
-
-    const fromSearchIndex = await fetchJsonForHeader(resolveFromComponent('../data/search-index.json'));
-    const searchCandidates = Array.isArray(fromSearchIndex?.people)
-      ? fromSearchIndex.people.map((person) => String(person?.id || '')).filter(Boolean)
-      : [];
-
-    if (searchCandidates.length) {
-      return [...new Set(searchCandidates)];
-    }
-
-    return ['1', '2', '3', '15'];
-  })();
-
-  return randomProfileCandidatesPromise;
+  await ensurePeopleRegistryScript();
+  const people = await window.PeopleRegistry.loadPeopleRegistry();
+  return people
+    .map((person) => String(person?.id || '').trim())
+    .filter(Boolean);
 }
 
 async function navigateToRandomProfile() {
+  try {
+    await ensurePeopleRegistryScript();
+  } catch (error) {
+    console.warn('Random profile navigation failed: could not load people registry.', error);
+    return;
+  }
+
   const candidates = await getRandomProfileCandidates();
+  if (!candidates.length) {
+    console.warn('Random profile navigation failed: people.json did not contain any profiles.');
+    return;
+  }
+
   const currentProfileMatch = window.location.pathname.match(/\/people\/([^/]+)\/profile\.html$/);
   const currentProfileId = currentProfileMatch?.[1] || null;
 
@@ -1315,8 +1321,8 @@ async function navigateToRandomProfile() {
     pool = candidates;
   }
 
-  const chosenId = pool[Math.floor(Math.random() * pool.length)] || '15';
-  window.location.assign(resolveFromComponent(`../people/${chosenId}/profile.html`));
+  const chosenId = pool[Math.floor(Math.random() * pool.length)];
+  window.location.assign(window.PeopleRegistry.resolvePersonProfileUrl(chosenId));
 }
 
 class FullHeader extends HTMLElement {
@@ -1354,7 +1360,7 @@ class FullHeader extends HTMLElement {
       } else if (text.includes('search')) {
         link.href = resolveFromComponent('../pages/search.html');
       } else if (text.includes('random')) {
-        link.href = resolveFromComponent('../people/15/profile.html');
+        link.href = '#';
       }
     });
 

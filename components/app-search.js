@@ -1,5 +1,5 @@
-const APP_SEARCH_INDEX_PATH = 'data/search-index.json';
 const APP_SEARCH_STYLE_ID = 'app-search-styles';
+const PEOPLE_REGISTRY_SCRIPT_URL = new URL('../lib/people-registry.js', document.currentScript?.src || window.location.href).href;
 const APP_SEARCH_DROPDOWN_LIMIT = 6;
 
 function getAppName() {
@@ -125,79 +125,201 @@ body:not(.theme-dark) {
   box-sizing: border-box;
 }
 
-.search-page .search-container {
-  float: none;
-  width: 100%;
-  max-width: none;
-  margin: 0 0 1.5rem;
-  text-align: left;
+.search-page__panel {
+  margin-bottom: 1.5rem;
+  padding: 1.35rem 1.5rem 1.5rem;
+  border: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--border-radius-base, 0.125rem);
+  background: var(--background-color-base, #ffffff);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
 }
 
-.search-page .search-container .search-input {
-  display: block;
-  width: auto;
-  vertical-align: initial;
+body.theme-dark .search-page__panel {
+  background: #242629;
+  box-shadow: inset 0 -1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.search-page__lead {
+  margin: 0 0 1.1rem;
+  color: var(--app-search-muted, #54595d);
+  font: 0.9375rem/1.55 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
 }
 
 .search-page__form {
-  margin-bottom: 0;
+  margin: 0;
 }
 
-.search-page__form .search-input {
-  width: 100%;
-  max-width: none;
-}
-
-.search-page__form #searchInput {
-  border-right-width: var(--border-width-base);
-  border-radius: var(--border-radius-base);
-}
-
-.search-page__form fieldset {
+.search-page__bar {
   display: flex;
-  gap: 0.5rem;
   align-items: stretch;
   width: 100%;
+  min-height: 2.875rem;
+  border: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--border-radius-base, 0.125rem);
+  background: var(--app-search-bar-bg, #f8f9fa);
+  overflow: visible;
+  box-sizing: border-box;
 }
 
-.search-page__form .search-input {
+body.theme-dark .search-page__bar {
+  --app-search-bar-bg: #1e2125;
+}
+
+.search-page__bar:focus-within {
+  border-color: var(--border-color-progressive, #36c);
+  box-shadow: 0 0 0 3px rgba(51, 102, 204, 0.15);
+}
+
+body.theme-dark .search-page__bar:focus-within {
+  box-shadow: 0 0 0 3px rgba(107, 158, 255, 0.18);
+}
+
+.search-page__bar-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding-left: 0.9rem;
+  color: var(--app-search-muted, #54595d);
+  font-size: 1.05rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.search-page__input {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.search-page__form button {
-  float: none;
-  position: static;
-  flex: 0 0 auto;
-  min-height: 0;
-}
-
-.search-page__meta {
-  margin: 0 0 1rem;
-  color: var(--app-search-muted, #54595d);
-  font-size: 0.9375rem;
-}
-
-.search-page__results {
+  width: 100%;
   margin: 0;
-  padding: 0;
-  list-style: none;
+  border: 0;
+  background: transparent;
+  color: var(--app-search-fg, #202122);
+  font: 1rem/1.4 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  padding: 0.7rem 0.75rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.search-page__input::placeholder {
+  color: color-mix(in srgb, var(--app-search-muted, #54595d) 88%, transparent);
+}
+
+.search-page__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0.3rem 0.3rem 0.3rem 0;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--border-color-progressive, #36c);
+  border-radius: var(--border-radius-base, 0.125rem);
+  background: var(--background-color-progressive, #36c);
+  color: var(--color-inverted, #ffffff);
+  font: 0.875rem/1 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.search-page__submit:hover {
+  background: var(--background-color-progressive--hover, #447ff5);
+}
+
+.search-page__submit:focus-visible {
+  outline: 2px solid var(--border-color-progressive--focus, #36c);
+  outline-offset: 2px;
+}
+
+.search-page__submit i {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.search-page__suggestions {
+  margin-top: 1.15rem;
+  padding-top: 1rem;
   border-top: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
 }
 
+.search-page__suggestions[hidden] {
+  display: none !important;
+}
+
+.search-page__suggestions-label {
+  margin: 0 0 0.7rem;
+  color: var(--app-search-muted, #54595d);
+  font: 0.75rem/1.2 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.search-page__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.search-page__results-root {
+  min-height: 0;
+}
+
+.search-page__results-header {
+  margin: 0 0 0.75rem;
+  color: var(--app-search-muted, #54595d);
+  font: 0.875rem/1.4 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+@media (max-width: 520px) {
+  .search-page__panel {
+    padding: 1.1rem 1rem 1.15rem;
+  }
+
+  .search-page__submit-text {
+    display: none;
+  }
+
+  .search-page__submit {
+    padding: 0.55rem 0.7rem;
+  }
+}
+
+.search-page__results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
 .search-page__result {
-  border-bottom: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
+  margin: 0;
+  padding: 0;
 }
 
 .search-page__result-link {
   display: block;
-  padding: 1rem 0.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--app-search-border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--border-radius-base, 0.125rem);
+  background: var(--background-color-base, #ffffff);
   color: var(--app-search-link, #3366cc);
   text-decoration: none;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+body.theme-dark .search-page__result-link {
+  background: #242629;
 }
 
 .search-page__result-link:hover {
-  text-decoration: underline;
+  background: var(--app-search-hover, rgba(0, 0, 0, 0.05));
+  border-color: color-mix(in srgb, var(--app-search-link, #3366cc) 30%, var(--app-search-border, rgba(0, 0, 0, 0.12)));
+  text-decoration: none;
 }
 
 .search-page__result-title {
@@ -217,13 +339,16 @@ body:not(.theme-dark) {
 
 .search-page__empty {
   margin: 0;
-  padding: 1rem 0 2rem;
+  padding: 1.25rem 1.1rem;
+  border: 1px dashed var(--app-search-border, rgba(0, 0, 0, 0.12));
+  border-radius: var(--border-radius-base, 0.125rem);
   color: var(--app-search-muted, #54595d);
+  font: 0.9375rem/1.55 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
   text-align: left;
 }
 `;
 
-let searchIndexPromise = null;
+let peopleRegistryScriptPromise = null;
 
 function normalizeSiteRootPrefix(prefix) {
     if (!prefix || prefix === '/') {
@@ -244,14 +369,48 @@ function ensureSearchStyles() {
     document.head.append(style);
 }
 
+function ensurePeopleRegistryScript() {
+    if (window.PeopleRegistry) {
+        return Promise.resolve();
+    }
+
+    if (peopleRegistryScriptPromise) {
+        return peopleRegistryScriptPromise;
+    }
+
+    const existingScript = document.querySelector('script[src*="people-registry.js"]');
+    if (existingScript) {
+        peopleRegistryScriptPromise = new Promise((resolve, reject) => {
+            existingScript.addEventListener('load', resolve, { once: true });
+            existingScript.addEventListener('error', reject, { once: true });
+        });
+        return peopleRegistryScriptPromise;
+    }
+
+    peopleRegistryScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = PEOPLE_REGISTRY_SCRIPT_URL;
+        script.defer = true;
+        script.addEventListener('load', resolve, { once: true });
+        script.addEventListener('error', reject, { once: true });
+        document.head.append(script);
+    });
+
+    return peopleRegistryScriptPromise;
+}
+
 function getSiteRootPrefix() {
+    if (window.PeopleRegistry?.getSiteRootPrefix) {
+        return window.PeopleRegistry.getSiteRootPrefix();
+    }
+
     const pathname = window.location.pathname.replace(/\\/g, '/');
-    const nestedProfileMatch = pathname.match(/^(.*\/)people\/\d+\/[^/]+$/);
+    const nestedProfileMatch = pathname.match(/^(.*\/)people\/[^/]+\/[^/]+$/);
     if (nestedProfileMatch) {
         return normalizeSiteRootPrefix(nestedProfileMatch[1]);
     }
 
-    const peopleDirectoryMatch = pathname.match(/^(.*\/)people\/\d+\//);
+    const peopleDirectoryMatch = pathname.match(/^(.*\/)people\/[^/]+\//);
     if (peopleDirectoryMatch) {
         return normalizeSiteRootPrefix(peopleDirectoryMatch[1]);
     }
@@ -263,11 +422,11 @@ function getSiteRootPrefix() {
     return '';
 }
 
-function resolveSearchIndexUrl() {
-    return new URL(APP_SEARCH_INDEX_PATH, new URL(getSiteRootPrefix(), window.location.href)).href;
-}
-
 function resolvePersonProfileUrl(personId) {
+    if (window.PeopleRegistry?.resolvePersonProfileUrl) {
+        return window.PeopleRegistry.resolvePersonProfileUrl(personId);
+    }
+
     return new URL(`people/${personId}/profile.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
 }
 
@@ -291,50 +450,40 @@ function normalizeSearchText(value) {
         .replace(/\s+/g, ' ');
 }
 
+function getPersonDisplayName(entry) {
+    return [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim();
+}
+
 function scorePersonEntry(query, entry) {
     const normalizedQuery = normalizeSearchText(query);
     if (!normalizedQuery) {
         return 0;
     }
 
-    const title = normalizeSearchText(entry.title);
-    const aliases = (entry.aliases || []).map(normalizeSearchText);
-    const description = normalizeSearchText(entry.description);
+    const firstName = normalizeSearchText(entry.firstName);
+    const lastName = normalizeSearchText(entry.lastName);
+    const fullName = normalizeSearchText(getPersonDisplayName(entry));
     const id = String(entry.id || '').toLowerCase();
     let score = 0;
 
-    if (title === normalizedQuery || id === normalizedQuery) {
+    if (fullName === normalizedQuery || id === normalizedQuery) {
         score = Math.max(score, 120);
     }
 
-    if (title.startsWith(normalizedQuery) || id.startsWith(normalizedQuery)) {
+    if (fullName.startsWith(normalizedQuery) || firstName.startsWith(normalizedQuery) || lastName.startsWith(normalizedQuery) || id.startsWith(normalizedQuery)) {
         score = Math.max(score, 95);
     }
 
-    if (title.includes(normalizedQuery)) {
+    if (fullName.includes(normalizedQuery) || firstName.includes(normalizedQuery) || lastName.includes(normalizedQuery)) {
         score = Math.max(score, 80);
     }
 
-    if (description.includes(normalizedQuery)) {
-        score = Math.max(score, 55);
-    }
-
-    aliases.forEach((alias) => {
-        if (alias === normalizedQuery) {
-            score = Math.max(score, 90);
-        } else if (alias.startsWith(normalizedQuery)) {
-            score = Math.max(score, 75);
-        } else if (alias.includes(normalizedQuery)) {
-            score = Math.max(score, 60);
-        }
-    });
-
     const queryTokens = normalizedQuery.split(' ').filter(Boolean);
     if (queryTokens.length > 1) {
-        const haystack = [title, description, ...aliases].join(' ');
+        const haystack = [firstName, lastName, fullName].join(' ');
         const allTokensMatch = queryTokens.every((token) => haystack.includes(token));
         if (allTokensMatch) {
-            score = Math.max(score, 70);
+            score = Math.max(score, 100);
         }
     }
 
@@ -342,22 +491,8 @@ function scorePersonEntry(query, entry) {
 }
 
 async function loadSearchIndex() {
-    if (!searchIndexPromise) {
-        searchIndexPromise = fetch(resolveSearchIndexUrl())
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Failed to load search index: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then((data) => data?.people || [])
-            .catch((error) => {
-                console.error(error);
-                return [];
-            });
-    }
-
-    return searchIndexPromise;
+    await ensurePeopleRegistryScript();
+    return window.PeopleRegistry.loadPeopleRegistry();
 }
 
 async function findPersonMatches(query, { limit = 8 } = {}) {
@@ -370,7 +505,7 @@ async function findPersonMatches(query, { limit = 8 } = {}) {
             url: resolvePersonProfileUrl(entry.id),
         }))
         .filter((result) => result.score > 0)
-        .sort((a, b) => b.score - a.score || a.entry.title.localeCompare(b.entry.title))
+        .sort((a, b) => b.score - a.score || getPersonDisplayName(a.entry).localeCompare(getPersonDisplayName(b.entry)))
         .slice(0, limit);
 }
 
@@ -379,7 +514,7 @@ function getSearchInput(form) {
 }
 
 function getDropdownAnchor(form) {
-    return form.querySelector('.search-input') || form;
+    return form.querySelector('.app-search-anchor, .search-input, .search-page__bar') || form;
 }
 
 function createDropdown(anchor) {
@@ -416,15 +551,8 @@ function renderDropdownItems(dropdown, matches, query) {
 
         const title = document.createElement('span');
         title.className = 'app-search__option-title';
-        title.textContent = match.entry.title;
+        title.textContent = getPersonDisplayName(match.entry);
         link.append(title);
-
-        if (match.entry.description) {
-            const description = document.createElement('span');
-            description.className = 'app-search__option-description';
-            description.textContent = match.entry.description;
-            link.append(description);
-        }
 
         item.append(link);
         dropdown.append(item);
@@ -581,6 +709,15 @@ function bindAppSearchForm(form) {
     input.setAttribute('aria-expanded', 'false');
 }
 
+function initSearchPageChips() {
+    document.querySelectorAll('.search-page__chip[data-query]').forEach((chip) => {
+        const query = chip.dataset.query?.trim() || chip.textContent.trim();
+        if (query) {
+            chip.href = resolveSearchPageUrl(query);
+        }
+    });
+}
+
 async function renderSearchResultsPage() {
     const resultsRoot = document.getElementById('app-search-results');
     if (!resultsRoot) {
@@ -588,10 +725,12 @@ async function renderSearchResultsPage() {
     }
 
     ensureSearchStyles();
+    initSearchPageChips();
 
     const params = new URLSearchParams(window.location.search);
     const query = (params.get('q') || params.get('search') || '').trim();
     const metaEl = document.getElementById('app-search-page-meta');
+    const suggestionsEl = document.getElementById('app-search-suggestions');
     const toolbar = document.querySelector('full-page-toolbar');
     const formInput = document.querySelector('#search-page-form input[name="search"], #search-page-form input[type="search"]');
 
@@ -612,8 +751,15 @@ async function renderSearchResultsPage() {
         if (metaEl) {
             metaEl.textContent = `Enter a name or keyword to find people in ${appName}.`;
         }
-        resultsRoot.innerHTML = '<p class="search-page__empty">Try searching for Shaun Roselt, Hanli, wife, or Mandela.</p>';
+        if (suggestionsEl) {
+            suggestionsEl.hidden = false;
+        }
+        resultsRoot.replaceChildren();
         return;
+    }
+
+    if (suggestionsEl) {
+        suggestionsEl.hidden = true;
     }
 
     const matches = await findPersonMatches(query, { limit: 100 });
@@ -625,9 +771,13 @@ async function renderSearchResultsPage() {
     }
 
     if (matches.length === 0) {
-        resultsRoot.innerHTML = `<p class="search-page__empty">No profiles matched “${query}”. Try another spelling or a shorter keyword.</p>`;
+        resultsRoot.innerHTML = `<p class="search-page__empty">No profiles matched “${query}”. Try another spelling, pick a popular search above, or use a shorter keyword.</p>`;
         return;
     }
+
+    const header = document.createElement('p');
+    header.className = 'search-page__results-header';
+    header.textContent = matches.length === 1 ? '1 profile found' : `${matches.length} profiles found`;
 
     const list = document.createElement('ul');
     list.className = 'search-page__results';
@@ -642,26 +792,26 @@ async function renderSearchResultsPage() {
 
         const title = document.createElement('span');
         title.className = 'search-page__result-title';
-        title.textContent = match.entry.title;
+        title.textContent = getPersonDisplayName(match.entry);
         link.append(title);
-
-        if (match.entry.description) {
-            const description = document.createElement('span');
-            description.className = 'search-page__result-description';
-            description.textContent = match.entry.description;
-            link.append(description);
-        }
 
         item.append(link);
         list.append(item);
     });
 
-    resultsRoot.replaceChildren(list);
+    resultsRoot.replaceChildren(header, list);
 }
 
 function initAppSearch() {
-    document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindAppSearchForm);
-    void renderSearchResultsPage();
+    void ensurePeopleRegistryScript()
+        .then(() => {
+            document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindAppSearchForm);
+            initSearchPageChips();
+            return renderSearchResultsPage();
+        })
+        .catch((error) => {
+            console.error('Failed to initialize app search', error);
+        });
 }
 
 window.AppSearch = {

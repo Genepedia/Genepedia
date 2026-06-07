@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-06-07T14:29:00.619Z",
+  "people": [
+    {
+      "id": "1",
+      "firstName": "Shaun",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "2",
+      "firstName": "Hanli",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "3",
+      "firstName": "Profile",
+      "lastName": "3"
+    },
+    {
+      "id": "4",
+      "firstName": "Shaun",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "5",
+      "firstName": "Shaun",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "6",
+      "firstName": "Shaun",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "7",
+      "firstName": "Shaun",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "8",
+      "firstName": "Shaun",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "9",
+      "firstName": "Shaun",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "10",
+      "firstName": "Shaun",
+      "lastName": "Roselt"
+    },
+    {
+      "id": "15",
+      "firstName": "Nelson",
+      "lastName": "Mandela"
+    },
+    {
+      "id": "16",
+      "firstName": "Gadla",
+      "lastName": "Henry Mphakanyiswa Mandela"
+    },
+    {
+      "id": "17",
+      "firstName": "Nosekeni",
+      "lastName": "Nonqaphi Fanny Mandela"
+    },
+    {
+      "id": "18",
+      "firstName": "Mabel",
+      "lastName": "Notancu Timakwe"
+    },
+    {
+      "id": "19",
+      "firstName": "Constance",
+      "lastName": "Mbekeni Mandela"
+    },
+    {
+      "id": "20",
+      "firstName": "Daligqili",
+      "lastName": "Mandela"
+    },
+    {
+      "id": "21",
+      "firstName": "Leabie",
+      "lastName": "Philiso Mandela"
+    },
+    {
+      "id": "22",
+      "firstName": "Nokuthamba",
+      "lastName": "Bhulehluthi"
+    },
+    {
+      "id": "23",
+      "firstName": "Graça",
+      "lastName": "Machel"
+    },
+    {
+      "id": "24",
+      "firstName": "Evelyn",
+      "lastName": "Mase"
+    },
+    {
+      "id": "25",
+      "firstName": "Winnie",
+      "lastName": "Madikizela-Mandela"
+    }
+  ]
+}
