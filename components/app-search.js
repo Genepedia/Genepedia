@@ -1,33 +1,33 @@
 (function initAppSearchModule() {
-if (window.AppSearch) {
-    return;
-}
-
-const APP_SEARCH_STYLE_ID = 'app-search-styles';
-const APP_SEARCH_DROPDOWN_LIMIT = 6;
-
-function resolveAppSearchScriptUrl() {
-    const script = document.currentScript || document.querySelector('script[src*="app-search.js"]');
-    if (script?.src) {
-        return script.src;
+    if (window.AppSearch) {
+        return;
     }
 
-    const pathname = window.location.pathname.replace(/\\/g, '/');
-    if (pathname.includes('/pages/') || pathname.match(/\/people\/[^/]+\//)) {
-        return new URL('../components/app-search.js', window.location.href).href;
+    const APP_SEARCH_STYLE_ID = 'app-search-styles';
+    const APP_SEARCH_DROPDOWN_LIMIT = 6;
+
+    function resolveAppSearchScriptUrl() {
+        const script = document.currentScript || document.querySelector('script[src*="app-search.js"]');
+        if (script?.src) {
+            return script.src;
+        }
+
+        const pathname = window.location.pathname.replace(/\\/g, '/');
+        if (pathname.includes('/pages/') || pathname.match(/\/people\/[^/]+\//)) {
+            return new URL('../components/app-search.js', window.location.href).href;
+        }
+
+        return new URL('components/app-search.js', window.location.href).href;
     }
 
-    return new URL('components/app-search.js', window.location.href).href;
-}
+    const PEOPLE_REGISTRY_SCRIPT_URL = new URL('../lib/people-registry.js', resolveAppSearchScriptUrl()).href;
 
-const PEOPLE_REGISTRY_SCRIPT_URL = new URL('../lib/people-registry.js', resolveAppSearchScriptUrl()).href;
+    function getAppName() {
+        const name = window.App?.getName?.() || window.App?.Name;
+        return (typeof name === 'string' && name.trim()) ? name.trim() : '';
+    }
 
-function getAppName() {
-    const name = window.App?.getName?.() || window.App?.Name;
-    return (typeof name === 'string' && name.trim()) ? name.trim() : '';
-}
-
-const APP_SEARCH_STYLES = String.raw`
+    const APP_SEARCH_STYLES = String.raw`
 .app-search-anchor {
   position: relative;
 }
@@ -374,582 +374,582 @@ body.theme-dark .search-page__result-link {
 }
 `;
 
-let peopleRegistryScriptPromise = null;
+    let peopleRegistryScriptPromise = null;
 
-function normalizeSiteRootPrefix(prefix) {
-    if (!prefix || prefix === '/') {
+    function normalizeSiteRootPrefix(prefix) {
+        if (!prefix || prefix === '/') {
+            return '';
+        }
+
+        return prefix;
+    }
+
+    function ensureSearchStyles() {
+        if (document.getElementById(APP_SEARCH_STYLE_ID)) {
+            return;
+        }
+
+        const style = document.createElement('style');
+        style.id = APP_SEARCH_STYLE_ID;
+        style.textContent = APP_SEARCH_STYLES;
+        document.head.append(style);
+    }
+
+    function ensurePeopleRegistryScript() {
+        if (window.PeopleRegistry) {
+            return Promise.resolve();
+        }
+
+        if (peopleRegistryScriptPromise) {
+            return peopleRegistryScriptPromise;
+        }
+
+        const existingScript = document.querySelector('script[src*="people-registry.js"]');
+        if (existingScript) {
+            peopleRegistryScriptPromise = new Promise((resolve, reject) => {
+                existingScript.addEventListener('load', resolve, { once: true });
+                existingScript.addEventListener('error', reject, { once: true });
+            });
+            return peopleRegistryScriptPromise;
+        }
+
+        peopleRegistryScriptPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = PEOPLE_REGISTRY_SCRIPT_URL;
+            script.defer = true;
+            script.addEventListener('load', resolve, { once: true });
+            script.addEventListener('error', reject, { once: true });
+            document.head.append(script);
+        });
+
+        return peopleRegistryScriptPromise;
+    }
+
+    function getSiteRootPrefix() {
+        if (window.PeopleRegistry?.getSiteRootPrefix) {
+            return window.PeopleRegistry.getSiteRootPrefix();
+        }
+
+        const pathname = window.location.pathname.replace(/\\/g, '/');
+        const nestedProfileMatch = pathname.match(/^(.*\/)people\/[^/]+\/[^/]+$/);
+        if (nestedProfileMatch) {
+            return normalizeSiteRootPrefix(nestedProfileMatch[1]);
+        }
+
+        const peopleDirectoryMatch = pathname.match(/^(.*\/)people\/[^/]+\//);
+        if (peopleDirectoryMatch) {
+            return normalizeSiteRootPrefix(peopleDirectoryMatch[1]);
+        }
+
+        if (pathname.includes('/pages/')) {
+            return '../';
+        }
+
         return '';
     }
 
-    return prefix;
-}
-
-function ensureSearchStyles() {
-    if (document.getElementById(APP_SEARCH_STYLE_ID)) {
-        return;
-    }
-
-    const style = document.createElement('style');
-    style.id = APP_SEARCH_STYLE_ID;
-    style.textContent = APP_SEARCH_STYLES;
-    document.head.append(style);
-}
-
-function ensurePeopleRegistryScript() {
-    if (window.PeopleRegistry) {
-        return Promise.resolve();
-    }
-
-    if (peopleRegistryScriptPromise) {
-        return peopleRegistryScriptPromise;
-    }
-
-    const existingScript = document.querySelector('script[src*="people-registry.js"]');
-    if (existingScript) {
-        peopleRegistryScriptPromise = new Promise((resolve, reject) => {
-            existingScript.addEventListener('load', resolve, { once: true });
-            existingScript.addEventListener('error', reject, { once: true });
-        });
-        return peopleRegistryScriptPromise;
-    }
-
-    peopleRegistryScriptPromise = new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = PEOPLE_REGISTRY_SCRIPT_URL;
-        script.defer = true;
-        script.addEventListener('load', resolve, { once: true });
-        script.addEventListener('error', reject, { once: true });
-        document.head.append(script);
-    });
-
-    return peopleRegistryScriptPromise;
-}
-
-function getSiteRootPrefix() {
-    if (window.PeopleRegistry?.getSiteRootPrefix) {
-        return window.PeopleRegistry.getSiteRootPrefix();
-    }
-
-    const pathname = window.location.pathname.replace(/\\/g, '/');
-    const nestedProfileMatch = pathname.match(/^(.*\/)people\/[^/]+\/[^/]+$/);
-    if (nestedProfileMatch) {
-        return normalizeSiteRootPrefix(nestedProfileMatch[1]);
-    }
-
-    const peopleDirectoryMatch = pathname.match(/^(.*\/)people\/[^/]+\//);
-    if (peopleDirectoryMatch) {
-        return normalizeSiteRootPrefix(peopleDirectoryMatch[1]);
-    }
-
-    if (pathname.includes('/pages/')) {
-        return '../';
-    }
-
-    return '';
-}
-
-function resolvePersonProfileUrl(personId) {
-    if (window.PeopleRegistry?.resolvePersonProfileUrl) {
-        return window.PeopleRegistry.resolvePersonProfileUrl(personId);
-    }
-
-    return new URL(`people/${personId}/profile.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
-}
-
-function resolveSearchPageUrl(query = '') {
-    const pathname = window.location.pathname.replace(/\\/g, '/');
-    const searchPagePath = pathname.includes('/pages/') ? 'search.html' : 'pages/search.html';
-    const url = new URL(searchPagePath, new URL(getSiteRootPrefix(), window.location.href));
-    const trimmedQuery = query.trim();
-
-    if (trimmedQuery) {
-        url.searchParams.set('q', trimmedQuery);
-    }
-
-    return url.href;
-}
-
-function normalizeSearchText(value) {
-    return (value || '')
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, ' ');
-}
-
-function getPersonDisplayName(entry) {
-    return [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim();
-}
-
-function scorePersonEntry(query, entry) {
-    const normalizedQuery = normalizeSearchText(query);
-    if (!normalizedQuery) {
-        return 0;
-    }
-
-    const firstName = normalizeSearchText(entry.firstName);
-    const lastName = normalizeSearchText(entry.lastName);
-    const fullName = normalizeSearchText(getPersonDisplayName(entry));
-    const id = String(entry.id || '').toLowerCase();
-    let score = 0;
-
-    if (fullName === normalizedQuery || id === normalizedQuery) {
-        score = Math.max(score, 120);
-    }
-
-    if (fullName.startsWith(normalizedQuery) || firstName.startsWith(normalizedQuery) || lastName.startsWith(normalizedQuery) || id.startsWith(normalizedQuery)) {
-        score = Math.max(score, 95);
-    }
-
-    if (fullName.includes(normalizedQuery) || firstName.includes(normalizedQuery) || lastName.includes(normalizedQuery)) {
-        score = Math.max(score, 80);
-    }
-
-    const queryTokens = normalizedQuery.split(' ').filter(Boolean);
-    if (queryTokens.length > 1) {
-        const haystack = [firstName, lastName, fullName].join(' ');
-        const allTokensMatch = queryTokens.every((token) => haystack.includes(token));
-        if (allTokensMatch) {
-            score = Math.max(score, 100);
-        }
-    }
-
-    return score;
-}
-
-async function loadSearchIndex() {
-    await ensurePeopleRegistryScript();
-    return window.PeopleRegistry.loadPeopleRegistry();
-}
-
-async function findPersonMatches(query, { limit = 8 } = {}) {
-    const people = await loadSearchIndex();
-
-    return people
-        .map((entry) => ({
-            entry,
-            score: scorePersonEntry(query, entry),
-            url: resolvePersonProfileUrl(entry.id),
-        }))
-        .filter((result) => result.score > 0)
-        .sort((a, b) => b.score - a.score || getPersonDisplayName(a.entry).localeCompare(getPersonDisplayName(b.entry)))
-        .slice(0, limit);
-}
-
-function getSearchInput(form) {
-    return form.querySelector('input[name="search"], input[type="search"]');
-}
-
-function getDropdownAnchor(form) {
-    if (form.id === 'header-chrome-search-form' || form.classList.contains('header-chrome__search-form')) {
-        return form;
-    }
-
-    return form.querySelector('.app-search-anchor, .search-input, .search-page__bar') || form;
-}
-
-function createDropdown(anchor) {
-    const dropdown = document.createElement('ul');
-    dropdown.className = 'app-search__dropdown';
-    dropdown.setAttribute('role', 'listbox');
-    dropdown.hidden = true;
-    anchor.append(dropdown);
-    return dropdown;
-}
-
-function renderDropdownItems(dropdown, matches, query) {
-    dropdown.textContent = '';
-
-    const appName = getAppName();
-
-    if (matches.length === 0) {
-        const empty = document.createElement('li');
-        empty.className = 'app-search__dropdown-empty';
-        empty.textContent = query.trim() ? `No profiles match "${query.trim()}".` : `Type to search ${appName}.`;
-        dropdown.append(empty);
-        return;
-    }
-
-    matches.forEach((match, index) => {
-        const item = document.createElement('li');
-        item.className = 'app-search__option';
-        item.setAttribute('role', 'option');
-        item.dataset.index = String(index);
-
-        const link = document.createElement('a');
-        link.className = 'app-search__option-link';
-        link.href = match.url;
-
-        const title = document.createElement('span');
-        title.className = 'app-search__option-title';
-        title.textContent = getPersonDisplayName(match.entry);
-        link.append(title);
-
-        item.append(link);
-        dropdown.append(item);
-    });
-
-    const footer = document.createElement('li');
-    footer.className = 'app-search__dropdown-footer';
-    footer.setAttribute('role', 'presentation');
-
-    const viewAll = document.createElement('a');
-    viewAll.className = 'app-search__dropdown-all';
-    viewAll.href = resolveSearchPageUrl(query);
-    viewAll.textContent = `View all results for “${query.trim()}”`;
-    footer.append(viewAll);
-    dropdown.append(footer);
-}
-
-function setActiveDropdownOption(dropdown, index) {
-    const options = [...dropdown.querySelectorAll('.app-search__option')];
-    options.forEach((option, optionIndex) => {
-        const isActive = optionIndex === index;
-        option.classList.toggle('is-active', isActive);
-        option.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    });
-    return options[index] || null;
-}
-
-function bindAppSearchSubmitLink(form, input, { closeDropdown, getActiveMatch, goToSearchPage }) {
-    const submitControl = form.querySelector('a.app-search-submit') || form.querySelector('button[type="submit"]');
-    if (!submitControl) {
-        return;
-    }
-
-    const syncSubmitHref = () => {
-        if (submitControl.tagName === 'A') {
-            submitControl.href = resolveSearchPageUrl(input.value);
-        }
-    };
-
-    input.addEventListener('input', syncSubmitHref);
-    syncSubmitHref();
-
-    if (submitControl.tagName !== 'A') {
-        return;
-    }
-
-    submitControl.addEventListener('click', (event) => {
-        if (event.defaultPrevented) {
-            return;
+    function resolvePersonProfileUrl(personId) {
+        if (window.PeopleRegistry?.resolvePersonProfileUrl) {
+            return window.PeopleRegistry.resolvePersonProfileUrl(personId);
         }
 
-        // Let the browser handle open-in-new-tab and other modified clicks.
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
-            syncSubmitHref();
-            return;
-        }
-
-        event.preventDefault();
-        closeDropdown();
-
-        const activeMatch = getActiveMatch();
-        if (activeMatch) {
-            window.location.assign(activeMatch.url);
-            return;
-        }
-
-        goToSearchPage(input.value);
-    });
-}
-
-function bindAppSearchForm(form) {
-    if (!form || form.dataset.appSearchBound === 'true') {
-        return;
+        return new URL(`people/${personId}/profile.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
     }
 
-    ensureSearchStyles();
-    form.dataset.appSearchBound = 'true';
-
-    const input = getSearchInput(form);
-    if (!input) {
-        return;
-    }
-
-    const anchor = getDropdownAnchor(form);
-    anchor.classList.add('app-search-anchor');
-    const dropdown = createDropdown(anchor);
-
-    let activeIndex = -1;
-    let debounceTimer = null;
-    let latestMatches = [];
-
-    const closeDropdown = () => {
-        dropdown.hidden = true;
-        activeIndex = -1;
-        input.setAttribute('aria-expanded', 'false');
-    };
-
-    const openDropdown = () => {
-        dropdown.hidden = false;
-        input.setAttribute('aria-expanded', 'true');
-    };
-
-    const updateDropdown = async () => {
-        const query = input.value;
+    function resolveSearchPageUrl(query = '') {
+        const pathname = window.location.pathname.replace(/\\/g, '/');
+        const searchPagePath = pathname.includes('/pages/') ? 'search.html' : 'pages/search.html';
+        const url = new URL(searchPagePath, new URL(getSiteRootPrefix(), window.location.href));
         const trimmedQuery = query.trim();
 
-        if (!trimmedQuery) {
-            closeDropdown();
+        if (trimmedQuery) {
+            url.searchParams.set('q', trimmedQuery);
+        }
+
+        return url.href;
+    }
+
+    function normalizeSearchText(value) {
+        return (value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, ' ');
+    }
+
+    function getPersonDisplayName(entry) {
+        return [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim();
+    }
+
+    function scorePersonEntry(query, entry) {
+        const normalizedQuery = normalizeSearchText(query);
+        if (!normalizedQuery) {
+            return 0;
+        }
+
+        const firstName = normalizeSearchText(entry.firstName);
+        const lastName = normalizeSearchText(entry.lastName);
+        const fullName = normalizeSearchText(getPersonDisplayName(entry));
+        const id = String(entry.id || '').toLowerCase();
+        let score = 0;
+
+        if (fullName === normalizedQuery || id === normalizedQuery) {
+            score = Math.max(score, 120);
+        }
+
+        if (fullName.startsWith(normalizedQuery) || firstName.startsWith(normalizedQuery) || lastName.startsWith(normalizedQuery) || id.startsWith(normalizedQuery)) {
+            score = Math.max(score, 95);
+        }
+
+        if (fullName.includes(normalizedQuery) || firstName.includes(normalizedQuery) || lastName.includes(normalizedQuery)) {
+            score = Math.max(score, 80);
+        }
+
+        const queryTokens = normalizedQuery.split(' ').filter(Boolean);
+        if (queryTokens.length > 1) {
+            const haystack = [firstName, lastName, fullName].join(' ');
+            const allTokensMatch = queryTokens.every((token) => haystack.includes(token));
+            if (allTokensMatch) {
+                score = Math.max(score, 100);
+            }
+        }
+
+        return score;
+    }
+
+    async function loadSearchIndex() {
+        await ensurePeopleRegistryScript();
+        return window.PeopleRegistry.loadPeopleRegistry();
+    }
+
+    async function findPersonMatches(query, { limit = 8 } = {}) {
+        const people = await loadSearchIndex();
+
+        return people
+            .map((entry) => ({
+                entry,
+                score: scorePersonEntry(query, entry),
+                url: resolvePersonProfileUrl(entry.id),
+            }))
+            .filter((result) => result.score > 0)
+            .sort((a, b) => b.score - a.score || getPersonDisplayName(a.entry).localeCompare(getPersonDisplayName(b.entry)))
+            .slice(0, limit);
+    }
+
+    function getSearchInput(form) {
+        return form.querySelector('input[name="search"], input[type="search"]');
+    }
+
+    function getDropdownAnchor(form) {
+        if (form.id === 'header-chrome-search-form' || form.classList.contains('header-chrome__search-form')) {
+            return form;
+        }
+
+        return form.querySelector('.app-search-anchor, .search-input, .search-page__bar') || form;
+    }
+
+    function createDropdown(anchor) {
+        const dropdown = document.createElement('ul');
+        dropdown.className = 'app-search__dropdown';
+        dropdown.setAttribute('role', 'listbox');
+        dropdown.hidden = true;
+        anchor.append(dropdown);
+        return dropdown;
+    }
+
+    function renderDropdownItems(dropdown, matches, query) {
+        dropdown.textContent = '';
+
+        const appName = getAppName();
+
+        if (matches.length === 0) {
+            const empty = document.createElement('li');
+            empty.className = 'app-search__dropdown-empty';
+            empty.textContent = query.trim() ? `No profiles match "${query.trim()}".` : `Type to search ${appName}.`;
+            dropdown.append(empty);
             return;
         }
 
-        latestMatches = await findPersonMatches(trimmedQuery, { limit: APP_SEARCH_DROPDOWN_LIMIT });
-        renderDropdownItems(dropdown, latestMatches, trimmedQuery);
-        activeIndex = -1;
-        openDropdown();
-    };
+        matches.forEach((match, index) => {
+            const item = document.createElement('li');
+            item.className = 'app-search__option';
+            item.setAttribute('role', 'option');
+            item.dataset.index = String(index);
 
-    const scheduleUpdate = () => {
-        window.clearTimeout(debounceTimer);
-        debounceTimer = window.setTimeout(() => {
-            void updateDropdown();
-        }, 150);
-    };
+            const link = document.createElement('a');
+            link.className = 'app-search__option-link';
+            link.href = match.url;
 
-    const goToSearchPage = (query) => {
-        const trimmedQuery = (query || '').trim();
-        window.location.assign(resolveSearchPageUrl(trimmedQuery));
-    };
+            const title = document.createElement('span');
+            title.className = 'app-search__option-title';
+            title.textContent = getPersonDisplayName(match.entry);
+            link.append(title);
 
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        closeDropdown();
+            item.append(link);
+            dropdown.append(item);
+        });
 
-        if (activeIndex >= 0 && latestMatches[activeIndex]) {
-            window.location.assign(latestMatches[activeIndex].url);
+        const footer = document.createElement('li');
+        footer.className = 'app-search__dropdown-footer';
+        footer.setAttribute('role', 'presentation');
+
+        const viewAll = document.createElement('a');
+        viewAll.className = 'app-search__dropdown-all';
+        viewAll.href = resolveSearchPageUrl(query);
+        viewAll.textContent = `View all results for “${query.trim()}”`;
+        footer.append(viewAll);
+        dropdown.append(footer);
+    }
+
+    function setActiveDropdownOption(dropdown, index) {
+        const options = [...dropdown.querySelectorAll('.app-search__option')];
+        options.forEach((option, optionIndex) => {
+            const isActive = optionIndex === index;
+            option.classList.toggle('is-active', isActive);
+            option.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        return options[index] || null;
+    }
+
+    function bindAppSearchSubmitLink(form, input, { closeDropdown, getActiveMatch, goToSearchPage }) {
+        const submitControl = form.querySelector('a.app-search-submit') || form.querySelector('button[type="submit"]');
+        if (!submitControl) {
             return;
         }
 
-        goToSearchPage(input.value);
-    });
+        const syncSubmitHref = () => {
+            if (submitControl.tagName === 'A') {
+                submitControl.href = resolveSearchPageUrl(input.value);
+            }
+        };
 
-    bindAppSearchSubmitLink(form, input, {
-        closeDropdown,
-        getActiveMatch: () => (activeIndex >= 0 ? latestMatches[activeIndex] : null),
-        goToSearchPage,
-    });
+        input.addEventListener('input', syncSubmitHref);
+        syncSubmitHref();
 
-    input.addEventListener('input', scheduleUpdate);
-
-    input.addEventListener('focus', () => {
-        if (input.value.trim()) {
-            scheduleUpdate();
+        if (submitControl.tagName !== 'A') {
+            return;
         }
-    });
 
-    input.addEventListener('keydown', (event) => {
-        const options = dropdown.hidden ? [] : [...dropdown.querySelectorAll('.app-search__option')];
+        submitControl.addEventListener('click', (event) => {
+            if (event.defaultPrevented) {
+                return;
+            }
 
-        if (event.key === 'ArrowDown') {
-            if (!options.length) {
+            // Let the browser handle open-in-new-tab and other modified clicks.
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
+                syncSubmitHref();
                 return;
             }
 
             event.preventDefault();
-            activeIndex = Math.min(activeIndex + 1, options.length - 1);
-            setActiveDropdownOption(dropdown, activeIndex)?.scrollIntoView({ block: 'nearest' });
-            return;
-        }
+            closeDropdown();
 
-        if (event.key === 'ArrowUp') {
-            if (!options.length) {
+            const activeMatch = getActiveMatch();
+            if (activeMatch) {
+                window.location.assign(activeMatch.url);
                 return;
             }
 
-            event.preventDefault();
-            activeIndex = Math.max(activeIndex - 1, 0);
-            setActiveDropdownOption(dropdown, activeIndex)?.scrollIntoView({ block: 'nearest' });
+            goToSearchPage(input.value);
+        });
+    }
+
+    function bindAppSearchForm(form) {
+        if (!form || form.dataset.appSearchBound === 'true') {
             return;
         }
 
-        if (event.key === 'Escape') {
-            closeDropdown();
+        ensureSearchStyles();
+        form.dataset.appSearchBound = 'true';
+
+        const input = getSearchInput(form);
+        if (!input) {
             return;
         }
-    });
 
-    dropdown.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-    });
+        const anchor = getDropdownAnchor(form);
+        anchor.classList.add('app-search-anchor');
+        const dropdown = createDropdown(anchor);
 
-    document.addEventListener('click', (event) => {
-        if (!form.contains(event.target)) {
-            closeDropdown();
-        }
-    });
+        let activeIndex = -1;
+        let debounceTimer = null;
+        let latestMatches = [];
 
-    input.setAttribute('aria-autocomplete', 'list');
-    input.setAttribute('aria-controls', dropdown.id || '');
-    if (!dropdown.id) {
-        dropdown.id = `app-search-dropdown-${Math.random().toString(36).slice(2, 9)}`;
-        input.setAttribute('aria-controls', dropdown.id);
-    }
-    input.setAttribute('aria-expanded', 'false');
-}
+        const closeDropdown = () => {
+            dropdown.hidden = true;
+            activeIndex = -1;
+            input.setAttribute('aria-expanded', 'false');
+        };
 
-function initSearchPageChips() {
-  const chips = Array.from(document.querySelectorAll('.search-page__chip[data-query]'));
-  if (!chips.length) return;
+        const openDropdown = () => {
+            dropdown.hidden = false;
+            input.setAttribute('aria-expanded', 'true');
+        };
 
-  // Set a sensible default (search page) so links work immediately,
-  // then try to resolve to a person profile and replace the label with the full name.
-  chips.forEach((chip) => {
-    const query = chip.dataset.query?.trim() || chip.textContent.trim();
-    if (query) {
-      chip.href = resolveSearchPageUrl(query);
-    }
-  });
+        const updateDropdown = async () => {
+            const query = input.value;
+            const trimmedQuery = query.trim();
 
-  // Asynchronously resolve person profiles for chips when the people registry is available.
-  void ensurePeopleRegistryScript()
-    .then(() => Promise.resolve())
-    .then(async () => {
-      for (const chip of chips) {
-        try {
-          const query = chip.dataset.query?.trim() || chip.textContent.trim();
-          if (!query) continue;
-
-          const matches = await findPersonMatches(query, { limit: 1 });
-          if (matches && matches.length) {
-            const match = matches[0];
-            chip.href = match.url || resolvePersonProfileUrl(match.entry.id);
-            const name = getPersonDisplayName(match.entry);
-            if (name) {
-              chip.textContent = name;
+            if (!trimmedQuery) {
+                closeDropdown();
+                return;
             }
-          }
-        } catch (err) {
-          // If anything fails, leave the chip as a search link.
-          // Swallow errors to avoid breaking the rest of the page.
-          // eslint-disable-next-line no-console
-          console.debug('initSearchPageChips: could not resolve chip', err);
-        }
-      }
-    })
-    .catch(() => {});
-}
 
-async function renderSearchResultsPage() {
-    const resultsRoot = document.getElementById('app-search-results');
-    if (!resultsRoot) {
-        return;
-    }
+            latestMatches = await findPersonMatches(trimmedQuery, { limit: APP_SEARCH_DROPDOWN_LIMIT });
+            renderDropdownItems(dropdown, latestMatches, trimmedQuery);
+            activeIndex = -1;
+            openDropdown();
+        };
 
-    ensureSearchStyles();
-    initSearchPageChips();
+        const scheduleUpdate = () => {
+            window.clearTimeout(debounceTimer);
+            debounceTimer = window.setTimeout(() => {
+                void updateDropdown();
+            }, 150);
+        };
 
-    const params = new URLSearchParams(window.location.search);
-    const query = (params.get('q') || params.get('search') || '').trim();
-    const metaEl = document.getElementById('app-search-page-meta');
-    const suggestionsEl = document.getElementById('app-search-suggestions');
-    const toolbar = document.querySelector('full-page-toolbar');
-    const formInput = document.querySelector('#search-page-form input[name="search"], #search-page-form input[type="search"]');
+        const goToSearchPage = (query) => {
+            const trimmedQuery = (query || '').trim();
+            window.location.assign(resolveSearchPageUrl(trimmedQuery));
+        };
 
-    if (formInput) {
-        formInput.value = query;
-    }
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            closeDropdown();
 
-    const appName = getAppName();
-    const pageTitle = query ? `Search results for “${query}”` : `Search ${appName}`;
+            if (activeIndex >= 0 && latestMatches[activeIndex]) {
+                window.location.assign(latestMatches[activeIndex].url);
+                return;
+            }
 
-    if (toolbar) {
-        toolbar.setAttribute('title', pageTitle);
-    }
+            goToSearchPage(input.value);
+        });
 
-    document.title = query ? `Search: ${query} - ${appName}` : `Search - ${appName}`;
+        bindAppSearchSubmitLink(form, input, {
+            closeDropdown,
+            getActiveMatch: () => (activeIndex >= 0 ? latestMatches[activeIndex] : null),
+            goToSearchPage,
+        });
 
-    if (!query) {
-        if (metaEl) {
-            metaEl.textContent = `Enter a name or keyword to find people in ${appName}.`;
-        }
-        if (suggestionsEl) {
-            suggestionsEl.hidden = false;
-        }
-        resultsRoot.replaceChildren();
-        return;
-    }
+        input.addEventListener('input', scheduleUpdate);
 
-    if (suggestionsEl) {
-        suggestionsEl.hidden = true;
-    }
-
-    const matches = await findPersonMatches(query, { limit: 100 });
-
-    if (metaEl) {
-        metaEl.textContent = matches.length === 1
-            ? '1 result'
-            : `${matches.length} results`;
-    }
-
-    if (matches.length === 0) {
-        resultsRoot.innerHTML = `<p class="search-page__empty">No profiles matched “${query}”. Try another spelling, pick a popular search above, or use a shorter keyword.</p>`;
-        return;
-    }
-
-    const header = document.createElement('p');
-    header.className = 'search-page__results-header';
-    header.textContent = matches.length === 1 ? '1 profile found' : `${matches.length} profiles found`;
-
-    const list = document.createElement('ul');
-    list.className = 'search-page__results';
-
-    matches.forEach((match) => {
-        const item = document.createElement('li');
-        item.className = 'search-page__result';
-
-        const link = document.createElement('a');
-        link.className = 'search-page__result-link';
-        link.href = match.url;
-
-        const title = document.createElement('span');
-        title.className = 'search-page__result-title';
-        title.textContent = getPersonDisplayName(match.entry);
-        link.append(title);
-
-        item.append(link);
-        list.append(item);
-    });
-
-    resultsRoot.replaceChildren(header, list);
-}
-
-function bindAllSearchForms() {
-    document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindAppSearchForm);
-}
-
-function initAppSearch() {
-    ensureSearchStyles();
-    bindAllSearchForms();
-    initSearchPageChips();
-
-    void ensurePeopleRegistryScript()
-        .then(() => renderSearchResultsPage())
-        .catch((error) => {
-            console.error('Failed to load people registry for search', error);
-
-            const resultsRoot = document.getElementById('app-search-results');
-            const query = (new URLSearchParams(window.location.search).get('q') || '').trim();
-            if (resultsRoot && query) {
-                resultsRoot.innerHTML = '<p class="search-page__empty">Search is temporarily unavailable. Please try again in a moment.</p>';
+        input.addEventListener('focus', () => {
+            if (input.value.trim()) {
+                scheduleUpdate();
             }
         });
-}
 
-window.AppSearch = {
-    findPersonMatches,
-    resolveSearchPageUrl,
-    resolvePersonProfileUrl,
-    bindAppSearchForm,
-    bindAllSearchForms,
-    renderSearchResultsPage,
-    initAppSearch,
-};
+        input.addEventListener('keydown', (event) => {
+            const options = dropdown.hidden ? [] : [...dropdown.querySelectorAll('.app-search__option')];
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAppSearch, { once: true });
-} else {
-    initAppSearch();
-}
+            if (event.key === 'ArrowDown') {
+                if (!options.length) {
+                    return;
+                }
+
+                event.preventDefault();
+                activeIndex = Math.min(activeIndex + 1, options.length - 1);
+                setActiveDropdownOption(dropdown, activeIndex)?.scrollIntoView({ block: 'nearest' });
+                return;
+            }
+
+            if (event.key === 'ArrowUp') {
+                if (!options.length) {
+                    return;
+                }
+
+                event.preventDefault();
+                activeIndex = Math.max(activeIndex - 1, 0);
+                setActiveDropdownOption(dropdown, activeIndex)?.scrollIntoView({ block: 'nearest' });
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                closeDropdown();
+                return;
+            }
+        });
+
+        dropdown.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!form.contains(event.target)) {
+                closeDropdown();
+            }
+        });
+
+        input.setAttribute('aria-autocomplete', 'list');
+        input.setAttribute('aria-controls', dropdown.id || '');
+        if (!dropdown.id) {
+            dropdown.id = `app-search-dropdown-${Math.random().toString(36).slice(2, 9)}`;
+            input.setAttribute('aria-controls', dropdown.id);
+        }
+        input.setAttribute('aria-expanded', 'false');
+    }
+
+    function initSearchPageChips() {
+        const chips = Array.from(document.querySelectorAll('.search-page__chip[data-query]'));
+        if (!chips.length) return;
+
+        // Set a sensible default (search page) so links work immediately,
+        // then try to resolve to a person profile and replace the label with the full name.
+        chips.forEach((chip) => {
+            const query = chip.dataset.query?.trim() || chip.textContent.trim();
+            if (query) {
+                chip.href = resolveSearchPageUrl(query);
+            }
+        });
+
+        // Asynchronously resolve person profiles for chips when the people registry is available.
+        void ensurePeopleRegistryScript()
+            .then(() => Promise.resolve())
+            .then(async () => {
+                for (const chip of chips) {
+                    try {
+                        const query = chip.dataset.query?.trim() || chip.textContent.trim();
+                        if (!query) continue;
+
+                        const matches = await findPersonMatches(query, { limit: 1 });
+                        if (matches && matches.length) {
+                            const match = matches[0];
+                            chip.href = match.url || resolvePersonProfileUrl(match.entry.id);
+                            const name = getPersonDisplayName(match.entry);
+                            if (name) {
+                                chip.textContent = name;
+                            }
+                        }
+                    } catch (err) {
+                        // If anything fails, leave the chip as a search link.
+                        // Swallow errors to avoid breaking the rest of the page.
+                        // eslint-disable-next-line no-console
+                        console.debug('initSearchPageChips: could not resolve chip', err);
+                    }
+                }
+            })
+            .catch(() => { });
+    }
+
+    async function renderSearchResultsPage() {
+        const resultsRoot = document.getElementById('app-search-results');
+        if (!resultsRoot) {
+            return;
+        }
+
+        ensureSearchStyles();
+        initSearchPageChips();
+
+        const params = new URLSearchParams(window.location.search);
+        const query = (params.get('q') || params.get('search') || '').trim();
+        const metaEl = document.getElementById('app-search-page-meta');
+        const suggestionsEl = document.getElementById('app-search-suggestions');
+        const toolbar = document.querySelector('full-page-toolbar');
+        const formInput = document.querySelector('#search-page-form input[name="search"], #search-page-form input[type="search"]');
+
+        if (formInput) {
+            formInput.value = query;
+        }
+
+        const appName = getAppName();
+        const pageTitle = query ? `Search results for “${query}”` : `Search ${appName}`;
+
+        if (toolbar) {
+            toolbar.setAttribute('title', pageTitle);
+        }
+
+        document.title = query ? `Search: ${query} - ${appName}` : `Search - ${appName}`;
+
+        if (!query) {
+            if (metaEl) {
+                metaEl.textContent = `Enter a name or keyword to find people in ${appName}.`;
+            }
+            if (suggestionsEl) {
+                suggestionsEl.hidden = false;
+            }
+            resultsRoot.replaceChildren();
+            return;
+        }
+
+        if (suggestionsEl) {
+            suggestionsEl.hidden = true;
+        }
+
+        const matches = await findPersonMatches(query, { limit: 100 });
+
+        if (metaEl) {
+            metaEl.textContent = matches.length === 1
+                ? '1 result'
+                : `${matches.length} results`;
+        }
+
+        if (matches.length === 0) {
+            resultsRoot.innerHTML = `<p class="search-page__empty">No profiles matched “${query}”. Try another spelling, pick a popular search above, or use a shorter keyword.</p>`;
+            return;
+        }
+
+        const header = document.createElement('p');
+        header.className = 'search-page__results-header';
+        header.textContent = matches.length === 1 ? '1 profile found' : `${matches.length} profiles found`;
+
+        const list = document.createElement('ul');
+        list.className = 'search-page__results';
+
+        matches.forEach((match) => {
+            const item = document.createElement('li');
+            item.className = 'search-page__result';
+
+            const link = document.createElement('a');
+            link.className = 'search-page__result-link';
+            link.href = match.url;
+
+            const title = document.createElement('span');
+            title.className = 'search-page__result-title';
+            title.textContent = getPersonDisplayName(match.entry);
+            link.append(title);
+
+            item.append(link);
+            list.append(item);
+        });
+
+        resultsRoot.replaceChildren(header, list);
+    }
+
+    function bindAllSearchForms() {
+        document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindAppSearchForm);
+    }
+
+    function initAppSearch() {
+        ensureSearchStyles();
+        bindAllSearchForms();
+        initSearchPageChips();
+
+        void ensurePeopleRegistryScript()
+            .then(() => renderSearchResultsPage())
+            .catch((error) => {
+                console.error('Failed to load people registry for search', error);
+
+                const resultsRoot = document.getElementById('app-search-results');
+                const query = (new URLSearchParams(window.location.search).get('q') || '').trim();
+                if (resultsRoot && query) {
+                    resultsRoot.innerHTML = '<p class="search-page__empty">Search is temporarily unavailable. Please try again in a moment.</p>';
+                }
+            });
+    }
+
+    window.AppSearch = {
+        findPersonMatches,
+        resolveSearchPageUrl,
+        resolvePersonProfileUrl,
+        bindAppSearchForm,
+        bindAllSearchForms,
+        renderSearchResultsPage,
+        initAppSearch,
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAppSearch, { once: true });
+    } else {
+        initAppSearch();
+    }
 
 })();
