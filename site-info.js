@@ -5,13 +5,102 @@
     const existing = (typeof window !== 'undefined') ? window.App : null;
     const app = (existing && typeof existing === 'object') ? existing : {};
 
+    const SITE_INFO_SCRIPT_URL = (typeof document !== 'undefined' && document.currentScript?.src)
+        ? document.currentScript.src
+        : '';
+
     const DEFAULTS = {
         Name: BRANDING_SOURCE_NAME,
         Version: '1.0.0',
         ReleaseDate: '2026-07-01',
         Description: `${BRANDING_SOURCE_NAME} is a home for family stories, a place to discover, document, and share your family history.`,
         GitHubApiBase: 'https://api.shaunroselt.com/genepedia',
+        Slogan: 'Free Geneology Encyclopedia',
     };
+
+    function getSiteBaseUrl() {
+        if (SITE_INFO_SCRIPT_URL) {
+            return new URL('./', SITE_INFO_SCRIPT_URL);
+        }
+
+        return new URL('/', window.location.href);
+    }
+
+    function resolveSiteUrl(relativePath) {
+        const cleanPath = String(relativePath || '').replace(/^\//, '');
+        try {
+            return new URL(cleanPath, getSiteBaseUrl()).href;
+        } catch (e) {
+            return cleanPath;
+        }
+    }
+
+    function getSlogan() {
+        const slogan = (typeof app.Slogan === 'string') ? app.Slogan.trim() : '';
+        return slogan || DEFAULTS.Slogan;
+    }
+
+    let peopleRegistryScriptPromise = null;
+
+    function ensurePeopleRegistryScript() {
+        if (window.PeopleRegistry) {
+            return Promise.resolve();
+        }
+
+        if (peopleRegistryScriptPromise) {
+            return peopleRegistryScriptPromise;
+        }
+
+        const existingScript = document.querySelector('script[src*="people-registry.js"]');
+        if (existingScript) {
+            peopleRegistryScriptPromise = new Promise((resolve, reject) => {
+                existingScript.addEventListener('load', resolve, { once: true });
+                existingScript.addEventListener('error', reject, { once: true });
+            });
+            return peopleRegistryScriptPromise;
+        }
+
+        peopleRegistryScriptPromise = new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = resolveSiteUrl('lib/people-registry.js');
+            script.defer = true;
+            script.addEventListener('load', resolve, { once: true });
+            script.addEventListener('error', reject, { once: true });
+            document.head.append(script);
+        });
+
+        return peopleRegistryScriptPromise;
+    }
+
+    async function navigateToRandomProfile() {
+        try {
+            await ensurePeopleRegistryScript();
+        } catch (error) {
+            console.warn('Random profile navigation failed: could not load people registry.', error);
+            return;
+        }
+
+        const people = await window.PeopleRegistry.loadPeopleRegistry();
+        const candidates = people
+            .map((person) => String(person?.id || '').trim())
+            .filter(Boolean);
+
+        if (!candidates.length) {
+            console.warn('Random profile navigation failed: people.json did not contain any profiles.');
+            return;
+        }
+
+        const currentProfileMatch = window.location.pathname.match(/\/people\/([^/]+)\/profile\.html$/);
+        const currentProfileId = currentProfileMatch?.[1] || null;
+
+        let pool = candidates.filter((id) => id !== currentProfileId);
+        if (!pool.length) {
+            pool = candidates;
+        }
+
+        const chosenId = pool[Math.floor(Math.random() * pool.length)];
+        window.location.assign(window.PeopleRegistry.resolvePersonProfileUrl(chosenId));
+    }
 
     const textTemplates = new WeakMap();
     const attributeTemplates = new WeakMap();
@@ -202,8 +291,15 @@
         app.GitHubApiBase = DEFAULTS.GitHubApiBase;
     }
 
+    if (!normalizeName(app.Slogan)) {
+        app.Slogan = DEFAULTS.Slogan;
+    }
+
     app.getName = getAppName;
     app.getGitHubApiBase = getGitHubApiBase;
+    app.getSlogan = getSlogan;
+    app.resolveSiteUrl = resolveSiteUrl;
+    app.navigateToRandomProfile = navigateToRandomProfile;
     app.applyBranding = applyBranding;
     app.BrandToken = BRAND_TOKEN;
 

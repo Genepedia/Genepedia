@@ -367,7 +367,7 @@ function resolveFromComponent(relativePath) {
   }
 }
 
-const FULL_FOOTER_ACTION_BUTTON_SCRIPT_URL = resolveFromComponent('action-button.js');
+const FULL_FOOTER_ACTION_BUTTON_SCRIPT_URL = resolveFromComponent('../lib/Web-Framework/components/action-button.js');
 
 function ensureFooterActionButtonScript() {
   if (customElements.get('action-button')) {
