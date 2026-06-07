@@ -10,6 +10,7 @@
 	<script src="../site-info.js"></script>
 	<script defer src="../components/mini-header.js"></script>
 	<script defer src="../components/full-header.js"></script>
+	<script defer src="../components/full-page-toolbar.js"></script>
 	<script defer src="../components/app-search.js"></script>
 	<script defer src="../components/full-footer.js"></script>
 </head>
@@ -17,8 +18,8 @@
 <body>
 	<full-header></full-header>
 	<article>
+		<full-page-toolbar title="Search {{APP_NAME}}"></full-page-toolbar>
 		<main class="main-content search-page">
-			<h1 class="search-page__title" id="app-search-page-title">Search {{APP_NAME}}</h1>
 			<p class="search-page__meta" id="app-search-page-meta">Enter a name or keyword to find people in
 				{{APP_NAME}}.</p>
 

@@ -122,22 +122,25 @@ body:not(.theme-dark) {
 }
 
 .search-page {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
   box-sizing: border-box;
 }
 
-.search-page__title {
-  margin: 0 0 1rem;
-  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
-  font-size: 1.75rem;
-  font-weight: 400;
-  line-height: 1.2;
+.search-page .search-container {
+  float: none;
+  width: 100%;
+  max-width: none;
+  margin: 0 0 1.5rem;
+  text-align: left;
+}
+
+.search-page .search-container .search-input {
+  display: block;
+  width: auto;
+  vertical-align: initial;
 }
 
 .search-page__form {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
 }
 
 .search-page__form .search-input {
@@ -154,10 +157,19 @@ body:not(.theme-dark) {
   display: flex;
   gap: 0.5rem;
   align-items: stretch;
+  width: 100%;
 }
 
 .search-page__form .search-input {
   flex: 1 1 auto;
+  min-width: 0;
+}
+
+.search-page__form button {
+  float: none;
+  position: static;
+  flex: 0 0 auto;
+  min-height: 0;
 }
 
 .search-page__meta {
@@ -204,9 +216,10 @@ body:not(.theme-dark) {
 }
 
 .search-page__empty {
-  padding: 2rem 0;
+  margin: 0;
+  padding: 1rem 0 2rem;
   color: var(--app-search-muted, #54595d);
-  text-align: center;
+  text-align: left;
 }
 `;
 
@@ -578,8 +591,8 @@ async function renderSearchResultsPage() {
 
     const params = new URLSearchParams(window.location.search);
     const query = (params.get('q') || params.get('search') || '').trim();
-    const titleEl = document.getElementById('app-search-page-title');
     const metaEl = document.getElementById('app-search-page-meta');
+    const toolbar = document.querySelector('full-page-toolbar');
     const formInput = document.querySelector('#search-page-form input[name="search"], #search-page-form input[type="search"]');
 
     if (formInput) {
@@ -587,9 +600,10 @@ async function renderSearchResultsPage() {
     }
 
     const appName = getAppName();
+    const pageTitle = query ? `Search results for “${query}”` : `Search ${appName}`;
 
-    if (titleEl) {
-        titleEl.textContent = query ? `Search results for “${query}”` : `Search ${appName}`;
+    if (toolbar) {
+        toolbar.setAttribute('title', pageTitle);
     }
 
     document.title = query ? `Search: ${query} - ${appName}` : `Search - ${appName}`;

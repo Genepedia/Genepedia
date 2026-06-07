@@ -26,15 +26,10 @@ body:not(.theme-dark) full-page-toolbar {
 
 full-page-toolbar .people-page__inner {
 	width: 100%;
-	max-width: var(--page-toolbar-max-width, 90rem);
+	max-width: var(--site-content-max-width, 90rem);
 	margin: 0 auto;
 	padding: 1rem 1rem 0;
 	box-sizing: border-box;
-}
-
-/* Override the default content width enforcement in lib/common.css. */
-body>article full-page-toolbar .people-page__inner {
-	max-width: var(--page-toolbar-max-width, 90rem);
 }
 
 full-page-toolbar .people-page__title-row {
@@ -73,6 +68,10 @@ full-page-toolbar .people-page__edit-button {
 	white-space: nowrap;
 	cursor: pointer;
 	box-sizing: border-box;
+}
+
+full-page-toolbar .people-page__edit-button[hidden] {
+	display: none !important;
 }
 
 full-page-toolbar .people-page__edit-button:hover {

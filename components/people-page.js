@@ -38,7 +38,7 @@ body:not(.theme-dark) people-page {
 .people-page__content {
   flex: 1 1 auto;
   width: 100%;
-  max-width: 90rem;
+  max-width: var(--site-content-max-width, 90rem);
   margin: 0 auto;
   padding: 1rem;
   box-sizing: border-box;

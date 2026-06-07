@@ -88,7 +88,7 @@ body:not(.theme-dark) .page-footer {
 
 .page-footer__inner {
   width: 100%;
-  max-width: 90rem;
+  max-width: var(--site-content-max-width, 90rem);
   margin: 0 auto;
   padding: 0 1rem 2rem;
   box-sizing: border-box;

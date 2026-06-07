@@ -20,6 +20,10 @@ body {
   margin: 0;
 }
 
+:root {
+  --site-content-max-width: 90rem;
+}
+
 /* Ensure pages using the header/footer chrome have an article wrapper
    that grows to fill the viewport like other pages. */
 body>article {
@@ -35,7 +39,7 @@ body>article {
 /* Lightweight reusable content container used by many pages */
 .main-content {
   padding: 2rem;
-  max-width: 90rem;
+  max-width: var(--site-content-max-width);
   margin: 0 auto;
 }
 
@@ -48,8 +52,10 @@ body>article>main,
 body>article [role="main"],
 body>article .main-content,
 body>article .people-page__content,
-body>article .people-page__inner {
-  max-width: 90rem;
+body>article .people-page__inner,
+body>article full-page-toolbar .people-page__inner,
+body>article full-footer .page-footer__inner {
+  max-width: var(--site-content-max-width);
   margin-left: auto;
   margin-right: auto;
   width: 100%;
