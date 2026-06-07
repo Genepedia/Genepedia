@@ -457,15 +457,25 @@ body.theme-dark .search-page__result-link {
     }
 
     function resolveSearchPageUrl(query = '') {
-        const pathname = window.location.pathname.replace(/\\/g, '/');
-        const searchPagePath = pathname.includes('/pages/') ? 'search.html' : 'pages/search.html';
-        const url = new URL(searchPagePath, new URL(getSiteRootPrefix(), window.location.href));
-        const trimmedQuery = query.trim();
+        const trimmedQuery = (query || '').trim();
 
-        if (trimmedQuery) {
-            url.searchParams.set('q', trimmedQuery);
+        // Prefer the site-provided resolver when available — it's authoritative
+        if (window.App?.resolveSiteUrl) {
+            try {
+                const resolved = window.App.resolveSiteUrl('pages/search.html');
+                const url = new URL(resolved, window.location.href);
+                if (trimmedQuery) url.searchParams.set('q', trimmedQuery);
+                return url.href;
+            } catch (e) {
+                // fall through to the fallback below
+            }
         }
 
+        // Fallback: resolve relative to the computed site-root prefix so this
+        // works correctly from pages/, people/*/profile, and site root.
+        const base = new URL(getSiteRootPrefix() || '.', window.location.href);
+        const url = new URL('pages/search.html', base);
+        if (trimmedQuery) url.searchParams.set('q', trimmedQuery);
         return url.href;
     }
 
