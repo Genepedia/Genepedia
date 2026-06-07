@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>People — Genepedia</title>
+		<link rel="stylesheet" href="../lib/common.css" />
+		<style>
+			.people-list {
+				max-width: 72rem;
+				margin: 1.5rem auto;
+				padding: 1rem;
+			}
+			.people-list ul { list-style: none; padding: 0; margin: 0; }
+			.people-list li { padding: 0.45rem 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+			.people-list a.person-link { text-decoration: none; color: #3366cc; }
+			.people-list a.person-link:focus, .people-list a.person-link:hover { text-decoration: underline; }
+		</style>
+	</head>
+	<body>
+		<main class="people-list" role="main">
+			<h1>People</h1>
+			<p id="count" aria-live="polite"></p>
+			<ul id="peopleList" aria-live="polite"></ul>
+		</main>
+
+		<script>
+			async function renderPeople() {
+				const listEl = document.getElementById('peopleList');
+				const countEl = document.getElementById('count');
+				try {
+					const res = await fetch('people.json', { cache: 'no-store' });
+					if (!res.ok) throw new Error('Failed to fetch people.json: ' + res.status);
+					const data = await res.json();
+					const people = Array.isArray(data.people) ? data.people : [];
+					countEl.textContent = people.length === 1 ? '1 person' : `${people.length} people`;
+
+					if (people.length === 0) {
+						listEl.innerHTML = '<li>No people found.</li>';
+						return;
+					}
+
+					// Render list
+					const frag = document.createDocumentFragment();
+					for (const p of people) {
+						const li = document.createElement('li');
+						const a = document.createElement('a');
+						a.className = 'person-link';
+						a.href = `${encodeURIComponent(p.id)}/profile.html`;
+						const name = [p.firstName, p.lastName].filter(Boolean).join(' ');
+						a.textContent = name || p.id || 'Unknown';
+						a.setAttribute('data-person-id', String(p.id));
+						li.appendChild(a);
+						frag.appendChild(li);
+					}
+
+					listEl.appendChild(frag);
+				} catch (err) {
+					console.error(err);
+					listEl.innerHTML = '<li>Could not load people list.</li>';
+					countEl.textContent = '';
+				}
+			}
+
+			document.addEventListener('DOMContentLoaded', renderPeople);
+		</script>
+	</body>
+</html>
+
