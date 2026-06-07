@@ -1,3 +1,16 @@
+const TOOLBAR_DOWNLOAD_OPTIONS = [
+	{ format: 'pdf', title: 'Download as PDF', icon: 'bi-file-earmark-pdf', label: 'PDF' },
+	{ format: 'png', title: 'Download as PNG', icon: 'bi-filetype-png', label: 'PNG' },
+	{ format: 'svg', title: 'Download as SVG', icon: 'bi-filetype-svg', label: 'SVG' },
+	{ format: 'html', title: 'Download as HTML', icon: 'bi-file-earmark-code', label: 'HTML' },
+	{ format: 'markdown', title: 'Download as Markdown', icon: 'bi-filetype-md', label: 'Markdown' },
+	{ format: 'plaintext', title: 'Download as plain text', icon: 'bi-file-earmark-text', label: 'Plain text' },
+	{ format: 'json', title: 'Download as JSON', icon: 'bi-braces', label: 'JSON', peopleOnly: true },
+	{ format: 'gedcom', title: 'Download as GEDCOM', icon: 'bi-diagram-3', label: 'GEDCOM', peopleOnly: true },
+	{ format: 'epub', title: 'Download as EPUB', icon: 'bi-book', label: 'EPUB' },
+	{ format: 'print', title: 'Print this page', icon: 'bi-printer', label: 'Print' },
+];
+
 const FULL_PAGE_TOOLBAR_TEMPLATE = String.raw`
 <style>
 full-page-toolbar {
@@ -466,68 +479,7 @@ full-page-toolbar:not([variant="people"]):not([variant="page"]):not([variant="no
 						class="people-page__dropdown"
 						role="menu"
 						hidden
-					>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as PDF">
-								<i class="bi bi-file-earmark-pdf" aria-hidden="true"></i>
-								<span>PDF</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as PNG">
-								<i class="bi bi-filetype-png" aria-hidden="true"></i>
-								<span>PNG</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as SVG">
-								<i class="bi bi-filetype-svg" aria-hidden="true"></i>
-								<span>SVG</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as HTML">
-								<i class="bi bi-file-earmark-code" aria-hidden="true"></i>
-								<span>HTML</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as Markdown">
-								<i class="bi bi-filetype-md" aria-hidden="true"></i>
-								<span>Markdown</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as plain text">
-								<i class="bi bi-file-earmark-text" aria-hidden="true"></i>
-								<span>Plain text</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as JSON">
-								<i class="bi bi-braces" aria-hidden="true"></i>
-								<span>JSON</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as GEDCOM">
-								<i class="bi bi-diagram-3" aria-hidden="true"></i>
-								<span>GEDCOM</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Download as EPUB">
-								<i class="bi bi-book" aria-hidden="true"></i>
-								<span>EPUB</span>
-							</a>
-						</li>
-						<li role="none">
-							<a href="#" role="menuitem" title="Print this page">
-								<i class="bi bi-printer" aria-hidden="true"></i>
-								<span>Print</span>
-							</a>
-						</li>
-					</ul>
+					></ul>
 				</div>
 			</div>
 		</div>
@@ -743,6 +695,48 @@ class FullPageToolbar extends HTMLElement {
 					tabsList.innerHTML = defaultPeopleTabs;
 				}
 			}
+		}
+
+		this.#syncDownloadMenu();
+	}
+
+	#getDownloadContext() {
+		const variant = (this.getAttribute('variant') || '').trim().toLowerCase();
+		if (variant === 'people' || this.closest('people-page')) {
+			return 'people';
+		}
+
+		if (/\/people\/[^/]+\/profile\.html$/i.test(window.location.pathname.replace(/\\/g, '/'))) {
+			return 'people';
+		}
+
+		return 'page';
+	}
+
+	#getDownloadOptionsForContext(context) {
+		const isPeopleProfile = context === 'people';
+		return TOOLBAR_DOWNLOAD_OPTIONS.filter((option) => !option.peopleOnly || isPeopleProfile);
+	}
+
+	#syncDownloadMenu() {
+		const downloadMenu = this.querySelector('#people-page-download-menu');
+		const downloadButton = this.querySelector('.people-page__download-menu .people-page__menu-trigger');
+		if (!downloadMenu) {
+			return;
+		}
+
+		const options = this.#getDownloadOptionsForContext(this.#getDownloadContext());
+		downloadMenu.innerHTML = options.map((option) => String.raw`
+			<li role="none">
+				<a href="#" role="menuitem" title="${option.title}" data-download-format="${option.format}">
+					<i class="bi ${option.icon}" aria-hidden="true"></i>
+					<span>${option.label}</span>
+				</a>
+			</li>
+		`).join('');
+
+		if (downloadButton) {
+			downloadButton.hidden = options.length === 0;
 		}
 	}
 

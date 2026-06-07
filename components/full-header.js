@@ -8,7 +8,11 @@ const FULL_HEADER_TEMPLATE = String.raw`
    fixed header never overlaps page content. The header script keeps
    --header-chrome-height in sync with the actual header height. */
 body[data-has-full-header="true"] {
-  padding-top: calc(var(--header-chrome-height, 55px) + 0.25rem);
+  padding-top: calc(var(--header-chrome-height, 55px) + 4px);
+}
+
+body[data-has-full-header="true"]:has(> full-header.portal-index[data-logged-in="false"]) {
+  padding-top: 0;
 }
 
 full-header {
@@ -19,10 +23,11 @@ full-header {
   right: 0;
   width: 100%;
   z-index: 110;
+  font-size: 16px;
   --header-chrome-height: 55px;
-  --header-chrome-control-height: 2.375rem;
-  --header-chrome-avatar-size: calc(var(--header-chrome-control-height) - 0.4rem);
-  --header-chrome-toolbar-gap: 0.5rem;
+  --header-chrome-control-height: 2.375em;
+  --header-chrome-avatar-size: calc(var(--header-chrome-control-height) - 0.4em);
+  --header-chrome-toolbar-gap: 0.5em;
   --header-chrome-bg: #27292d;
   --header-chrome-fg: #eaecf0;
   --header-chrome-search-bg: #1e2125;
@@ -84,7 +89,7 @@ body:not(.theme-dark) .header-container.header-chrome {
   display: flex;
   align-items: center;
   gap: var(--header-chrome-toolbar-gap);
-  padding: 0 0.5rem;
+  padding: 0 0.5em;
   box-sizing: border-box;
 }
 
@@ -99,7 +104,7 @@ body:not(.theme-dark) .header-container.header-chrome {
 
 .header-chrome__start {
   flex: 0 1 auto;
-  gap: 0.25rem;
+  gap: 0.25em;
 }
 
 .header-chrome__tools {
@@ -123,12 +128,12 @@ body:not(.theme-dark) .header-container.header-chrome {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.75em;
+  height: 2.75em;
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 0.125rem;
+  border-radius: 0.125em;
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -139,7 +144,7 @@ body:not(.theme-dark) .header-container.header-chrome {
 }
 
 .header-chrome__menu-icon {
-  font-size: 1.35rem;
+  font-size: 1.35em;
   line-height: 1;
 }
 
@@ -170,7 +175,7 @@ full-header.sidebar-open .header-chrome__menu-icon--close {
 .header-chrome__brand mini-header .central-textlogo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.5em;
   margin: 0;
   width: auto;
   max-width: none;
@@ -179,16 +184,16 @@ full-header.sidebar-open .header-chrome__menu-icon--close {
   text-align: left;
   text-indent: 0;
   font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
-  font-size: 1rem;
+  font-size: 1em;
   line-height: 1.1;
   color: #eaecf0 !important;
 }
 
 .header-chrome__brand mini-header .central-textlogo__logo {
   display: block !important;
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
+  width: 2em;
+  height: 2em;
+  min-width: 2em;
   flex-shrink: 0;
   object-fit: contain;
   background: transparent;
@@ -243,7 +248,7 @@ body:not(.theme-dark) .header-chrome__user-trigger {
 .header-chrome__brand mini-header .localized-slogan {
   display: block;
   margin-top: 0;
-  font-size: 0.72rem;
+  font-size: 0.72em;
   font-weight: 400;
   line-height: 1.15;
   opacity: 0.88;
@@ -254,14 +259,14 @@ body:not(.theme-dark) .header-chrome__user-trigger {
 
 .header-chrome__search-form {
   width: 100%;
-  max-width: 18rem;
+  max-width: 18em;
   display: flex;
   align-items: center;
   min-height: var(--header-chrome-control-height);
   height: var(--header-chrome-control-height);
   background: var(--header-chrome-search-bg);
   border: 1px solid var(--header-chrome-search-border);
-  border-radius: 0.125rem;
+  border-radius: 0.125em;
   box-sizing: border-box;
   overflow: visible;
   position: relative;
@@ -272,13 +277,13 @@ body:not(.theme-dark) .header-chrome__user-trigger {
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  padding: 0 0 0 0.75rem;
+  padding: 0 0 0 0.75em;
   color: #c8ccd1;
   pointer-events: none;
 }
 
 .header-chrome__search-icon i {
-  font-size: 1rem;
+  font-size: 1em;
   line-height: 1;
 }
 
@@ -288,8 +293,8 @@ body:not(.theme-dark) .header-chrome__user-trigger {
   border: 0;
   background: transparent;
   color: var(--header-chrome-fg);
-  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
-  padding: 0 0.75rem 0 0.5rem;
+  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  padding: 0 0.75em 0 0.5em;
 }
 
 .header-chrome__search-input::placeholder {
@@ -311,7 +316,7 @@ body:not(.theme-dark) .header-chrome__user-trigger {
   margin: 0;
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.125rem;
+  border-radius: 0.125em;
   background: rgba(255, 255, 255, 0.04);
   color: inherit;
   cursor: pointer;
@@ -332,7 +337,7 @@ body:not(.theme-dark) .header-chrome__search-toggle:hover {
 }
 
 .header-chrome__search-toggle i {
-  font-size: 1rem;
+  font-size: 1em;
   line-height: 1;
 }
 
@@ -349,16 +354,16 @@ full-header.search-open .header-chrome__search-toggle-icon--close {
 }
 
 .header-chrome__login {
-  min-width: 4.75rem;
+  min-width: 4.75em;
   min-height: var(--header-chrome-control-height);
   height: var(--header-chrome-control-height);
   margin: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.125rem;
+  border-radius: 0.125em;
   background: rgba(255, 255, 255, 0.04);
   color: var(--header-chrome-fg);
-  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
-  padding: 0 0.85rem;
+  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  padding: 0 0.85em;
   cursor: pointer;
   white-space: nowrap;
   line-height: 1;
@@ -402,17 +407,17 @@ full-header[data-logged-in="false"] .header-chrome__notifications {
 .header-chrome__user-trigger {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  max-width: 14rem;
+  gap: 0.5em;
+  max-width: 14em;
   min-height: var(--header-chrome-control-height);
   height: var(--header-chrome-control-height);
   margin: 0;
-  padding: 0 0.55rem 0 0.2rem;
+  padding: 0 0.55em 0 0.2em;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.125rem;
+  border-radius: 0.125em;
   background: rgba(255, 255, 255, 0.04);
   color: var(--header-chrome-fg);
-  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
   line-height: 1;
   cursor: pointer;
   white-space: nowrap;
@@ -453,7 +458,7 @@ full-header[data-logged-in="false"] .header-chrome__notifications {
 }
 
 .header-chrome__user-avatar--placeholder i {
-  font-size: 1.15rem;
+  font-size: 1.15em;
   line-height: 1;
 }
 
@@ -464,7 +469,7 @@ body:not(.theme-dark) .header-chrome__user-avatar--placeholder {
 .header-chrome__user-name {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.3em;
   min-width: 0;
   overflow: hidden;
   line-height: 1;
@@ -482,7 +487,7 @@ body:not(.theme-dark) .header-chrome__user-avatar--placeholder {
 
 .header-chrome__user-caret {
   flex-shrink: 0;
-  font-size: 0.8rem;
+  font-size: 0.8em;
   opacity: 0.85;
   transition: transform 0.15s ease;
 }
@@ -493,13 +498,13 @@ body:not(.theme-dark) .header-chrome__user-avatar--placeholder {
 
 .header-chrome__user-dropdown {
   position: absolute;
-  top: calc(100% + 0.35rem);
+  top: calc(100% + 0.35em);
   right: 0;
   z-index: 20;
-  min-width: 14.5rem;
-  padding: 0.35rem 0;
+  min-width: 14.5em;
+  padding: 0.35em 0;
   border: 1px solid var(--header-chrome-menu-border);
-  border-radius: 0.125rem;
+  border-radius: 0.125em;
   background: var(--header-chrome-dropdown-bg);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   box-sizing: border-box;
@@ -536,9 +541,9 @@ body:not(.theme-dark) .header-chrome__user-dropdown {
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.04);
   color: inherit;
-  border-radius: 0.125rem;
+  border-radius: 0.125em;
   box-sizing: border-box;
-  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
 }
 
 .header-chrome__notifications-trigger .action-button__control:hover { background: rgba(255,255,255,0.08) }
@@ -559,7 +564,7 @@ body:not(.theme-dark) .header-chrome__notifications-trigger .action-button__cont
   border-radius: 999px;
   background: #ff3b30;
   color: var(--color-inverted);
-  font-size: 0.65rem;
+  font-size: 0.65em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -570,13 +575,13 @@ body:not(.theme-dark) .header-chrome__notifications-trigger .action-button__cont
 
 .header-chrome__notifications-dropdown {
   position: absolute;
-  top: calc(100% + 0.35rem);
+  top: calc(100% + 0.35em);
   right: 0;
   z-index: 20;
-  min-width: 14.5rem;
-  padding: 0.35rem 0;
+  min-width: 14.5em;
+  padding: 0.35em 0;
   border: 1px solid var(--header-chrome-menu-border);
-  border-radius: 0.125rem;
+  border-radius: 0.125em;
   background: var(--header-chrome-dropdown-bg);
   box-shadow: 0 8px 24px rgba(0,0,0,0.35);
   box-sizing: border-box;
@@ -585,7 +590,7 @@ body:not(.theme-dark) .header-chrome__notifications-trigger .action-button__cont
 .header-chrome__notifications-trigger .action-button__icon i {
   position: relative;
   z-index: 1;
-  font-size: 1.05rem;
+  font-size: 1.05em;
   line-height: 1;
 }
 
@@ -594,19 +599,19 @@ body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px
 .header-chrome__notifications-dropdown[hidden] { display: none !important }
 
 .header-chrome__notifications-list {
-  max-height: 18rem;
+  max-height: 18em;
   overflow: auto;
-  padding: 0 0.25rem;
+  padding: 0 0.25em;
 }
 
 .header-chrome__notifications-footer {
-  padding: 0 0.25rem;
+  padding: 0 0.25em;
 }
 
 .header-chrome__notifications-meta {
   margin-left: auto;
   color: var(--color-subtle);
-  font-size: 0.8rem;
+  font-size: 0.8em;
 }
 
 /* Make notifications dropdown items match the profile dropdown */
@@ -614,14 +619,14 @@ body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px
 .header-chrome__notifications-dropdown button {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.65em;
   width: 100%;
   margin: 0;
-  padding: 0.55rem 1rem;
+  padding: 0.55em 1em;
   border: 0;
   background: transparent;
   color: var(--header-chrome-fg);
-  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -630,8 +635,8 @@ body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px
 
 .header-chrome__notifications-dropdown i {
   flex-shrink: 0;
-  width: 1.1rem;
-  font-size: 1rem;
+  width: 1.1em;
+  font-size: 1em;
   opacity: 0.9;
 }
 
@@ -644,14 +649,14 @@ body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px
 .header-chrome__user-dropdown button {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.65em;
   width: 100%;
   margin: 0;
-  padding: 0.55rem 1rem;
+  padding: 0.55em 1em;
   border: 0;
   background: transparent;
   color: var(--header-chrome-fg);
-  font: 0.875rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font: 0.875em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
@@ -660,8 +665,8 @@ body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px
 
 .header-chrome__user-dropdown i {
   flex-shrink: 0;
-  width: 1.1rem;
-  font-size: 1rem;
+  width: 1.1em;
+  font-size: 1em;
   opacity: 0.9;
 }
 
@@ -672,7 +677,7 @@ body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px
 
 .header-chrome__user-divider {
   height: 1px;
-  margin: 0.35rem 0;
+  margin: 0.35em 0;
   background: var(--header-chrome-menu-border);
 }
 
@@ -704,15 +709,15 @@ full-header.sidebar-open .header-chrome__sidebar {
   flex: 1 1 auto;
   flex-direction: column;
   align-content: flex-start;
-  gap: 0.15rem;
+  gap: 0.15em;
   min-height: 0;
-  padding: 0.75rem;
+  padding: 0.75em;
   overflow-y: auto;
 }
 
 .header-chrome__sidebar-footer {
   flex-shrink: 0;
-  padding: 0.75rem;
+  padding: 0.75em;
   border-top: 1px solid var(--header-chrome-menu-border);
 }
 
@@ -720,21 +725,21 @@ full-header.sidebar-open .header-chrome__sidebar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.65rem;
+  gap: 0.65em;
 }
 
 .header-chrome__theme-switch-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font: 0.8125rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  gap: 0.35em;
+  font: 0.8125em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
   color: var(--header-chrome-fg);
   opacity: 0.88;
   white-space: nowrap;
 }
 
 .header-chrome__theme-switch-label i {
-  font-size: 0.95rem;
+  font-size: 0.95em;
   line-height: 1;
 }
 
@@ -742,8 +747,8 @@ full-header.sidebar-open .header-chrome__sidebar {
   position: relative;
   display: inline-flex;
   flex-shrink: 0;
-  width: 2.75rem;
-  height: 1.5rem;
+  width: 2.75em;
+  height: 1.5em;
 }
 
 .header-chrome__theme-input {
@@ -774,10 +779,10 @@ body:not(.theme-dark) .header-chrome__theme-switch-slider {
 .header-chrome__theme-switch-slider::after {
   content: "";
   position: absolute;
-  top: 0.15rem;
-  left: 0.15rem;
-  width: 1.2rem;
-  height: 1.2rem;
+  top: 0.15em;
+  left: 0.15em;
+  width: 1.2em;
+  height: 1.2em;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
@@ -793,7 +798,7 @@ body:not(.theme-dark) .header-chrome__theme-input:checked + .header-chrome__them
 }
 
 .header-chrome__theme-input:checked + .header-chrome__theme-switch-slider::after {
-  transform: translateX(1.25rem);
+  transform: translateX(1.25em);
 }
 
 .header-chrome__theme-input:focus-visible + .header-chrome__theme-switch-slider {
@@ -805,12 +810,12 @@ body:not(.theme-dark) .header-chrome__theme-input:checked + .header-chrome__them
   display: flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: 0.125rem;
+  gap: 0.65em;
+  padding: 0.55em 0.75em;
+  border-radius: 0.125em;
   color: inherit;
   text-decoration: none;
-  font: 0.9rem -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+  font: 0.9em -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
 }
 
 .header-chrome__sidebar-link:hover {
@@ -843,6 +848,38 @@ full-header.sidebar-open .header-chrome__backdrop {
   pointer-events: auto;
 }
 
+full-header.sidebar-disabled .header-chrome__menu,
+full-header.sidebar-disabled .header-chrome__sidebar,
+full-header.sidebar-disabled .header-chrome__backdrop {
+  display: none !important;
+}
+
+/* Portal homepage: logged-out users only see the login control. */
+full-header.portal-index[data-logged-in="false"] .header-container.header-chrome {
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+full-header.portal-index[data-logged-in="false"] .header-chrome__auth {
+  pointer-events: auto;
+}
+
+body:not(.theme-dark) full-header.portal-index[data-logged-in="false"] .header-container.header-chrome {
+  box-shadow: none;
+}
+
+full-header.portal-index[data-logged-in="false"] .header-chrome__start,
+full-header.portal-index[data-logged-in="false"] .header-chrome__search-form,
+full-header.portal-index[data-logged-in="false"] .header-chrome__search {
+  display: none !important;
+}
+
+full-header.portal-index[data-logged-in="false"] .header-chrome__tools {
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
 @media (min-width: 992px) {
   .header-chrome__sidebar {
     transform: translateX(0);
@@ -868,9 +905,9 @@ full-header.sidebar-open .header-chrome__backdrop {
 
   .header-chrome__search-form {
     order: 2;
-    flex: 0 1 18rem;
+    flex: 0 1 18em;
     width: auto;
-    max-width: 18rem;
+    max-width: 18em;
     margin-left: auto;
     margin-right: 0;
   }
@@ -886,7 +923,7 @@ full-header.sidebar-open .header-chrome__backdrop {
     flex-wrap: wrap;
     align-items: stretch;
     gap: var(--header-chrome-toolbar-gap);
-    padding: 0.35rem 0.5rem 0.5rem;
+    padding: 0.35em 0.5em 0.5em;
     min-height: auto;
   }
 
@@ -927,18 +964,18 @@ full-header.sidebar-open .header-chrome__backdrop {
 
 @media (max-width: 420px) {
   .header-chrome__brand mini-header .central-textlogo {
-    gap: 0.4rem;
-    font-size: 0.92rem;
+    gap: 0.4em;
+    font-size: 0.92em;
   }
 
   .header-chrome__brand mini-header .central-textlogo__logo {
-    width: 1.75rem;
-    height: 1.75rem;
-    min-width: 1.75rem;
+    width: 1.75em;
+    height: 1.75em;
+    min-width: 1.75em;
   }
 
   .header-chrome__brand mini-header .localized-slogan {
-    font-size: 0.66rem;
+    font-size: 0.66em;
   }
 
   .header-chrome__user-name {
@@ -957,7 +994,7 @@ full-header.sidebar-open .header-chrome__backdrop {
   /* Extra bottom padding for the header row to give more breathing room
      before the page content on very small screens. */
   .header-chrome__row {
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.75em;
   }
 
   /* Keep the logo fully visible and prevent the brand text from pushing into
@@ -1215,6 +1252,30 @@ function resolveFromComponent(relativePath) {
   }
 }
 
+function normalizeSitePath(pathname) {
+  let path = String(pathname || '/').replace(/\/+$/, '');
+  if (!path) {
+    path = '/';
+  }
+  if (path.endsWith('/index.html')) {
+    path = path.slice(0, -'/index.html'.length) || '/';
+  }
+  return path;
+}
+
+function isPortalIndexPage() {
+  try {
+    const indexUrl = new URL(resolveFromComponent('../index.html'), window.location.href);
+    const currentUrl = new URL(window.location.href);
+    if (indexUrl.origin !== currentUrl.origin) {
+      return false;
+    }
+    return normalizeSitePath(indexUrl.pathname) === normalizeSitePath(currentUrl.pathname);
+  } catch {
+    return false;
+  }
+}
+
 const ACTION_BUTTON_SCRIPT_URL = resolveFromComponent('action-button.js');
 
 function ensureActionButtonScript() {
@@ -1330,7 +1391,15 @@ class FullHeader extends HTMLElement {
   connectedCallback() {
     if (this.__rendered) return;
     this.__rendered = true;
-    const showDesktopSidebar = window.matchMedia('(min-width: 992px)').matches;
+    const onPortalIndex = isPortalIndexPage();
+    const sidebarEnabled = !onPortalIndex;
+    const showDesktopSidebar = sidebarEnabled && window.matchMedia('(min-width: 992px)').matches;
+    if (!sidebarEnabled) {
+      this.classList.add('sidebar-disabled');
+    }
+    if (onPortalIndex) {
+      this.classList.add('portal-index');
+    }
     this.classList.toggle('sidebar-open', showDesktopSidebar);
     try {
       document.body.setAttribute('data-has-full-header', 'true');
@@ -1688,6 +1757,11 @@ class FullHeader extends HTMLElement {
   }
 
   #initSidebar() {
+    if (this.classList.contains('sidebar-disabled')) {
+      this._closeSidebar = () => {};
+      return;
+    }
+
     const menuButton = this.querySelector('.header-chrome__menu');
     const backdrop = this.querySelector('.header-chrome__backdrop');
     const desktopQuery = window.matchMedia('(min-width: 992px)');
@@ -1989,7 +2063,7 @@ class FullHeader extends HTMLElement {
     this._headerResizeObserver?.disconnect();
     this._headerResizeObserver = null;
     document.body.classList.remove('header-chrome-content-offset');
-    this.classList.remove('sidebar-open', 'search-open');
+    this.classList.remove('sidebar-open', 'search-open', 'sidebar-disabled', 'portal-index');
     if (this._notificationsDocumentClickHandler) {
       document.removeEventListener('click', this._notificationsDocumentClickHandler);
       this._notificationsDocumentClickHandler = null;
