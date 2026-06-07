@@ -263,7 +263,8 @@ body:not(.theme-dark) .header-chrome__user-trigger {
   border: 1px solid var(--header-chrome-search-border);
   border-radius: 0.125rem;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
 }
 
 .header-chrome__search-icon {
@@ -1529,32 +1530,72 @@ class FullHeader extends HTMLElement {
     document.addEventListener('keydown', this._notificationsEscapeHandler);
   }
 
-  #initAppSearch() {
-    const searchForm = this.querySelector('#header-chrome-search-form');
-    if (!searchForm) {
-      return;
+  #waitForAppSearch() {
+    if (window.AppSearch) {
+      return Promise.resolve();
     }
 
-    const bindSearch = () => {
-      window.AppSearch?.bindAppSearchForm?.(searchForm);
+    const existingScript = [...document.querySelectorAll('script[src*="app-search.js"]')].at(-1);
+    if (existingScript) {
+      return new Promise((resolve, reject) => {
+        const finish = () => {
+          if (window.AppSearch) {
+            resolve();
+            return;
+          }
+
+          reject(new Error('app-search.js loaded without exposing AppSearch'));
+        };
+
+        if (existingScript.readyState === 'complete' || existingScript.readyState === 'loaded') {
+          finish();
+          return;
+        }
+
+        existingScript.addEventListener('load', finish, { once: true });
+        existingScript.addEventListener('error', () => reject(new Error('Failed to load app-search.js')), { once: true });
+      });
+    }
+
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = resolveFromComponent('app-search.js');
+      script.defer = true;
+      script.addEventListener('load', () => {
+        if (window.AppSearch) {
+          resolve();
+          return;
+        }
+
+        reject(new Error('app-search.js loaded without exposing AppSearch'));
+      }, { once: true });
+      script.addEventListener('error', () => reject(new Error('Failed to load app-search.js')), { once: true });
+      document.head.append(script);
+    });
+  }
+
+  #initAppSearch() {
+    const start = () => {
+      const searchForm = this.querySelector('#header-chrome-search-form');
+      if (!searchForm) {
+        return;
+      }
+
+      void this.#waitForAppSearch()
+        .then(() => {
+          window.AppSearch?.bindAppSearchForm?.(searchForm);
+        })
+        .catch((error) => {
+          console.error('Failed to initialize header search', error);
+        });
     };
 
-    if (window.AppSearch) {
-      bindSearch();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start, { once: true });
       return;
     }
 
-    const existingScript = document.querySelector('script[src*="app-search.js"]');
-    if (existingScript) {
-      existingScript.addEventListener('load', bindSearch, { once: true });
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = resolveFromComponent('app-search.js');
-    script.defer = true;
-    script.addEventListener('load', bindSearch, { once: true });
-    document.head.append(script);
+    start();
   }
 
   #syncHeaderHeight() {

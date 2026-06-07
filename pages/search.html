@@ -7,12 +7,6 @@
 	<title>Search - {{APP_NAME}}</title>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
 	<link rel="stylesheet" href="../lib/common.css">
-	<script src="../site-info.js"></script>
-	<script defer src="../components/mini-header.js"></script>
-	<script defer src="../components/full-header.js"></script>
-	<script defer src="../components/full-page-toolbar.js"></script>
-	<script defer src="../components/app-search.js"></script>
-	<script defer src="../components/full-footer.js"></script>
 </head>
 
 <body>
@@ -21,8 +15,7 @@
 		<full-page-toolbar title="Search {{APP_NAME}}"></full-page-toolbar>
 		<main class="main-content search-page">
 			<section class="search-page__panel" aria-label="Search profiles">
-				<p class="search-page__lead" id="app-search-page-meta">Enter a name or keyword to find people in
-					{{APP_NAME}}.</p>
+				<p class="search-page__lead" id="app-search-page-meta">Enter a first or last name to find people in {{APP_NAME}}.</p>
 
 				<form class="search-page__form" id="search-page-form" action="#" role="search">
 					<div class="search-page__bar app-search-anchor">
@@ -30,7 +23,7 @@
 						<i class="bi bi-search search-page__bar-icon" aria-hidden="true"></i>
 						<input id="searchPageInput" class="search-page__input" name="search" type="search"
 							autofocus="autofocus" dir="auto" autocomplete="off"
-							placeholder="Search by name, place, or keyword…">
+							placeholder="Search by first or last name…">
 						<button class="search-page__submit" type="submit" aria-label="Search">
 							<span class="search-page__submit-text">Search</span>
 							<i class="bi bi-arrow-right" aria-hidden="true"></i>
@@ -41,10 +34,10 @@
 				<div class="search-page__suggestions" id="app-search-suggestions">
 					<p class="search-page__suggestions-label">Popular searches</p>
 					<div class="search-page__chips">
-						<a class="site-chip search-page__chip" href="#" data-query="Shaun Roselt">Shaun Roselt</a>
-						<a class="site-chip search-page__chip" href="#" data-query="Hanli">Hanli</a>
-						<a class="site-chip search-page__chip" href="#" data-query="wife">wife</a>
+						<a class="site-chip search-page__chip" href="#" data-query="Shaun">Shaun</a>
+						<a class="site-chip search-page__chip" href="#" data-query="Roselt">Roselt</a>
 						<a class="site-chip search-page__chip" href="#" data-query="Mandela">Mandela</a>
+						<a class="site-chip search-page__chip" href="#" data-query="Elon">Elon</a>
 					</div>
 				</div>
 			</section>
@@ -53,7 +46,14 @@
 		</main>
 		<full-footer></full-footer>
 	</article>
-	<script defer src="../index.js"></script>
+	<script src="../site-info.js"></script>
+	<script src="../lib/people-registry.js"></script>
+	<script src="../components/mini-header.js"></script>
+	<script src="../components/full-header.js"></script>
+	<script src="../components/full-page-toolbar.js"></script>
+	<script src="../components/app-search.js"></script>
+	<script src="../components/full-footer.js"></script>
+	<script src="../index.js"></script>
 </body>
 
 </html>

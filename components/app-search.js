@@ -1,6 +1,26 @@
+(function initAppSearchModule() {
+if (window.AppSearch) {
+    return;
+}
+
 const APP_SEARCH_STYLE_ID = 'app-search-styles';
-const PEOPLE_REGISTRY_SCRIPT_URL = new URL('../lib/people-registry.js', document.currentScript?.src || window.location.href).href;
 const APP_SEARCH_DROPDOWN_LIMIT = 6;
+
+function resolveAppSearchScriptUrl() {
+    const script = document.currentScript || document.querySelector('script[src*="app-search.js"]');
+    if (script?.src) {
+        return script.src;
+    }
+
+    const pathname = window.location.pathname.replace(/\\/g, '/');
+    if (pathname.includes('/pages/') || pathname.match(/\/people\/[^/]+\//)) {
+        return new URL('../components/app-search.js', window.location.href).href;
+    }
+
+    return new URL('components/app-search.js', window.location.href).href;
+}
+
+const PEOPLE_REGISTRY_SCRIPT_URL = new URL('../lib/people-registry.js', resolveAppSearchScriptUrl()).href;
 
 function getAppName() {
     const name = window.App?.getName?.() || window.App?.Name;
@@ -115,14 +135,20 @@ body:not(.theme-dark) {
 .header-chrome__search-form.app-search-anchor {
   position: relative;
   overflow: visible;
+  z-index: 2;
 }
 
 .header-chrome__search-form .app-search__dropdown {
   min-width: 16rem;
+  right: 0;
+  left: auto;
+  width: max(16rem, 100%);
 }
 
 .search-page {
   box-sizing: border-box;
+  width: 100%;
+  padding-top: 0;
 }
 
 .search-page__panel {
@@ -514,6 +540,10 @@ function getSearchInput(form) {
 }
 
 function getDropdownAnchor(form) {
+    if (form.id === 'header-chrome-search-form' || form.classList.contains('header-chrome__search-form')) {
+        return form;
+    }
+
     return form.querySelector('.app-search-anchor, .search-input, .search-page__bar') || form;
 }
 
@@ -802,15 +832,25 @@ async function renderSearchResultsPage() {
     resultsRoot.replaceChildren(header, list);
 }
 
+function bindAllSearchForms() {
+    document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindAppSearchForm);
+}
+
 function initAppSearch() {
+    ensureSearchStyles();
+    bindAllSearchForms();
+    initSearchPageChips();
+
     void ensurePeopleRegistryScript()
-        .then(() => {
-            document.querySelectorAll('form[role="search"], #search-form, #header-chrome-search-form, #search-page-form').forEach(bindAppSearchForm);
-            initSearchPageChips();
-            return renderSearchResultsPage();
-        })
+        .then(() => renderSearchResultsPage())
         .catch((error) => {
-            console.error('Failed to initialize app search', error);
+            console.error('Failed to load people registry for search', error);
+
+            const resultsRoot = document.getElementById('app-search-results');
+            const query = (new URLSearchParams(window.location.search).get('q') || '').trim();
+            if (resultsRoot && query) {
+                resultsRoot.innerHTML = '<p class="search-page__empty">Search is temporarily unavailable. Please try again in a moment.</p>';
+            }
         });
 }
 
@@ -819,6 +859,7 @@ window.AppSearch = {
     resolveSearchPageUrl,
     resolvePersonProfileUrl,
     bindAppSearchForm,
+    bindAllSearchForms,
     renderSearchResultsPage,
     initAppSearch,
 };
@@ -828,3 +869,5 @@ if (document.readyState === 'loading') {
 } else {
     initAppSearch();
 }
+
+})();

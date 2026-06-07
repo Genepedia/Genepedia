@@ -351,7 +351,11 @@ full-page-toolbar .people-page__dropdown i {
 /* Simple variant hides tabs/actions and uses a title underline instead. */
 /* Allow pages to force-show the tabs with the show-tabs attribute or by using variant="page" or variant="notifications". */
 full-page-toolbar:not([variant="people"]):not([variant="page"]):not([variant="notifications"]):not([show-tabs]) .people-page__tabs-row {
-	display: none;
+	display: none !important;
+}
+
+full-page-toolbar:not([variant="people"]):not([variant="page"]):not([variant="notifications"]):not([show-tabs]) .people-page__edit-button {
+	display: none !important;
 }
 
 /* For simple variants (not people/page/notifications) underline the title row. */
