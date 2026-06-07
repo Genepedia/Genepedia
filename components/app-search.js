@@ -789,12 +789,45 @@ function bindAppSearchForm(form) {
 }
 
 function initSearchPageChips() {
-    document.querySelectorAll('.search-page__chip[data-query]').forEach((chip) => {
-        const query = chip.dataset.query?.trim() || chip.textContent.trim();
-        if (query) {
-            chip.href = resolveSearchPageUrl(query);
+  const chips = Array.from(document.querySelectorAll('.search-page__chip[data-query]'));
+  if (!chips.length) return;
+
+  // Set a sensible default (search page) so links work immediately,
+  // then try to resolve to a person profile and replace the label with the full name.
+  chips.forEach((chip) => {
+    const query = chip.dataset.query?.trim() || chip.textContent.trim();
+    if (query) {
+      chip.href = resolveSearchPageUrl(query);
+    }
+  });
+
+  // Asynchronously resolve person profiles for chips when the people registry is available.
+  void ensurePeopleRegistryScript()
+    .then(() => Promise.resolve())
+    .then(async () => {
+      for (const chip of chips) {
+        try {
+          const query = chip.dataset.query?.trim() || chip.textContent.trim();
+          if (!query) continue;
+
+          const matches = await findPersonMatches(query, { limit: 1 });
+          if (matches && matches.length) {
+            const match = matches[0];
+            chip.href = match.url || resolvePersonProfileUrl(match.entry.id);
+            const name = getPersonDisplayName(match.entry);
+            if (name) {
+              chip.textContent = name;
+            }
+          }
+        } catch (err) {
+          // If anything fails, leave the chip as a search link.
+          // Swallow errors to avoid breaking the rest of the page.
+          // eslint-disable-next-line no-console
+          console.debug('initSearchPageChips: could not resolve chip', err);
         }
-    });
+      }
+    })
+    .catch(() => {});
 }
 
 async function renderSearchResultsPage() {
