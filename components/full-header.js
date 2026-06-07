@@ -588,6 +588,22 @@ body:not(.theme-dark) .header-chrome__notifications-dropdown { box-shadow: 0 8px
 
 .header-chrome__notifications-dropdown[hidden] { display: none !important }
 
+.header-chrome__notifications-list {
+  max-height: 18rem;
+  overflow: auto;
+  padding: 0 0.25rem;
+}
+
+.header-chrome__notifications-footer {
+  padding: 0 0.25rem;
+}
+
+.header-chrome__notifications-meta {
+  margin-left: auto;
+  color: var(--color-subtle);
+  font-size: 0.8rem;
+}
+
 /* Make notifications dropdown items match the profile dropdown */
 .header-chrome__notifications-dropdown a,
 .header-chrome__notifications-dropdown button {
@@ -1005,15 +1021,17 @@ full-header.sidebar-open .header-chrome__backdrop {
       <div class="header-chrome__notifications">
         <action-button class="header-chrome__notifications-trigger" type="button" icon="bi-bell" title="Notifications" aria-label="Notifications" aria-haspopup="menu" aria-expanded="false" aria-controls="header-chrome-notifications-menu" badge="3"></action-button>
         <div id="header-chrome-notifications-menu" class="header-chrome__notifications-dropdown" role="menu" hidden>
-          <div class="header-chrome__notifications-list" style="max-height:18rem; overflow:auto; padding:0 0.25rem;">
-            <button type="button" role="menuitem" data-action="messages"><i class="bi bi-envelope" aria-hidden="true"></i><span>Messages</span><span class="meta" style="margin-left:auto;color:var(--color-subtle);font-size:0.8rem;">2 new</span></button>
+          <div class="header-chrome__notifications-list">
+            <button type="button" role="menuitem" data-action="messages"><i class="bi bi-envelope" aria-hidden="true"></i><span>Messages</span><span class="header-chrome__notifications-meta">2 new</span></button>
             <button type="button" role="menuitem" data-action="mentions"><i class="bi bi-at" aria-hidden="true"></i><span>Mentions</span></button>
-            <button type="button" role="menuitem" data-action="matches"><i class="bi bi-people" aria-hidden="true"></i><span>Matches</span><span class="meta" style="margin-left:auto;color:var(--color-subtle);font-size:0.8rem;">1 new</span></button>
+            <button type="button" role="menuitem" data-action="matches"><i class="bi bi-people" aria-hidden="true"></i><span>Matches</span><span class="header-chrome__notifications-meta">1 new</span></button>
             
             <button type="button" role="menuitem" data-action="edits"><i class="bi bi-pencil-square" aria-hidden="true"></i><span>Edit Requests</span></button>
           </div>
           <div class="header-chrome__user-divider" role="separator"></div>
-          <button type="button" role="menuitem" data-action="view-all"><i class="bi bi-bell" aria-hidden="true"></i><span>View All Notifications</span></button>
+          <div class="header-chrome__notifications-footer">
+            <button type="button" role="menuitem" data-action="view-all"><i class="bi bi-bell" aria-hidden="true"></i><span>View All Notifications</span></button>
+          </div>
         </div>
       </div>
       <div class="header-chrome__end">
@@ -1111,7 +1129,6 @@ full-header.sidebar-open .header-chrome__backdrop {
 const FULL_HEADER_SCRIPT_URL = document.currentScript?.src || '';
 const FULL_HEADER_SLOGAN = 'Free Geneology Encyclopedia';
 const FULL_HEADER_SESSION_KEY = 'app-header-session';
-const FULL_HEADER_DEFAULT_GITHUB_API_BASE = 'https://api.shaunroselt.com/genepedia';
 
 function normalizeHeaderApiBaseUrl(value) {
   const rawValue = String(value || '').trim();
@@ -1129,8 +1146,8 @@ function normalizeHeaderApiBaseUrl(value) {
 
 function resolveHeaderGitHubApiBase() {
   const configuredBase = normalizeHeaderApiBaseUrl(
-    window.GENEPEDIA_GITHUB_API_BASE
-    || document.documentElement?.dataset?.genepediaGithubApiBase
+    window.App?.getGitHubApiBase?.()
+    || window.App?.GitHubApiBase
     || ''
   );
 
@@ -1138,16 +1155,17 @@ function resolveHeaderGitHubApiBase() {
     return configuredBase;
   }
 
-  const isLocalHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-  if (window.location.protocol === 'file:' || isLocalHost) {
-    return normalizeHeaderApiBaseUrl(resolveFromComponent('../api'));
-  }
-
-  return FULL_HEADER_DEFAULT_GITHUB_API_BASE;
+  console.error('Genepedia GitHub API base is not configured. Set `window.App.GitHubApiBase` in `site-info.js`.');
+  return '';
 }
 
 function resolveHeaderGitHubApiUrl(fileName) {
-  return new URL(fileName, `${resolveHeaderGitHubApiBase()}/`).href;
+  const apiBase = resolveHeaderGitHubApiBase();
+  if (!apiBase) {
+    return fileName;
+  }
+
+  return new URL(fileName, `${apiBase}/`).href;
 }
 
 const FULL_HEADER_GITHUB_LOGIN_URL = resolveHeaderGitHubApiUrl('github-login.php');

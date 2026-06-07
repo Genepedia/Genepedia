@@ -10,6 +10,7 @@
         Version: '1.0.0',
         ReleaseDate: '2026-07-01',
         Description: `${BRANDING_SOURCE_NAME} is a home for family stories, a place to discover, document, and share your family history.`,
+        GitHubApiBase: 'https://api.shaunroselt.com/genepedia',
     };
 
     const textTemplates = new WeakMap();
@@ -28,9 +29,26 @@
         return (typeof value === 'string') ? value.trim() : '';
     }
 
+    function normalizeApiBase(value) {
+        const rawValue = (typeof value === 'string') ? value.trim() : '';
+        if (!rawValue) {
+            return '';
+        }
+
+        try {
+            return new URL(rawValue, window.location.href).href.replace(/\/+$/, '');
+        } catch (e) {
+            return rawValue.replace(/\/+$/, '');
+        }
+    }
+
     function getAppName() {
         const name = (app && typeof app.Name === 'string') ? app.Name.trim() : '';
         return name || BRANDING_SOURCE_NAME;
+    }
+
+    function getGitHubApiBase() {
+        return normalizeApiBase(app?.GitHubApiBase) || DEFAULTS.GitHubApiBase;
     }
 
     function replaceBrandTokens(value, nextName) {
@@ -180,8 +198,12 @@
     if (!normalizeName(app.Description)) {
         app.Description = DEFAULTS.Description;
     }
+    if (!normalizeApiBase(app.GitHubApiBase)) {
+        app.GitHubApiBase = DEFAULTS.GitHubApiBase;
+    }
 
     app.getName = getAppName;
+    app.getGitHubApiBase = getGitHubApiBase;
     app.applyBranding = applyBranding;
     app.BrandToken = BRAND_TOKEN;
 
@@ -218,12 +240,41 @@
         // ignore
     }
 
+    try {
+        const initialGitHubApiBase = getGitHubApiBase();
+        let internalGitHubApiBase = initialGitHubApiBase;
+
+        Object.defineProperty(app, 'GitHubApiBase', {
+            enumerable: true,
+            configurable: true,
+            get() {
+                return internalGitHubApiBase;
+            },
+            set(value) {
+                const nextGitHubApiBase = normalizeApiBase(value) || DEFAULTS.GitHubApiBase;
+                if (nextGitHubApiBase === internalGitHubApiBase) {
+                    return;
+                }
+
+                internalGitHubApiBase = nextGitHubApiBase;
+            },
+        });
+    } catch (e) {
+        app.GitHubApiBase = getGitHubApiBase();
+    }
+
     if (typeof window !== 'undefined') {
         window.App = app;
     }
 
     if (typeof document !== 'undefined') {
         if (document.readyState === 'loading') {
+            try {
+                applyBranding(document);
+            } catch (e) {
+                // ignore
+            }
+
             document.addEventListener('DOMContentLoaded', () => {
                 try {
                     applyBranding(document);
