@@ -4,7 +4,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>404 Not Found - {{APP_NAME}}</title>
+    <title data-brand-template="404 Not Found - {{APP_NAME}}"></title>
+    <script src="../site-info.js"></script>
     <meta name="robots" content="noindex">
     <link rel="stylesheet" href="../lib/Web-Framework/styles/common.css">
     <style>
@@ -76,8 +77,7 @@
         </form>
     </main>
 
-    <script src="../site-info.js"></script>
-    <script>
+<script>
         (function () {
             // Compute candidate base prefixes by walking up the URL path.
             const link = document.getElementById('go-home');

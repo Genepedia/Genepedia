@@ -1,0 +1,829 @@
+{
+  "people/2/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/2/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/2/data/tree.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/2/data/talk.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/2/data/changes.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/2/data/media.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/15/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"6af1a2a5fb61bc9ea7f0be9f7536a4e8c53fd64c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"WIP New Wiki Page"},
+    {"hash":"1105c3544415af0c4d374b2863b00cc4c7997282","date":"2026-05-27T22:43:10+02:00","author":"Shaun Roselt","subject":"New header testing"}
+  ],
+  "people/15/data/profile.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"39aee15cd66448139c212d243c779d5b22959850","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor statistics page layout and improve styling; add profile identity table for Nelson Mandela"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"6af1a2a5fb61bc9ea7f0be9f7536a4e8c53fd64c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"WIP New Wiki Page"}
+  ],
+  "people/15/data/tree.html": [
+    {"hash":"6af1a2a5fb61bc9ea7f0be9f7536a4e8c53fd64c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"WIP New Wiki Page"}
+  ],
+  "people/15/data/talk.html": [
+    {"hash":"6af1a2a5fb61bc9ea7f0be9f7536a4e8c53fd64c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"WIP New Wiki Page"}
+  ],
+  "people/15/data/profile-table.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"39aee15cd66448139c212d243c779d5b22959850","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor statistics page layout and improve styling; add profile identity table for Nelson Mandela"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/15/data/changes.html": [
+    {"hash":"6af1a2a5fb61bc9ea7f0be9f7536a4e8c53fd64c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"WIP New Wiki Page"}
+  ],
+  "people/15/data/media.html": [
+    {"hash":"6af1a2a5fb61bc9ea7f0be9f7536a4e8c53fd64c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"WIP New Wiki Page"}
+  ],
+  "people/21/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/21/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/21/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/21/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/21/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/21/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/9/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/9/data/profile.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/9/data/tree.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/9/data/talk.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/9/data/changes.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/9/data/media.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/4/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/4/data/profile.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/4/data/tree.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/4/data/talk.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/4/data/changes.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/4/data/media.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/17/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/17/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/17/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/17/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/17/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/17/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/7/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"7cb0388c92d0f7bf1ef48480a205c93e38a9b922","date":"2026-06-07T17:32:26+02:00","author":"Shaun Roselt","subject":"fix: update profile titles for consistency across multiple user profiles"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/7/data/profile.html": [
+    {"hash":"07a3081c76e20caf38ae87987328171a644d2571","date":"2026-06-07T17:40:16+02:00","author":"Shaun Roselt","subject":"fix: update profile names for consistency across multiple user profiles"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/7/data/tree.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/7/data/talk.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/7/data/changes.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/7/data/media.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/16/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/16/data/profile.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/16/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/16/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/16/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/16/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/6/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"7cb0388c92d0f7bf1ef48480a205c93e38a9b922","date":"2026-06-07T17:32:26+02:00","author":"Shaun Roselt","subject":"fix: update profile titles for consistency across multiple user profiles"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/6/data/profile.html": [
+    {"hash":"07a3081c76e20caf38ae87987328171a644d2571","date":"2026-06-07T17:40:16+02:00","author":"Shaun Roselt","subject":"fix: update profile names for consistency across multiple user profiles"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/6/data/tree.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/6/data/talk.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/6/data/changes.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/6/data/media.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/5/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/5/data/profile.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/5/data/tree.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/5/data/talk.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/5/data/changes.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/5/data/media.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/25/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/25/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/25/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/25/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/25/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/25/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/23/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/23/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/23/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/23/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/23/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/23/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/20/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/20/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/20/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/20/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/20/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/20/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/3/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/3/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/3/data/tree.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/3/data/talk.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/3/data/changes.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/3/data/media.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/1/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/1/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/1/data/tree.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/1/data/talk.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/1/data/changes.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/1/data/media.html": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "people/24/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/24/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/24/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/24/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/24/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/24/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/19/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/19/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/19/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/19/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/19/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/19/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/22/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/22/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/22/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/22/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/22/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/22/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/8/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"7cb0388c92d0f7bf1ef48480a205c93e38a9b922","date":"2026-06-07T17:32:26+02:00","author":"Shaun Roselt","subject":"fix: update profile titles for consistency across multiple user profiles"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/8/data/profile.html": [
+    {"hash":"07a3081c76e20caf38ae87987328171a644d2571","date":"2026-06-07T17:40:16+02:00","author":"Shaun Roselt","subject":"fix: update profile names for consistency across multiple user profiles"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/8/data/tree.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/8/data/talk.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/8/data/changes.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/8/data/media.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/10/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/10/data/profile.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/10/data/tree.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/10/data/talk.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/10/data/changes.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/10/data/media.html": [
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"}
+  ],
+  "people/18/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/18/data/profile.html": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/18/data/tree.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/18/data/talk.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/18/data/changes.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/18/data/media.html": [
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "people/index.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"1398950db71bece91dd2b4bc1c8f6685488921b0","date":"2026-06-07T17:15:44+02:00","author":"Shaun Roselt","subject":"People index: restore toolbar title and remove page H1/card wrapper"},
+    {"hash":"975be06aae3031a7f169169142b162d57271fd92","date":"2026-06-07T17:13:10+02:00","author":"Shaun Roselt","subject":"People index: replace list with searchable, sortable table; remove rounded corners and hide duplicate toolbar title"},
+    {"hash":"f67780e7013d1c093ae2a7587167d940869fb71f","date":"2026-06-07T17:05:51+02:00","author":"Shaun Roselt","subject":"Add full header/footer and toolbar to people index"},
+    {"hash":"203e4c5b41087229f91de25fd852f99372f57792","date":"2026-06-07T17:04:23+02:00","author":"Shaun Roselt","subject":"Add people index listing page (people/index.html)"}
+  ],
+  "people/11/profile.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"},
+    {"hash":"8d53f79fb6d883bcd1c8c036a11e6c169e6c6167","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"New Wiki Page done :D"},
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "people/11/data/profile.html": [
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"}
+  ],
+  "people/11/data/tree.html": [
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"}
+  ],
+  "people/11/data/talk.html": [
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"}
+  ],
+  "people/11/data/profile-table.html": [
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"}
+  ],
+  "people/11/data/changes.html": [
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"}
+  ],
+  "people/11/data/media.html": [
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"}
+  ],
+  "components/app-search.js": [
+    {"hash":"20ccab85c47016a72a042497c1ab6ce26795f01f","date":"2026-06-07T22:08:18+02:00","author":"Shaun Roselt","subject":"fix(search): resolve search page URL reliably to pages/search.html"},
+    {"hash":"5ab07d1a50997923fed8d0be06cf8c5f6a4a84c3","date":"2026-06-07T21:22:22+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"27b33a029378496480cf4d24faba6233e60df7ae","date":"2026-06-07T20:51:38+02:00","author":"Shaun Roselt","subject":"feat: enhance search page chips to resolve person profiles asynchronously"},
+    {"hash":"a840a4b55a8081611dd72763442cc977418b8957","date":"2026-06-07T18:32:30+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and update header styles"},
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"},
+    {"hash":"9b9726427a34426916a3a3322b89c0d1663cf6e6","date":"2026-06-07T16:35:08+02:00","author":"Shaun Roselt","subject":"feat: implement people registry and update home page layout"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"}
+  ],
+  "components/people-page-profile-table.js": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "components/people-page.js": [
+    {"hash":"a840a4b55a8081611dd72763442cc977418b8957","date":"2026-06-07T18:32:30+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and update header styles"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"39aee15cd66448139c212d243c779d5b22959850","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor statistics page layout and improve styling; add profile identity table for Nelson Mandela"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"8d53f79fb6d883bcd1c8c036a11e6c169e6c6167","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"New Wiki Page done :D"},
+    {"hash":"6af1a2a5fb61bc9ea7f0be9f7536a4e8c53fd64c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"WIP New Wiki Page"}
+  ],
+  "index.js": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"103b252d70ec65d282846fdc2dea2741b437a49c","date":"2026-05-25T21:42:22+02:00","author":"Shaun Roselt","subject":"Added Home Page"}
+  ],
+  "pages/privacy_policy.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"7cb0baff17a3535b8977d700a5c1c99e1f5fda2a","date":"2026-05-26T23:16:40+02:00","author":"Shaun Roselt","subject":"Update site: index.css, index.html, pages/privacy_policy.html, pages/terms_of_use.html"},
+    {"hash":"103b252d70ec65d282846fdc2dea2741b437a49c","date":"2026-05-25T21:42:22+02:00","author":"Shaun Roselt","subject":"Added Home Page"}
+  ],
+  "pages/settings.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "pages/statistics.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"39aee15cd66448139c212d243c779d5b22959850","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor statistics page layout and improve styling; add profile identity table for Nelson Mandela"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "pages/contact.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"}
+  ],
+  "pages/notifications.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"f4c7a57fe368af3bf8414297f1cf061a9ea818aa","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Add notifications feature with sample data and HTML structure"}
+  ],
+  "pages/home.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"767af8cb4ce5ab8e62a0d73e6a1640f3b85203eb","date":"2026-06-07T17:26:55+02:00","author":"Shaun Roselt","subject":"feat: enhance full-header and full-page-toolbar with download options and context-aware behavior"},
+    {"hash":"9b9726427a34426916a3a3322b89c0d1663cf6e6","date":"2026-06-07T16:35:08+02:00","author":"Shaun Roselt","subject":"feat: implement people registry and update home page layout"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "pages/search.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"767af8cb4ce5ab8e62a0d73e6a1640f3b85203eb","date":"2026-06-07T17:26:55+02:00","author":"Shaun Roselt","subject":"feat: enhance full-header and full-page-toolbar with download options and context-aware behavior"},
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"},
+    {"hash":"9b9726427a34426916a3a3322b89c0d1663cf6e6","date":"2026-06-07T16:35:08+02:00","author":"Shaun Roselt","subject":"feat: implement people registry and update home page layout"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "pages/terms_of_use.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"7cb0baff17a3535b8977d700a5c1c99e1f5fda2a","date":"2026-05-26T23:16:40+02:00","author":"Shaun Roselt","subject":"Update site: index.css, index.html, pages/privacy_policy.html, pages/terms_of_use.html"},
+    {"hash":"103b252d70ec65d282846fdc2dea2741b437a49c","date":"2026-05-25T21:42:22+02:00","author":"Shaun Roselt","subject":"Added Home Page"}
+  ],
+  "pages/404.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "data/themes/light.css": [
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "data/themes/dark.css": [
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "data/themes/themes.js": [
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "data/languages/languages.js": [
+    {"hash":"2f9cb56dd009bca24e432974d0c3dab3c9ab8b46","date":"2026-05-27T21:15:10+02:00","author":"Shaun Roselt","subject":"WIP Wiki Style Page"}
+  ],
+  "tree-test-1/index.js": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"f4c7a57fe368af3bf8414297f1cf061a9ea818aa","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Add notifications feature with sample data and HTML structure"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "tree-test-1/index.css": [
+    {"hash":"f4c7a57fe368af3bf8414297f1cf061a9ea818aa","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Add notifications feature with sample data and HTML structure"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "tree-test-1/index.html": [
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"f4c7a57fe368af3bf8414297f1cf061a9ea818aa","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Add notifications feature with sample data and HTML structure"},
+    {"hash":"b56c7c69bf3f8e0b023e91b853e14e2e44db9d49","date":"2026-06-04T12:39:21+02:00","author":"Shaun Roselt","subject":"Refactor code structure and remove redundant sections for improved readability and maintainability"}
+  ],
+  "site-info.js": [
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"af0e4a5f1a5a3cc96b00ac929b7fa7df151f20f1","date":"2026-06-07T12:04:43+02:00","author":"Shaun Roselt","subject":"Enhance notifications dropdown styles and improve GitHub API base handling"},
+    {"hash":"766f2d79ba791b2aafb87e24332f8030deefb493","date":"2026-06-06T02:45:47+02:00","author":"Shaun Roselt","subject":"Enhance app readiness handling and prevent flash of raw HTML during loading"},
+    {"hash":"83261a8a34c0bad51e2fbeff4d2b6bd46b7f1555","date":"2026-06-06T01:06:15+02:00","author":"Shaun Roselt","subject":"Update branding source name to Genepedia"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"2f85dbd1c078a274d203c214cbadb129d1f9c40a","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Update branding source name and enhance dynamic description generation"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"}
+  ],
+  "lib/Web-Framework/components/action-button.js": [
+  ],
+  "lib/Web-Framework/components/full-header.js": [
+  ],
+  "lib/Web-Framework/components/full-page-toolbar.js": [
+  ],
+  "lib/Web-Framework/components/mini-header.js": [
+  ],
+  "lib/Web-Framework/components/mini-footer.js": [
+  ],
+  "lib/Web-Framework/components/full-footer.js": [
+  ],
+  "lib/Web-Framework/components/sister-projects.js": [
+  ],
+  "lib/Web-Framework/styles/common.css": [
+  ],
+  "lib/Web-Framework/styles/portal-index.css": [
+  ],
+  "lib/Web-Framework/site-runtime.js": [
+  ],
+  "lib/Web-Framework/site-info.js": [
+  ],
+  "lib/people-registry.js": [
+    {"hash":"9b9726427a34426916a3a3322b89c0d1663cf6e6","date":"2026-06-07T16:35:08+02:00","author":"Shaun Roselt","subject":"feat: implement people registry and update home page layout"}
+  ],
+  "lib/gedcom.js": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"f4c7a57fe368af3bf8414297f1cf061a9ea818aa","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Add notifications feature with sample data and HTML structure"}
+  ],
+  "lib/notifications.js": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"f4c7a57fe368af3bf8414297f1cf061a9ea818aa","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Add notifications feature with sample data and HTML structure"}
+  ],
+  "lib/routing.js": [
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "lib/download-manager.js": [
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "404.html": [
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"d8a9adb58da2f3a8c8002cccb2944c0423fc9c3e","date":"2026-06-07T16:00:57+02:00","author":"Shaun Roselt","subject":"Refactor profile pages for consistency and clarity"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"}
+  ],
+  "index.html": [
+    {"hash":"5ab07d1a50997923fed8d0be06cf8c5f6a4a84c3","date":"2026-06-07T21:22:22+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"132cb85d3182fad4f0372c4a41ee5f783f1daadb","date":"2026-06-07T20:17:11+02:00","author":"Shaun Roselt","subject":"autosave: commit workspace changes"},
+    {"hash":"de382cdc7e3cae92795dc0760cf8efd2ac6a38fe","date":"2026-06-07T18:53:28+02:00","author":"Shaun Roselt","subject":"Move full-header into Web-Framework submodule."},
+    {"hash":"a840a4b55a8081611dd72763442cc977418b8957","date":"2026-06-07T18:32:30+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and update header styles"},
+    {"hash":"767af8cb4ce5ab8e62a0d73e6a1640f3b85203eb","date":"2026-06-07T17:26:55+02:00","author":"Shaun Roselt","subject":"feat: enhance full-header and full-page-toolbar with download options and context-aware behavior"},
+    {"hash":"1383896eba070ac3e26d517e4f42b9d085bdff11","date":"2026-06-07T16:55:12+02:00","author":"Shaun Roselt","subject":"feat: enhance app search functionality and improve profile pages"},
+    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
+    {"hash":"d55c87a9d0fb0280225a1beca091e09e6017625f","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Trying to make App Name more dynamic"},
+    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
+    {"hash":"e2e360b4c9e5be9fca05ce42f598c1154967d9c9","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"Refactor profile pages and add contact page"},
+    {"hash":"8c820135e5f98c014c3de475ad4c16a03aa0233c","date":"2026-06-04T00:29:28+02:00","author":"Shaun Roselt","subject":"General Dev for new Wiki Page"},
+    {"hash":"7cb0baff17a3535b8977d700a5c1c99e1f5fda2a","date":"2026-05-26T23:16:40+02:00","author":"Shaun Roselt","subject":"Update site: index.css, index.html, pages/privacy_policy.html, pages/terms_of_use.html"},
+    {"hash":"103b252d70ec65d282846fdc2dea2741b437a49c","date":"2026-05-25T21:42:22+02:00","author":"Shaun Roselt","subject":"Added Home Page"}
+  ]
+}

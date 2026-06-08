@@ -198,7 +198,9 @@
 
         try {
             if ((!root || target === document) && typeof document !== 'undefined') {
+                const titleEl = document.querySelector('title');
                 const sourceTitle = titleTemplates.get(document)
+                    || titleEl?.getAttribute('data-brand-template')
                     || (typeof document.title === 'string' && document.title.includes(BRAND_TOKEN) ? document.title : null);
 
                 if (sourceTitle) {

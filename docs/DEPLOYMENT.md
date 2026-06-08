@@ -25,6 +25,10 @@ Required
  - `GITHUB_CLIENT_SECRET` — the GitHub OAuth app secret (server-side only).
 
 Optional (recommended)
+ - `GITHUB_API_TOKEN` — personal access token with read access to the Genepedia
+   repository. Used by `github-file-commits.php` for server-side commit history
+   (5,000 requests/hour instead of the unauthenticated 60/hour browser limit).
+ - `GITHUB_REPO` — repository slug for commit history (default `Genepedia/Genepedia`).
  - `GITHUB_CLIENT_ID` — override the built-in default client ID if needed.
  - `GITHUB_ALLOWED_RETURN_ORIGINS` — comma-separated allowed origins that
    may be passed as `return_to` in the login flow. Example:
@@ -40,6 +44,7 @@ Files to deploy from `/home/deck/Documents/Development/Genepedia/API`
  - `github-callback.php`
  - `github-session.php`
  - `github-logout.php`
+ - `github-file-commits.php`
 
 Recommended deployment layout
  - Copy the contents of the `API` repository to `/var/www/genepedia/`
