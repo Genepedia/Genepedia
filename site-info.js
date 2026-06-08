@@ -16,6 +16,7 @@
         Description: `${BRANDING_SOURCE_NAME} is a home for family stories, a place to discover, document, and share your family history.`,
         GitHubApiBase: 'https://api.shaunroselt.com/genepedia',
         Slogan: 'Free Geneology Encyclopedia',
+        PageEditPath: 'pages/edit.html',
     };
 
     function getSiteBaseUrl() {
@@ -33,6 +34,22 @@
         } catch (e) {
             return cleanPath;
         }
+    }
+
+    function normalizeSitePath(path) {
+        return String(path || '').replace(/\\/g, '/').replace(/^\//, '').trim();
+    }
+
+    function resolvePageEditUrl(sourcePath, returnPath) {
+        const cleanSource = normalizeSitePath(sourcePath);
+        const cleanReturn = normalizeSitePath(returnPath || cleanSource);
+        const editPath = normalizeSitePath(app.PageEditPath || DEFAULTS.PageEditPath || 'pages/edit.html');
+        const url = new URL(editPath, getSiteBaseUrl());
+        url.searchParams.set('source', cleanSource);
+        if (cleanReturn) {
+            url.searchParams.set('return', cleanReturn);
+        }
+        return url.href;
     }
 
     function getSlogan() {
@@ -301,6 +318,7 @@
     app.getGitHubApiBase = getGitHubApiBase;
     app.getSlogan = getSlogan;
     app.resolveSiteUrl = resolveSiteUrl;
+    app.resolvePageEditUrl = resolvePageEditUrl;
     app.navigateToRandomProfile = navigateToRandomProfile;
     app.applyBranding = applyBranding;
     app.BrandToken = BRAND_TOKEN;

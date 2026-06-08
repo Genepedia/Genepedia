@@ -666,9 +666,103 @@ class PeoplePage extends HTMLElement {
 
   }
 
+  async #ensurePageTabs() {
+    if (window.AppPageTabs?.mountChangesView) {
+      return window.AppPageTabs;
+    }
+
+    const scripts = Array.from(document.querySelectorAll('script[src]'));
+    let base = new URL('.', window.location.href).href;
+    for (const script of scripts) {
+      const src = script.getAttribute('src') || '';
+      if (src.includes('components/people-page.js')) {
+        try {
+          base = new URL('.', new URL(src, window.location.href)).href;
+          break;
+        } catch (error) {
+          // ignore
+        }
+      }
+    }
+
+    const pageTabsSrc = new URL('../lib/page-tabs.js', base).href;
+    if (document.querySelector(`script[src="${pageTabsSrc}"]`)) {
+      return window.AppPageTabs?.ensurePageTabsLoaded?.() || null;
+    }
+
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = pageTabsSrc;
+      script.async = true;
+      script.addEventListener('load', resolve, { once: true });
+      script.addEventListener('error', reject, { once: true });
+      document.head.append(script);
+    });
+
+    return window.AppPageTabs;
+  }
+
+  #ensureChangesStyles() {
+    if (document.querySelector('link[href*="common.css"]')) {
+      return;
+    }
+
+    const scripts = Array.from(document.querySelectorAll('script[src]'));
+    let base = new URL('.', window.location.href).href;
+    for (const script of scripts) {
+      const src = script.getAttribute('src') || '';
+      if (src.includes('components/people-page.js')) {
+        try {
+          base = new URL('.', new URL(src, window.location.href)).href;
+          break;
+        } catch (error) {
+          // ignore
+        }
+      }
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = new URL('../lib/Web-Framework/styles/common.css', base).href;
+    document.head.append(link);
+  }
+
+  async #loadChangesTab() {
+    const contentEl = this.#getContentElement();
+    if (!contentEl) {
+      return;
+    }
+
+    try {
+      this.#ensureChangesStyles();
+      const pageTabs = await this.#ensurePageTabs();
+      const sourcePaths = pageTabs?.getPeopleProfileSourcePaths?.();
+      if (!pageTabs?.mountChangesView || !sourcePaths?.length) {
+        throw new Error('Change history is unavailable for this profile.');
+      }
+
+      await pageTabs.mountChangesView(contentEl, sourcePaths);
+      this.dispatchEvent(
+        new CustomEvent('people-page-tab-loaded', {
+          bubbles: true,
+          composed: true,
+          detail: { tab: 'changes' },
+        }),
+      );
+    } catch (error) {
+      contentEl.innerHTML = '<p>Could not load change history. Please try again.</p>';
+      console.error(error);
+    }
+  }
+
   async #loadTab(tab) {
     const contentEl = this.#getContentElement();
     if (!contentEl) {
+      return;
+    }
+
+    if (tab === 'changes') {
+      await this.#loadChangesTab();
       return;
     }
 

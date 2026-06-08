@@ -46,6 +46,8 @@ Files to deploy from `/home/deck/Documents/Development/Genepedia/API`
  - `github-logout.php`
  - `github-file-commits.php`
  - `github-file-commit-diff.php`
+ - `github-config.php`
+ - `github-submit-page-edit.php`
 
 Recommended deployment layout
  - Copy the contents of the `API` repository to `/var/www/genepedia/`
