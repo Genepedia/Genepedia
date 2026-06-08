@@ -87,7 +87,8 @@
 <body>
 	<full-header></full-header>
 	<article class="no-radius">
-		<full-page-toolbar title="People {{APP_NAME}}" edit-text="Edit Page" edit-href="#" variant="people"></full-page-toolbar>
+		<full-page-toolbar title="People {{APP_NAME}}" edit-text="Edit Page" edit-source="people/index.html"
+			variant="page"></full-page-toolbar>
 		<main class="main-content people-page">
 			<div class="people-list__controls">
 				<input id="peopleSearch" type="search" placeholder="Search ID, first or last name" aria-label="Search people">
@@ -113,6 +114,7 @@
 <script src="../lib/Web-Framework/components/mini-header.js"></script>
 	<script src="../lib/Web-Framework/components/full-header.js"></script>
 	<script src="../lib/Web-Framework/components/full-page-toolbar.js"></script>
+	<script src="../lib/page-tabs.js"></script>
 	<script src="../lib/Web-Framework/components/full-footer.js"></script>
 
 	<script>

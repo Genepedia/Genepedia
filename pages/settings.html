@@ -9,8 +9,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../lib/Web-Framework/styles/common.css">
 <script defer src="../lib/Web-Framework/components/mini-header.js"></script>
+    <script defer src="../lib/Web-Framework/components/mini-footer.js"></script>
     <script defer src="../lib/Web-Framework/components/full-header.js"></script>
+    <script defer src="../lib/Web-Framework/components/full-page-toolbar.js"></script>
+    <script defer src="../lib/page-tabs.js"></script>
     <script defer src="../lib/Web-Framework/components/full-footer.js"></script>
+    <script defer src="../lib/Web-Framework/components/sister-projects.js"></script>
 
 </head>
 
@@ -18,9 +22,11 @@
     <full-header></full-header>
 
     <article>
+        <full-page-toolbar title="App Settings" edit-text="Edit Page" edit-source="pages/settings.html"
+            variant="page"></full-page-toolbar>
         <main class="settings-page main-content">
             <section class="settings-page__hero">
-                <h1 class="settings-page__hero-title">App settings</h1>
+                <h2 class="settings-page__hero-title">Preferences</h2>
                 <p class="settings-page__hero-description">Adjust your {{APP_NAME}} experience with local browser
                     preferences for appearance, layout, downloads, and language. These settings are stored locally and
                     apply immediately.</p>

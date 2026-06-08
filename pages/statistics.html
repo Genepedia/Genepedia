@@ -4,8 +4,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Site statistics</title>
+    <title data-brand-template="Statistics - {{APP_NAME}}"></title>
     <script src="../site-info.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../lib/Web-Framework/styles/common.css">
     <style>
         :root {
@@ -142,12 +143,13 @@
 </head>
 
 <body>
-    <main class="container">
-        <header>
-            <h1>Repository & Pages statistics (no API key required)</h1>
-            <p style="margin:6px 0 0">This page fetches public GitHub repository metrics without a token where possible.
+    <full-header></full-header>
+    <article>
+        <full-page-toolbar title="Site Statistics" edit-text="Edit Page" edit-source="pages/statistics.html"
+            variant="page"></full-page-toolbar>
+        <main class="main-content container">
+            <p>This page fetches public GitHub repository metrics without a token where possible.
                 Some traffic endpoints require repo admin access and will show a message if unavailable.</p>
-        </header>
 
         <div class="controls" role="search" aria-label="Repository selector">
             <label>Owner <input id="owner" type="text" value="ShaunRoselt" /></label>
@@ -460,7 +462,17 @@
 
             })();
         </script>
-    </main>
+        </main>
+        <full-footer></full-footer>
+    </article>
+    <script src="../lib/Web-Framework/components/mini-header.js"></script>
+    <script src="../lib/Web-Framework/components/mini-footer.js"></script>
+    <script src="../lib/Web-Framework/components/full-header.js"></script>
+    <script src="../lib/Web-Framework/components/full-page-toolbar.js"></script>
+    <script src="../lib/page-tabs.js"></script>
+    <script src="../lib/Web-Framework/components/full-footer.js"></script>
+    <script src="../lib/Web-Framework/components/sister-projects.js"></script>
+    <script src="../index.js"></script>
 </body>
 
 </html>
