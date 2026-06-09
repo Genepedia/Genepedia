@@ -1,0 +1,16 @@
+{
+  "creator": {
+    "personId": "1",
+    "name": "Shaun Roselt",
+    "githubLogin": "ShaunRoselt"
+  },
+  "maintainers": [
+    {
+      "personId": "1",
+      "name": "Shaun Roselt",
+      "githubLogin": "ShaunRoselt"
+    }
+  ],
+  "claim": null
+}
+
