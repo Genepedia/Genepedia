@@ -161,6 +161,49 @@
         return normalizeApiBase(app?.GitHubApiBase) || DEFAULTS.GitHubApiBase;
     }
 
+    const GITHUB_ACCESS_TOKEN_KEY = 'app-header-github-token';
+
+    function getGitHubAccessToken() {
+        try {
+            return String(localStorage.getItem(GITHUB_ACCESS_TOKEN_KEY) || '').trim();
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function setGitHubAccessToken(token) {
+        try {
+            const next = String(token || '').trim();
+            if (next) {
+                localStorage.setItem(GITHUB_ACCESS_TOKEN_KEY, next);
+            } else {
+                localStorage.removeItem(GITHUB_ACCESS_TOKEN_KEY);
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function getGitHubFetchInit(init) {
+        const options = init && typeof init === 'object' ? { ...init } : {};
+        const headers = new Headers(options.headers || {});
+        if (!headers.has('Accept')) {
+            headers.set('Accept', 'application/json');
+        }
+
+        const token = getGitHubAccessToken();
+        if (token && !headers.has('Authorization')) {
+            headers.set('Authorization', `Bearer ${token}`);
+        }
+
+        options.headers = headers;
+        if (options.credentials === undefined) {
+            options.credentials = 'include';
+        }
+
+        return options;
+    }
+
     function replaceBrandTokens(value, nextName) {
         if (typeof value !== 'string') {
             return value;
@@ -320,6 +363,9 @@
 
     app.getName = getAppName;
     app.getGitHubApiBase = getGitHubApiBase;
+    app.getGitHubAccessToken = getGitHubAccessToken;
+    app.setGitHubAccessToken = setGitHubAccessToken;
+    app.getGitHubFetchInit = getGitHubFetchInit;
     app.getSlogan = getSlogan;
     app.resolveSiteUrl = resolveSiteUrl;
     app.resolvePageEditUrl = resolvePageEditUrl;

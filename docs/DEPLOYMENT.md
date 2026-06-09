@@ -113,6 +113,13 @@ Verification checklist
    to show the logged-in user avatar and name.
 
 Troubleshooting
+ - If only the site owner can log in, the GitHub App is probably still **private**.
+   Publish it under GitHub App settings → Public access so any GitHub user can
+   authorize it.
+ - If login completes on GitHub but the site still shows signed out, browsers may
+   be blocking third-party cookies between `genepedia.org` and the API host. Deploy
+   `github-handoff.php` and the latest `full-header.js` / `site-info.js`, which
+   exchange a one-time login code for a stored access token.
  - If cookies don't persist after the redirect, confirm:
    - The API host is HTTPS and `GITHUB_SESSION_SAMESITE=None` is set.
    - `Access-Control-Allow-Origin` is echoing the requesting origin and
