@@ -242,6 +242,7 @@ class PeoplePage extends HTMLElement {
     this.__rendered = true;
     this.innerHTML = PEOPLE_PAGE_TEMPLATE;
     this.#syncEditHref();
+    this.#syncProfileEditLink();
     this.#bindMenus();
     this.#bindTabs();
     this.__titleLoadPromise = Promise.all([
@@ -454,6 +455,18 @@ class PeoplePage extends HTMLElement {
 
     const editHref = this.getAttribute('edit-href')?.trim();
     editButton.href = editHref || '#';
+  }
+
+  #syncProfileEditLink() {
+    const toolbar = this.querySelector('full-page-toolbar');
+    const personId = this.#resolvePersonId();
+    if (!toolbar || !personId) {
+      return;
+    }
+
+    toolbar.setAttribute('edit-source', `people/${personId}/data/profile.html`);
+    toolbar.setAttribute('edit-content-selector', '__fragment__');
+    toolbar.removeAttribute('edit-href');
   }
 
   #bindMenus() {

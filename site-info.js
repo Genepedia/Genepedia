@@ -40,7 +40,7 @@
         return String(path || '').replace(/\\/g, '/').replace(/^\//, '').trim();
     }
 
-    function resolvePageEditUrl(sourcePath, returnPath) {
+    function resolvePageEditUrl(sourcePath, returnPath, options) {
         const cleanSource = normalizeSitePath(sourcePath);
         const cleanReturn = normalizeSitePath(returnPath || cleanSource);
         const editPath = normalizeSitePath(app.PageEditPath || DEFAULTS.PageEditPath || 'pages/edit.html');
@@ -48,6 +48,10 @@
         url.searchParams.set('source', cleanSource);
         if (cleanReturn) {
             url.searchParams.set('return', cleanReturn);
+        }
+        const contentSelector = String(options?.contentSelector || '').trim();
+        if (contentSelector) {
+            url.searchParams.set('content-selector', contentSelector);
         }
         return url.href;
     }
