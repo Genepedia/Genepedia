@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-09T20:50:54.900Z",
+  "generatedAt": "2026-06-10T21:25:05.286Z",
   "people": [
     {
       "id": "1",
@@ -54,12 +54,15 @@
     {
       "id": "11",
       "firstName": "Elon",
-      "lastName": "Musk"
+      "lastName": "Musk",
+      "birthYear": "1971"
     },
     {
       "id": "15",
       "firstName": "Nelson",
-      "lastName": "Mandela"
+      "lastName": "Mandela",
+      "birthYear": "1918",
+      "deathYear": "2013"
     },
     {
       "id": "16",
@@ -99,17 +102,22 @@
     {
       "id": "23",
       "firstName": "Graça",
-      "lastName": "Machel"
+      "lastName": "Machel",
+      "birthYear": "1945"
     },
     {
       "id": "24",
       "firstName": "Evelyn",
-      "lastName": "Mase"
+      "lastName": "Mase",
+      "birthYear": "1922",
+      "deathYear": "2004"
     },
     {
       "id": "25",
       "firstName": "Winnie",
-      "lastName": "Madikizela-Mandela"
+      "lastName": "Madikizela-Mandela",
+      "birthYear": "1936",
+      "deathYear": "2018"
     }
   ]
 }
