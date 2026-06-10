@@ -319,9 +319,6 @@
                 }
             }
 
-            if (saveGroup) {
-                saveGroup.hidden = isInfobox;
-            }
         };
 
         sectionTabs.querySelectorAll('[data-edit-tab]').forEach((tab) => {

@@ -123,6 +123,22 @@
         window.location.assign(window.PeopleRegistry.resolvePersonProfileUrl(chosenId));
     }
 
+    async function navigateToNewTree() {
+        try {
+            await ensurePeopleRegistryScript();
+        } catch (error) {
+            console.warn('New tree navigation failed: could not load people registry.', error);
+            return;
+        }
+
+        const people = await window.PeopleRegistry.loadPeopleRegistry();
+        const numericIds = people
+            .map((person) => Number.parseInt(String(person?.id || ''), 10))
+            .filter((id) => Number.isFinite(id));
+        const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
+        window.location.assign(resolveSiteUrl(`people/edit.html?person=${nextId}`));
+    }
+
     const textTemplates = new WeakMap();
     const attributeTemplates = new WeakMap();
     const titleTemplates = new WeakMap();
@@ -370,6 +386,7 @@
     app.resolveSiteUrl = resolveSiteUrl;
     app.resolvePageEditUrl = resolvePageEditUrl;
     app.navigateToRandomProfile = navigateToRandomProfile;
+    app.navigateToNewTree = navigateToNewTree;
     app.applyBranding = applyBranding;
     app.BrandToken = BRAND_TOKEN;
 

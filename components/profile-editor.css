@@ -383,30 +383,106 @@ body.theme-dark .pie__group {
 /* Date range UI */
 .pie__field--date .pie__date-range {
   display: inline-flex;
-  gap: 0.5rem;
   align-items: center;
-  flex-wrap: wrap;
-}
-.pie__field--date .pie__date-input {
-  min-width: 12rem;
-  padding: 0.45rem 0.6rem;
-}
-.pie__field--date .pie__date-to {
-  display: none;
-  align-items: center;
-}
-.pie__field--date .pie__date-and {
-  display: none;
-  color: #6b7280;
-  margin: 0 0.25rem;
-}
-.pie__field--date.is-between .pie__date-to {
-  display: inline-flex;
-}
-.pie__field--date.is-between .pie__date-and {
-  display: inline-block;
 }
 
+.pie__date-range-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pie__field--date .pie__date-range-row--divider,
+.pie__field--date .pie__date-range-row--to {
+  display: none;
+}
+
+.pie__field--date.is-between {
+  align-items: flex-start;
+}
+
+.pie__field--date.is-between .pie__date-range {
+  display: grid;
+  gap: 0.65rem;
+  width: min(100%, 20rem);
+}
+
+.pie__field--date.is-between .pie__date-range-row,
+.pie__field--date.is-between .pie__date-range-row--divider,
+.pie__field--date.is-between .pie__date-range-row--to {
+  display: flex;
+}
+
+.pie__field--date.is-between .pie__date-range-row--divider {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+body.theme-dark .pie__field--date.is-between .pie__date-range-row--divider {
+  color: #a7adb4;
+}
+.pie__date-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  min-width: 12rem;
+}
+
+.pie__field--date .pie__date-input {
+  min-width: 0;
+  width: 100%;
+  padding: 0.45rem 2.35rem 0.45rem 0.6rem;
+  color-scheme: light;
+}
+
+body.theme-dark .pie__field--date .pie__date-input {
+  color-scheme: dark;
+}
+
+.pie__date-input-wrap .pie__date-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  width: 2.35rem;
+  height: 100%;
+  cursor: pointer;
+}
+
+.pie__date-picker-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0 0.125rem 0.125rem 0;
+  background: transparent;
+  color: #54595d;
+  cursor: pointer;
+}
+
+.pie__date-picker-button:hover,
+.pie__date-picker-button:focus-visible {
+  color: #3366cc;
+  outline: none;
+  background: rgba(51, 102, 204, 0.08);
+}
+
+body.theme-dark .pie__date-picker-button {
+  color: #a7adb4;
+}
+
+body.theme-dark .pie__date-picker-button:hover,
+body.theme-dark .pie__date-picker-button:focus-visible {
+  color: #6b9eff;
+  background: rgba(107, 158, 255, 0.12);
+}
 /* Cause-of-death suggestion dropdown */
 .pie__field--suggest {
   position: relative;
@@ -445,7 +521,8 @@ body.theme-dark .pie__suggestions {
   border-color: rgba(255,255,255,0.06);
 }
 
-.pie__row--location {
+.pie__row--location,
+.pie__row--date {
   align-items: start;
 }
 
@@ -482,6 +559,7 @@ body.theme-dark .pie__label {
 body.theme-dark .pie__field input[type="text"],
 body.theme-dark .pie__field input[type="number"],
 body.theme-dark .pie__field input[type="search"],
+body.theme-dark .pie__field input[type="date"],
 body.theme-dark .pie__field select {
   border-color: rgba(255, 255, 255, 0.3);
   background: #101418;
@@ -497,11 +575,10 @@ body.theme-dark .pie__field select {
 
 /* Ensure selects and native date inputs visually match height */
 .pie__field select,
-.pie__field input[type="date"] {
+.pie__field input[type="date"],
+.pie__date-input-wrap {
   box-sizing: border-box;
   height: 2.4rem;
-  display: inline-flex;
-  align-items: center;
 }
 
 .pie__field--split {
@@ -600,24 +677,75 @@ body.theme-dark .pie__location-empty {
 }
 
 /* Photo upload & media picker */
-.pie__field--photo {
+.pie__group--photo {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.pie__photo-preview-wrap {
   display: flex;
-  gap: 0.5rem;
-  align-items: center;
+  justify-content: center;
 }
+
+.pie__photo-preview-img {
+  display: block;
+  max-width: min(100%, 16rem);
+  max-height: 14rem;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+}
+
+body.theme-dark .pie__photo-preview-img {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #1e2125;
+}
+
+.pie__photo-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  padding: 1.25rem 0.75rem;
+  text-align: center;
+}
+
+.pie__photo-empty[hidden] {
+  display: none;
+}
+
+.pie__photo-empty-icon {
+  font-size: 2rem;
+  color: #72777d;
+}
+
+body.theme-dark .pie__photo-empty-icon {
+  color: #a7adb4;
+}
+
+.pie__photo-empty-text {
+  margin: 0;
+  color: #54595d;
+  font-size: 0.9rem;
+}
+
+body.theme-dark .pie__photo-empty-text {
+  color: #a7adb4;
+}
+
 .pie__photo-actions {
-  display: inline-flex;
-  gap: 0.4rem;
-  margin-left: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
-.pie__button-secondary {
-  padding: 0.35rem 0.6rem;
-  border-radius: 0.125rem;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
+
+.pie__photo-actions .page-editor__button i {
+  font-size: 1rem;
+  line-height: 1;
 }
+
 .pie__media-modal {
   position: fixed;
   inset: 0;
@@ -748,8 +876,8 @@ body.theme-dark .pie__location-toggle {
 }
 
 .pie__field--date input[type="text"],
-.pie__field--date input[type="date"] {
-  width: 9rem;
+.pie__field--date .pie__date-input-wrap {
+  width: 12rem;
   flex: 0 0 auto;
 }
 
@@ -781,14 +909,6 @@ body.theme-dark .pie__date-preview {
   font-size: 0.95em;
 }
 
-.pie__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
-
 .pie__save {
   display: inline-flex;
   align-items: center;
@@ -812,11 +932,6 @@ body.theme-dark .pie__date-preview {
 .pie__save:disabled {
   opacity: 0.6;
   cursor: progress;
-}
-
-.pie__actions-note {
-  font-size: 0.8rem;
-  color: #72777d;
 }
 
 @media (max-width: 600px) {

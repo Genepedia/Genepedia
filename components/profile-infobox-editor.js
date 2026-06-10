@@ -44,7 +44,8 @@
 		{ key: "country", label: "Country" },
 	];
 
-	const COMMON_CAUSES = [
+	const DEATH_CAUSES_DATA_PATH = "data/death-causes.json";
+	const DEATH_CAUSES_FALLBACK = [
 		"Natural causes",
 		"Heart attack",
 		"Myocardial infarction",
@@ -67,8 +68,10 @@
 		"Old age",
 		"Tuberculosis",
 	];
+	let deathCausesListPromise = null;
 
-	const COMMON_OCCUPATIONS = [
+	const OCCUPATIONS_DATA_PATH = "data/occupations-onet-usa.json";
+	const OCCUPATIONS_FALLBACK = [
 		"Farmer",
 		"Teacher",
 		"Doctor",
@@ -100,6 +103,84 @@
 		"Publisher",
 		"Business owner",
 	];
+	let occupationsListPromise = null;
+
+	function resolveOccupationsUrl() {
+		return resolveSiteUrl(OCCUPATIONS_DATA_PATH);
+	}
+
+	function loadOccupationsList() {
+		if (!occupationsListPromise) {
+			occupationsListPromise = fetch(resolveOccupationsUrl(), { cache: "force-cache" })
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error(`Failed to load occupations list: ${response.status}`);
+					}
+					return response.json();
+				})
+				.then((payload) => {
+					const occupations = Array.isArray(payload?.occupations) ? payload.occupations : [];
+					if (occupations.length < 1000) {
+						throw new Error(`Occupations list is too small (${occupations.length}).`);
+					}
+					return occupations;
+				})
+				.catch((error) => {
+					console.warn("Using fallback occupations list", error);
+					return OCCUPATIONS_FALLBACK;
+				});
+		}
+
+		return occupationsListPromise;
+	}
+
+	function matchSuggestionList(items, query, limit = 8) {
+		const trimmedQuery = String(query || "").trim();
+		if (!trimmedQuery) {
+			return items.slice(0, limit);
+		}
+
+		const low = trimmedQuery.toLocaleLowerCase("en-US");
+		const startsWith = [];
+		const includes = [];
+
+		for (const item of items) {
+			const value = String(item || "");
+			const lowValue = value.toLocaleLowerCase("en-US");
+			if (lowValue.startsWith(low)) {
+				startsWith.push(value);
+			} else if (lowValue.includes(low)) {
+				includes.push(value);
+			}
+		}
+
+		return [...startsWith, ...includes].slice(0, limit);
+	}
+
+	function loadDeathCausesList() {
+		if (!deathCausesListPromise) {
+			deathCausesListPromise = fetch(resolveSiteUrl(DEATH_CAUSES_DATA_PATH), { cache: "force-cache" })
+				.then((response) => {
+					if (!response.ok) {
+						throw new Error(`Failed to load death causes list: ${response.status}`);
+					}
+					return response.json();
+				})
+				.then((payload) => {
+					const causes = Array.isArray(payload?.causes) ? payload.causes : [];
+					if (causes.length < 100) {
+						throw new Error(`Death causes list is too small (${causes.length}).`);
+					}
+					return causes;
+				})
+				.catch((error) => {
+					console.warn("Using fallback death causes list", error);
+					return DEATH_CAUSES_FALLBACK;
+				});
+		}
+
+		return deathCausesListPromise;
+	}
 
 	const LOCATION_SEARCH_MIN_QUERY_LENGTH = 2;
 	const LOCATION_SEARCH_LIMIT = 6;
@@ -186,6 +267,66 @@
 		}
 		match = text.match(/(\d{4})/);
 		return match ? match[1] : "";
+	}
+
+	function normalizeStoredDate(value) {
+		const text = String(value || "").trim();
+		if (!text) return "";
+
+		const slashDate = text.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+		if (slashDate) {
+			return `${slashDate[1]}-${slashDate[2].padStart(2, "0")}-${slashDate[3].padStart(2, "0")}`;
+		}
+
+		const yearMonth = text.match(/^(\d{4})\/(\d{1,2})$/);
+		if (yearMonth) {
+			return `${yearMonth[1]}-${yearMonth[2].padStart(2, "0")}`;
+		}
+
+		if (/^\d{4}-\d{2}-\d{2}$/.test(text) || /^\d{4}-\d{2}$/.test(text) || /^\d{4}$/.test(text)) {
+			return text;
+		}
+
+		return text;
+	}
+
+	function storedToDateInputValue(value) {
+		return normalizeStoredDate(value);
+	}
+
+	function canonicalizeInfoboxData(data) {
+		const copy = normalizeData(data);
+		const dateGroups = ["birth", "baptism", "death", "burial"];
+
+		for (const group of dateGroups) {
+			const entry = copy[group];
+			if (!entry || typeof entry !== "object") continue;
+
+			delete entry.dateTo;
+			delete entry.circaTo;
+
+			if (entry.precision === "between") {
+				const parts = String(entry.date || "").split("|");
+				entry.date = parts.map((part) => normalizeStoredDate(part.trim())).join("|");
+			} else {
+				entry.date = normalizeStoredDate(entry.date);
+			}
+
+			entry.location = normalizeLocationData(entry.location, entry.place);
+			entry.place = formatLocationSummary(entry.location, entry.place);
+		}
+
+		copy.lastResidenceLocation = normalizeLocationData(copy.lastResidenceLocation, copy.lastResidence);
+		copy.lastResidence = formatLocationSummary(copy.lastResidenceLocation, copy.lastResidence);
+		copy.photo = {
+			src: String(copy.photo?.src || "").trim(),
+			alt: String(copy.photo?.alt || "").trim(),
+		};
+		copy.alsoKnownAs = [...(copy.alsoKnownAs || [])]
+			.map((value) => String(value).trim())
+			.filter(Boolean);
+
+		return copy;
 	}
 
 	function emptyLocationData() {
@@ -287,6 +428,31 @@
 			fallbackLabel,
 		]);
 		return secondary.join(", ");
+	}
+
+	function renderDateInput(dataDate) {
+		return `<span class="pie__date-input-wrap">
+			<input type="date" data-date="${dataDate}" class="pie__date-input">
+			<button type="button" class="pie__date-picker-button" aria-label="Choose date">
+				<i class="bi bi-calendar3" aria-hidden="true"></i>
+			</button>
+		</span>`;
+	}
+
+	function renderDateRange(group) {
+		return `<div class="pie__date-range">
+			<div class="pie__date-range-row pie__date-range-row--from">
+				${renderDateInput(`${group}.date`)}
+				<label class="pie__circa"><input type="checkbox" data-date="${group}.circa"> Circa</label>
+			</div>
+			<div class="pie__date-range-row pie__date-range-row--divider">
+				<span class="pie__date-and">and</span>
+			</div>
+			<div class="pie__date-range-row pie__date-range-row--to">
+				${renderDateInput(`${group}.dateTo`)}
+				<label class="pie__circa"><input type="checkbox" data-date="${group}.circaTo"> Circa</label>
+			</div>
+		</div>`;
 	}
 
 	function renderLocationField({ path, id, placeholder }) {
@@ -658,19 +824,11 @@
 
 			<fieldset class="pie__group" data-event="birth">
 				<legend class="pie__legend">Birth</legend>
-				<div class="pie__row">
+				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date of birth</span>
 					<div class="pie__field pie__field--date">
 						<select data-date="birth.precision"></select>
-						<div class="pie__date-range">
-							<input type="date" data-date="birth.date" placeholder="YYYY-MM-DD" inputmode="numeric" class="pie__date-input">
-							<label class="pie__circa"><input type="checkbox" data-date="birth.circa"> Circa</label>
-							<span class="pie__date-and" aria-hidden>and</span>
-							<span class="pie__date-to">
-								<input type="date" data-date="birth.dateTo" placeholder="YYYY-MM-DD" inputmode="numeric" class="pie__date-input">
-								<label class="pie__circa"><input type="checkbox" data-date="birth.circaTo"> Circa</label>
-							</span>
-						</div>
+						${renderDateRange("birth")}
 						<span class="pie__date-preview" data-preview="birth"></span>
 					</div>
 				</div>
@@ -683,19 +841,11 @@
 
 			<fieldset class="pie__group" data-event="baptism">
 				<legend class="pie__legend">Baptism</legend>
-				<div class="pie__row">
+				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date of baptism</span>
 					<div class="pie__field pie__field--date">
 						<select data-date="baptism.precision"></select>
-						<div class="pie__date-range">
-							<input type="date" data-date="baptism.date" placeholder="YYYY-MM-DD" inputmode="numeric" class="pie__date-input">
-							<label class="pie__circa"><input type="checkbox" data-date="baptism.circa"> Circa</label>
-							<span class="pie__date-and" aria-hidden>and</span>
-							<span class="pie__date-to">
-								<input type="date" data-date="baptism.dateTo" placeholder="YYYY-MM-DD" inputmode="numeric" class="pie__date-input">
-								<label class="pie__circa"><input type="checkbox" data-date="baptism.circaTo"> Circa</label>
-							</span>
-						</div>
+						${renderDateRange("baptism")}
 						<span class="pie__date-preview" data-preview="baptism"></span>
 					</div>
 				</div>
@@ -707,19 +857,11 @@
 
 			<fieldset class="pie__group pie__group--death" data-event="death">
 				<legend class="pie__legend">Death</legend>
-				<div class="pie__row">
+				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date of death</span>
 					<div class="pie__field pie__field--date">
 						<select data-date="death.precision"></select>
-						<div class="pie__date-range">
-							<input type="date" data-date="death.date" placeholder="YYYY-MM-DD" inputmode="numeric" class="pie__date-input">
-							<label class="pie__circa"><input type="checkbox" data-date="death.circa"> Circa</label>
-							<span class="pie__date-and" aria-hidden>and</span>
-							<span class="pie__date-to">
-								<input type="date" data-date="death.dateTo" placeholder="YYYY-MM-DD" inputmode="numeric" class="pie__date-input">
-								<label class="pie__circa"><input type="checkbox" data-date="death.circaTo"> Circa</label>
-							</span>
-						</div>
+						${renderDateRange("death")}
 						<span class="pie__date-preview" data-preview="death"></span>
 					</div>
 				</div>
@@ -742,19 +884,11 @@
 						<label><input type="radio" name="pie-burial-type" value="cremation"> Cremation</label>
 					</div>
 				</div>
-				<div class="pie__row">
+				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date</span>
 					<div class="pie__field pie__field--date">
 						<select data-date="burial.precision"></select>
-						<div class="pie__date-range">
-							<input type="date" data-date="burial.date" placeholder="YYYY-MM-DD" inputmode="numeric" class="pie__date-input">
-							<label class="pie__circa"><input type="checkbox" data-date="burial.circa"> Circa</label>
-							<span class="pie__date-and" aria-hidden>and</span>
-							<span class="pie__date-to">
-								<input type="date" data-date="burial.dateTo" placeholder="YYYY-MM-DD" inputmode="numeric" class="pie__date-input">
-								<label class="pie__circa"><input type="checkbox" data-date="burial.circaTo"> Circa</label>
-							</span>
-						</div>
+						${renderDateRange("burial")}
 						<span class="pie__date-preview" data-preview="burial"></span>
 					</div>
 				</div>
@@ -764,25 +898,31 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="pie__group">
+			<fieldset class="pie__group pie__group--photo">
 				<legend class="pie__legend">Photo</legend>
-				<div class="pie__row">
-					<label class="pie__label" for="pie-photo-src">Image file</label>
-					<div class="pie__field pie__field--photo">
-						<input id="pie-photo-src" type="text" data-field="photo.src" placeholder="images/portrait.jpg">
-						<div class="pie__photo-actions">
-							<input id="pie-photo-file" type="file" accept="image/*" hidden>
-							<button type="button" class="pie__button-secondary" data-photo-upload>Upload…</button>
-							<button type="button" class="pie__button-secondary" data-photo-choose>Choose from media</button>
-							<button type="button" class="pie__button-secondary" data-photo-preview hidden>Preview</button>
-						</div>
-					</div>
+				<input id="pie-photo-src" type="hidden" data-field="photo.src">
+				<div class="pie__photo-preview-wrap" id="pie-photo-preview-wrap" hidden>
+					<img id="pie-photo-preview-img" class="pie__photo-preview-img" alt="">
 				</div>
-				<div class="pie__row">
-					<label class="pie__label" for="pie-photo-alt">Alt text</label>
-					<div class="pie__field"><input id="pie-photo-alt" type="text" data-field="photo.alt" placeholder="Describe the photo"></div>
+				<div class="pie__photo-empty" id="pie-photo-empty">
+					<i class="bi bi-image pie__photo-empty-icon" aria-hidden="true"></i>
+					<p class="pie__photo-empty-text">No photo selected</p>
 				</div>
-				<p class="pie__hint">Upload images for review, or choose an existing image from this profile's Media gallery.</p>
+				<div class="pie__photo-actions">
+					<input id="pie-photo-file" type="file" accept="image/*" hidden>
+					<button type="button" class="page-editor__button" data-photo-upload>
+						<i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+						<span>Upload photo</span>
+					</button>
+					<button type="button" class="page-editor__button" data-photo-choose>
+						<i class="bi bi-images" aria-hidden="true"></i>
+						<span>Choose from media</span>
+					</button>
+					<button type="button" class="page-editor__button page-editor__button--small page-editor__sidebar-delete" data-photo-remove hidden>
+						<i class="bi bi-trash" aria-hidden="true"></i>
+						<span>Remove photo</span>
+					</button>
+				</div>
 				<div class="pie__media-modal" hidden aria-hidden="true">
 					<div class="pie__media-modal-backdrop" data-media-modal-close></div>
 					<div class="pie__media-modal-panel">
@@ -797,10 +937,6 @@
 					</div>
 				</div>
 			</fieldset>
-
-			<div class="pie__actions">
-				<span class="pie__actions-note">Saving opens a pull request for review.</span>
-			</div>
 		</form>
 	`;
 
@@ -815,10 +951,14 @@
 			this.__familyHtml = "";
 			this.__data = emptyData();
 			this.__locationFields = new Map();
+			this.__savedSnapshot = "";
+			this.__establishingBaseline = false;
 
 			this.innerHTML = TEMPLATE;
 			this.#populateSelects();
 			this.#bind();
+			void loadOccupationsList();
+			void loadDeathCausesList();
 
 			// Register a provider so the page editor can collect this infobox
 			// fragment and include it in the same PR when the global Save is used.
@@ -835,6 +975,14 @@
 				}
 			};
 			window.__extraPublishFileProviders.push(this.__extraPublishProvider);
+
+			if (!Array.isArray(window.__extraDirtyStateProviders)) window.__extraDirtyStateProviders = [];
+			this.__dirtyStateProvider = () => this.#isDirty();
+			window.__extraDirtyStateProviders.push(this.__dirtyStateProvider);
+
+			if (!Array.isArray(window.__extraDirtyStateResetCallbacks)) window.__extraDirtyStateResetCallbacks = [];
+			this.__dirtyStateReset = () => this.#setSavedBaseline({ quiet: true });
+			window.__extraDirtyStateResetCallbacks.push(this.__dirtyStateReset);
 
 			if (!/^[a-zA-Z0-9_-]{1,64}$/.test(this.__personId)) {
 				this.#setStatus("No valid profile id was provided.", "error");
@@ -868,6 +1016,43 @@
 			});
 		}
 
+		#openDatePicker(input) {
+			if (!input || input.disabled) {
+				return;
+			}
+
+			input.focus({ preventScroll: true });
+
+			try {
+				if (typeof input.showPicker === "function") {
+					input.showPicker();
+				}
+			} catch (error) {
+				// Some browsers block showPicker outside a direct user gesture.
+			}
+		}
+
+		#bindDatePickers() {
+			this.querySelectorAll(".pie__date-input-wrap").forEach((wrap) => {
+				const input = wrap.querySelector(".pie__date-input");
+				const button = wrap.querySelector(".pie__date-picker-button");
+				if (!input || input.dataset.pieDatePickerBound === "true") {
+					return;
+				}
+
+				input.dataset.pieDatePickerBound = "true";
+
+				input.addEventListener("click", () => {
+					this.#openDatePicker(input);
+				});
+
+				button?.addEventListener("click", (event) => {
+					event.preventDefault();
+					this.#openDatePicker(input);
+				});
+			});
+		}
+
 		#bind() {
 			const { form } = this.#els();
 			if (!form) return;
@@ -875,6 +1060,7 @@
 			this.#bindCauseSuggestionFields();
 			this.#bindOccupationSuggestionFields();
 			this.#bindPhotoFields();
+			this.#bindDatePickers();
 
 			form.addEventListener("submit", (event) => {
 				event.preventDefault();
@@ -897,6 +1083,60 @@
 				if (target?.matches?.('[data-date$=".precision"]')) this.#updateDateVisibility();
 				if (target?.matches?.('[data-date]')) this.#updatePreviews();
 			});
+
+			const notifyDirty = () => {
+				if (this.__establishingBaseline) {
+					return;
+				}
+				this.#notifyDirtyState();
+			};
+			form.addEventListener("input", notifyDirty, true);
+			form.addEventListener("change", notifyDirty, true);
+		}
+
+		#snapshotFormState() {
+			try {
+				return JSON.stringify(canonicalizeInfoboxData(this.#collect()));
+			} catch (error) {
+				return "";
+			}
+		}
+
+		#setSavedBaseline({ quiet = false } = {}) {
+			this.__establishingBaseline = true;
+			this.__suppressDirty = false;
+			this.__savedSnapshot = this.#snapshotFormState();
+			try {
+				this.__data = normalizeData(JSON.parse(this.__savedSnapshot || "{}"));
+			} catch (error) {
+				this.__data = this.#collect();
+			}
+			this.__establishingBaseline = false;
+			if (!quiet) {
+				this.#notifyDirtyState();
+			}
+		}
+
+		#isDirty() {
+			if (this.__suppressDirty || this.__establishingBaseline) {
+				return false;
+			}
+			if (!this.__savedSnapshot) {
+				return false;
+			}
+			return this.#snapshotFormState() !== this.__savedSnapshot;
+		}
+
+		discardUnsavedChanges() {
+			this.__suppressDirty = true;
+			this.#notifyDirtyState();
+		}
+
+		#notifyDirtyState() {
+			const editor = document.querySelector("page-editor");
+			if (editor && typeof editor.refreshDirtyState === "function") {
+				editor.refreshDirtyState();
+			}
 		}
 
 		async #loadExisting() {
@@ -929,15 +1169,29 @@
 			}
 
 			this.#fillForm();
-			this.#setStatus("");
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
+					this.#setSavedBaseline({ quiet: true });
+					this.#notifyDirtyState();
+					this.#setStatus("");
+				});
+			});
 		}
 
-			disconnectedCallback() {
-				if (this.__extraPublishProvider && Array.isArray(window.__extraPublishFileProviders)) {
-					const idx = window.__extraPublishFileProviders.indexOf(this.__extraPublishProvider);
-					if (idx >= 0) window.__extraPublishFileProviders.splice(idx, 1);
-				}
+		disconnectedCallback() {
+			if (this.__extraPublishProvider && Array.isArray(window.__extraPublishFileProviders)) {
+				const idx = window.__extraPublishFileProviders.indexOf(this.__extraPublishProvider);
+				if (idx >= 0) window.__extraPublishFileProviders.splice(idx, 1);
 			}
+			if (this.__dirtyStateProvider && Array.isArray(window.__extraDirtyStateProviders)) {
+				const idx = window.__extraDirtyStateProviders.indexOf(this.__dirtyStateProvider);
+				if (idx >= 0) window.__extraDirtyStateProviders.splice(idx, 1);
+			}
+			if (this.__dirtyStateReset && Array.isArray(window.__extraDirtyStateResetCallbacks)) {
+				const idx = window.__extraDirtyStateResetCallbacks.indexOf(this.__dirtyStateReset);
+				if (idx >= 0) window.__extraDirtyStateResetCallbacks.splice(idx, 1);
+			}
+		}
 
 		#fillForm() {
 			const data = this.__data;
@@ -954,6 +1208,7 @@
 			this.querySelectorAll("[data-date]").forEach((input) => {
 				const value = getPathValue(data, input.dataset.date);
 				if (input.type === "checkbox") input.checked = Boolean(value);
+				else if (input.type === "date") input.value = storedToDateInputValue(value);
 				else input.value = value ?? "";
 			});
 
@@ -962,6 +1217,7 @@
 			this.#setRadio("status", data.status);
 			this.#setRadio("gender", data.gender);
 			this.#setRadio("burial.type", data.burial.type);
+			this.#syncPhotoUi();
 
 			// If any group uses the 'between' precision, populate the secondary
 			// date input (dateTo) from the stored value which may be encoded as
@@ -976,8 +1232,8 @@
 					const to = parts[1] ? parts[1].trim() : "";
 					const fromInput = this.querySelector(`[data-date="${group}.date"]`);
 					const toInput = this.querySelector(`[data-date="${group}.dateTo"]`);
-					if (fromInput) fromInput.value = from;
-					if (toInput) toInput.value = to;
+					if (fromInput) fromInput.value = storedToDateInputValue(from);
+					if (toInput) toInput.value = storedToDateInputValue(to);
 					// Mirror existing single circa flag into the secondary circa checkbox
 					const circa = Boolean(getPathValue(data, `${group}.circa`));
 					const toCirca = this.querySelector(`[data-date="${group}.circaTo"]`);
@@ -1240,11 +1496,13 @@
 
 			input.addEventListener('input', () => {
 				window.clearTimeout(state.debounceTimer);
-				state.debounceTimer = window.setTimeout(() => this.#runCauseSearch(), 160);
+				state.debounceTimer = window.setTimeout(() => {
+					void this.#runCauseSearch();
+				}, 160);
 			});
 
 			input.addEventListener('focus', () => {
-				if (input.value.trim()) this.#runCauseSearch();
+				void this.#runCauseSearch();
 			});
 
 			input.addEventListener('blur', () => {
@@ -1263,19 +1521,17 @@
 			});
 		}
 
-		#runCauseSearch() {
+		async #runCauseSearch() {
 			const state = this.__causeSuggest;
 			if (!state || !state.input) return;
-			const q = String(state.input.value || '').trim();
-			if (!q) {
-				state.matches = COMMON_CAUSES.slice(0, 8);
-				this.#renderCauseSuggestions();
+			const causes = await loadDeathCausesList();
+			const requestId = (state.searchRequestId = (state.searchRequestId || 0) + 1);
+			const q = String(state.input.value || "").trim();
+			const matches = matchSuggestionList(causes, q, 8);
+			if (requestId !== state.searchRequestId) {
 				return;
 			}
-			const low = q.toLowerCase();
-			let matches = COMMON_CAUSES.filter((c) => c.toLowerCase().includes(low));
-			if (!matches.length) matches = COMMON_CAUSES.filter((c) => c.toLowerCase().startsWith(low));
-			state.matches = matches.slice(0, 8);
+			state.matches = matches;
 			this.#renderCauseSuggestions();
 		}
 
@@ -1393,11 +1649,13 @@
 
 			input.addEventListener('input', () => {
 				window.clearTimeout(state.debounceTimer);
-				state.debounceTimer = window.setTimeout(() => this.#runOccupationSearch(), 160);
+				state.debounceTimer = window.setTimeout(() => {
+					void this.#runOccupationSearch();
+				}, 160);
 			});
 
 			input.addEventListener('focus', () => {
-				if (input.value.trim()) this.#runOccupationSearch();
+				void this.#runOccupationSearch();
 			});
 
 			input.addEventListener('blur', () => {
@@ -1416,19 +1674,17 @@
 			});
 		}
 
-		#runOccupationSearch() {
+		async #runOccupationSearch() {
 			const state = this.__occupationSuggest;
 			if (!state || !state.input) return;
+			const occupations = await loadOccupationsList();
+			const requestId = (state.searchRequestId = (state.searchRequestId || 0) + 1);
 			const q = String(state.input.value || '').trim();
-			if (!q) {
-				state.matches = COMMON_OCCUPATIONS.slice(0, 8);
-				this.#renderOccupationSuggestions();
+			const matches = matchSuggestionList(occupations, q, 8);
+			if (requestId !== state.searchRequestId) {
 				return;
 			}
-			const low = q.toLowerCase();
-			let matches = COMMON_OCCUPATIONS.filter((c) => c.toLowerCase().includes(low));
-			if (!matches.length) matches = COMMON_OCCUPATIONS.filter((c) => c.toLowerCase().startsWith(low));
-			state.matches = matches.slice(0, 8);
+			state.matches = matches;
 			this.#renderOccupationSuggestions();
 		}
 
@@ -1519,39 +1775,113 @@
 		/* Photo picker + upload                                               */
 		/* ------------------------------------------------------------------ */
 
+		#resolvePhotoPreviewUrl(src) {
+			const trimmed = String(src || "").trim();
+			if (!trimmed) {
+				return "";
+			}
+			if (/^https?:\/\//i.test(trimmed)) {
+				return trimmed;
+			}
+
+			const normalized = trimmed.replace(/^\.?\//, "");
+			if (normalized.startsWith("people/")) {
+				return resolveSiteUrl(normalized);
+			}
+
+			return resolveSiteUrl(`people/${this.__personId}/data/${normalized}`);
+		}
+
+		#setPhotoSrc(src) {
+			const srcInput = this.querySelector("#pie-photo-src");
+			if (!srcInput) {
+				return;
+			}
+
+			const trimmed = String(src || "").trim();
+			if (this.__data?.photo && trimmed !== this.__data.photo.src) {
+				this.__data.photo.alt = "";
+			}
+			srcInput.value = trimmed;
+			srcInput.dispatchEvent(new Event("input", { bubbles: true }));
+			if (this.__data?.photo) {
+				this.__data.photo.src = trimmed;
+			}
+			this.#syncPhotoUi();
+		}
+
+		#syncPhotoUi() {
+			const srcInput = this.querySelector("#pie-photo-src");
+			const previewWrap = this.querySelector("#pie-photo-preview-wrap");
+			const previewImg = this.querySelector("#pie-photo-preview-img");
+			const emptyState = this.querySelector("#pie-photo-empty");
+			const removeBtn = this.querySelector("[data-photo-remove]");
+			const src = String(srcInput?.value || "").trim();
+			const hasPhoto = Boolean(src);
+
+			if (previewWrap) {
+				previewWrap.hidden = !hasPhoto;
+			}
+			if (emptyState) {
+				emptyState.hidden = hasPhoto;
+			}
+			if (removeBtn) {
+				removeBtn.hidden = !hasPhoto;
+			}
+			if (previewImg) {
+				if (hasPhoto) {
+					const previewUrl = this.#resolvePhotoPreviewUrl(src);
+					previewImg.src = previewUrl;
+					previewImg.alt = String(this.__data?.photo?.alt || "").trim() || "Selected profile photo";
+				} else {
+					previewImg.removeAttribute("src");
+					previewImg.alt = "";
+				}
+			}
+		}
+
 		#bindPhotoFields() {
-			const srcInput = this.querySelector('#pie-photo-src');
-			const fileInput = this.querySelector('#pie-photo-file');
-			const uploadBtn = this.querySelector('[data-photo-upload]');
-			const chooseBtn = this.querySelector('[data-photo-choose]');
-			const previewBtn = this.querySelector('[data-photo-preview]');
-			const modal = this.querySelector('.pie__media-modal');
+			const fileInput = this.querySelector("#pie-photo-file");
+			const uploadBtn = this.querySelector("[data-photo-upload]");
+			const chooseBtn = this.querySelector("[data-photo-choose]");
+			const removeBtn = this.querySelector("[data-photo-remove]");
+			const modal = this.querySelector(".pie__media-modal");
 
 			if (uploadBtn && fileInput) {
-				uploadBtn.addEventListener('click', () => fileInput.click());
-				fileInput.addEventListener('change', async () => {
+				uploadBtn.addEventListener("click", () => fileInput.click());
+				fileInput.addEventListener("change", async () => {
 					const file = fileInput.files?.[0];
-					if (!file) return;
+					fileInput.value = "";
+					if (!file) {
+						return;
+					}
 					try {
 						const result = await this.#submitPhotoUpload(file);
 						if (result?.filename) {
-							srcInput.value = `images/${result.filename}`;
-							srcInput.dispatchEvent(new Event('input', { bubbles: true }));
-							this.#setStatus('Image submitted for review.', 'success');
+							this.#setPhotoSrc(`images/${result.filename}`);
+							this.#setStatus("Image submitted for review.", "success");
 						}
 					} catch (error) {
 						console.error(error);
-						this.#setStatus(error?.message || 'Could not upload image.', 'error');
+						this.#setStatus(error?.message || "Could not upload image.", "error");
 					}
 				});
 			}
 
 			if (chooseBtn && modal) {
-				chooseBtn.addEventListener('click', async () => {
+				chooseBtn.addEventListener("click", async () => {
 					await this.#openPhotoMediaPicker();
 				});
-				modal.addEventListener('click', (ev) => {
-					if (ev.target.closest('[data-media-modal-close]')) this.#closePhotoMediaPicker();
+				modal.addEventListener("click", (ev) => {
+					if (ev.target.closest("[data-media-modal-close]")) {
+						this.#closePhotoMediaPicker();
+					}
+				});
+			}
+
+			if (removeBtn) {
+				removeBtn.addEventListener("click", () => {
+					this.#setPhotoSrc("");
 				});
 			}
 		}
@@ -1623,12 +1953,8 @@
 				btn.className = 'pie__media-thumb';
 				btn.dataset.mediaName = img.name;
 				btn.innerHTML = `<img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.name)}"><span class="pie__media-thumb-label">${escapeHtml(img.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g,' '))}</span>`;
-				btn.addEventListener('click', () => {
-					const srcInput = this.querySelector('#pie-photo-src');
-					if (srcInput) {
-						srcInput.value = `images/${img.name}`;
-						srcInput.dispatchEvent(new Event('input', { bubbles: true }));
-					}
+				btn.addEventListener("click", () => {
+					this.#setPhotoSrc(`images/${img.name}`);
 					this.#closePhotoMediaPicker();
 				});
 				grid.append(btn);
@@ -1847,6 +2173,8 @@
 				}
 			});
 
+			data.photo.alt = String(this.__data?.photo?.alt || "");
+
 			this.querySelectorAll("[data-date]").forEach((input) => {
 				setPathValue(data, input.dataset.date, input.type === "checkbox" ? input.checked : input.value.trim());
 			});
@@ -1931,6 +2259,7 @@
 					? `pull request #${pr.number} (${pr.url})`
 					: "a pull request";
 				this.#setStatus(`Infobox saved — ${link} opened for review.`, "success");
+				this.#setSavedBaseline();
 			} catch (error) {
 				console.error(error);
 				this.#setStatus(error?.message || "Could not save the infobox.", "error");
