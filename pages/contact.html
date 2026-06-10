@@ -8,39 +8,221 @@
     <script src="../site-info.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../lib/Web-Framework/styles/common.css">
+    <style>
+        /* Minimal layout tweaks only — reuse shared .card and .form-group styles */
+        .contact-page { display: flex; justify-content: center; padding: 1rem 0; }
+        .contact-page__card { max-width: none; width: 100%; border-radius: 0; box-shadow: none; }
+        .contact-page #contact-form { width: 100%; }
+        .contact-page__form-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+        .contact-page .form-group { width: 100%; min-width: 0; }
+        .contact-page .form-group input[type="text"],
+        .contact-page .form-group textarea {
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 0;
+        }
+        .contact-page .form-group input::placeholder,
+        .contact-page .form-group textarea::placeholder {
+            color: var(--color-subtle);
+            opacity: 1;
+        }
+        .contact-page .form-group label .contact-page__required {
+            color: var(--color-subtle);
+            font-weight: 400;
+        }
+        .contact-reason-select {
+            position: relative;
+            width: 100%;
+        }
+        .contact-reason-select__native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .contact-reason-select__trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color-subtle);
+            border-radius: 0;
+            background: var(--background-color-neutral-subtle);
+            padding: 0.95rem 1rem;
+            color: var(--color-base);
+            font: inherit;
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .contact-reason-select__trigger:hover {
+            border-color: var(--color-progressive);
+        }
+        .contact-reason-select__trigger:focus-visible {
+            outline: 2px solid var(--color-progressive);
+            outline-offset: 2px;
+        }
+        .contact-reason-select__trigger[aria-expanded="true"] {
+            border-color: var(--color-progressive);
+            box-shadow: 0 0 0 1px var(--color-progressive);
+        }
+        .contact-reason-select__selected {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.65rem;
+            min-width: 0;
+        }
+        .contact-reason-select__icon {
+            color: var(--color-progressive);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .contact-reason-select__chevron {
+            color: var(--color-subtle);
+            flex-shrink: 0;
+            transition: transform 0.15s ease;
+        }
+        .contact-reason-select__trigger[aria-expanded="true"] .contact-reason-select__chevron {
+            transform: rotate(180deg);
+        }
+        .contact-reason-select__menu {
+            position: absolute;
+            z-index: var(--z-index-dropdown, 50);
+            top: calc(100% + 0.35rem);
+            left: 0;
+            right: 0;
+            margin: 0;
+            padding: 0.35rem;
+            list-style: none;
+            border: 1px solid var(--border-color-subtle);
+            border-radius: 0;
+            background: var(--background-color-base);
+            box-shadow: var(--box-shadow-small);
+        }
+        .contact-reason-select__menu[hidden] {
+            display: none;
+        }
+        .contact-reason-select__option {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.75rem 0.85rem;
+            cursor: pointer;
+            color: var(--color-base);
+        }
+        .contact-reason-select__option:hover,
+        .contact-reason-select__option:focus-visible {
+            background: var(--background-color-neutral-subtle);
+            outline: none;
+        }
+        .contact-reason-select__option--selected {
+            background: var(--background-color-neutral-subtle);
+            font-weight: 600;
+        }
+        .contact-reason-select__option .bi {
+            color: var(--color-progressive);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .contact-page .form-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+        .contact-page .form-actions .contact-page__status {
+            margin-right: auto;
+        }
+        .contact-page__field-hint { margin: 0; font-size: 0.92rem; color: var(--color-subtle); }
+        .contact-page__status { min-height: 1.5rem; color: var(--color-progressive); font-weight: 600; }
+    </style>
 </head>
 
-<body>
+<body class="theme-dark">
     <full-header></full-header>
+
     <article>
-        <full-page-toolbar title="Contact {{APP_NAME}}" edit-text="Edit Page" edit-source="pages/contact.html"
-            variant="page"></full-page-toolbar>
-        <main class="main-content">
-            <p>If you need to get in touch with {{APP_NAME}}, please use one of the options below.</p>
+        <full-page-toolbar title="Contact {{APP_NAME}}" edit-text="Edit Page" edit-source="pages/contact.html" variant="page"></full-page-toolbar>
+        <main class="settings-page main-content">
+            <section>
+                <div class="settings-page__inner">
+                    <div class="contact-page">
+                        <div class="card settings-page__card contact-page__card">
+                            <p class="contact-page__section-copy">Thank you for your message — we'll look at it as soon as possible.</p>
 
-            <h2>Email</h2>
-            <p>
-                General enquiries: <a href="mailto:info@genepedia.org">info@genepedia.org</a><br>
-                Legal / privacy: <a href="mailto:legal@genepedia.org">legal@genepedia.org</a><br>
-                Press: <a href="mailto:press@genepedia.org">press@genepedia.org</a>
-            </p>
+                            <form id="contact-form" novalidate>
+                                <div class="contact-page__form-grid">
+                                    <div class="form-group">
+                                        <label for="contact-reason-trigger">Reason</label>
+                                        <div class="contact-reason-select" id="contact-reason-select">
+                                            <select id="contact-reason" name="reason" required class="contact-reason-select__native" tabindex="-1" aria-hidden="true">
+                                                <option value="question">General Question</option>
+                                                <option value="bug">Bug Report</option>
+                                                <option value="enhancement">Feature Request</option>
+                                            </select>
+                                            <button type="button" class="contact-reason-select__trigger" id="contact-reason-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="contact-reason-menu">
+                                                <span class="contact-reason-select__selected">
+                                                    <i class="bi bi-chat-left-text contact-reason-select__icon" id="contact-reason-icon" aria-hidden="true"></i>
+                                                    <span class="contact-reason-select__label" id="contact-reason-label-text">General Question</span>
+                                                </span>
+                                                <i class="bi bi-chevron-down contact-reason-select__chevron" aria-hidden="true"></i>
+                                            </button>
+                                            <ul class="contact-reason-select__menu" id="contact-reason-menu" role="listbox" hidden>
+                                                <li class="contact-reason-select__option contact-reason-select__option--selected" role="option" data-value="question" tabindex="0" aria-selected="true">
+                                                    <i class="bi bi-chat-left-text" aria-hidden="true"></i>
+                                                    <span>General Question</span>
+                                                </li>
+                                                <li class="contact-reason-select__option" role="option" data-value="bug" tabindex="-1" aria-selected="false">
+                                                    <i class="bi bi-bug" aria-hidden="true"></i>
+                                                    <span>Bug Report</span>
+                                                </li>
+                                                <li class="contact-reason-select__option" role="option" data-value="enhancement" tabindex="-1" aria-selected="false">
+                                                    <i class="bi bi-lightbulb" aria-hidden="true"></i>
+                                                    <span>Feature Request</span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
 
-            <h2>Report abuse</h2>
-            <p>If you need to report content that violates our policies or poses a safety risk, contact
-                <a href="mailto:safety@genepedia.org">safety@genepedia.org</a> or see our
-                <a href="legal_and_safety_contacts.html">Legal &amp; safety contacts</a> page.
-            </p>
+                                    <div class="form-group">
+                                        <label for="contact-subject">Subject <span class="contact-page__required" aria-hidden="true">(required)</span></label>
+                                        <input type="text" id="contact-subject" name="subject" required aria-required="true" placeholder="Brief summary of your message" />
+                                    </div>
 
-            <h2>Developer / technical issues</h2>
-            <p>For technical issues or to report bugs, please open an issue on our GitHub repository or email
-                <a href="mailto:tech@genepedia.org">tech@genepedia.org</a>.
-            </p>
+                                    <div class="form-group">
+                                        <label for="contact-message">Message <span class="contact-page__required" aria-hidden="true">(required)</span></label>
+                                        <textarea id="contact-message" name="message" rows="8" required aria-required="true" placeholder="Describe your question, bug, or feature request in detail"></textarea>
+                                    </div>
+                                </div>
 
+                                <div class="form-actions">
+                                    <span id="contact-status" role="status" aria-live="polite" class="contact-page__status"></span>
+                                    <button type="submit" class="pure-button pure-button-primary-progressive">Send Message</button>
+                                </div>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
         <full-footer></full-footer>
     </article>
 
-<script src="../lib/Web-Framework/components/mini-header.js"></script>
+    <script src="../lib/Web-Framework/components/mini-header.js"></script>
     <script src="../lib/Web-Framework/components/mini-footer.js"></script>
     <script src="../lib/Web-Framework/components/full-header.js"></script>
     <script src="../lib/Web-Framework/components/full-page-toolbar.js"></script>
@@ -48,6 +230,389 @@
     <script src="../lib/Web-Framework/components/full-footer.js"></script>
     <script src="../lib/Web-Framework/components/sister-projects.js"></script>
     <script src="../index.js"></script>
+    <script>
+        (function () {
+            const DEFAULT_REPO = 'Genepedia/Genepedia';
+            const REASON_CONFIG = {
+                question: { title: 'General Question', label: 'Question', icon: 'bi-chat-left-text' },
+                bug: { title: 'Bug Report', label: 'Bug', icon: 'bi-bug' },
+                enhancement: { title: 'Feature Request', label: 'Enhancement', icon: 'bi-lightbulb' },
+            };
+
+            const form = document.getElementById('contact-form');
+            if (!form) {
+                return;
+            }
+
+            const reasonInput = document.getElementById('contact-reason');
+            const reasonTrigger = document.getElementById('contact-reason-trigger');
+            const reasonMenu = document.getElementById('contact-reason-menu');
+            const reasonIcon = document.getElementById('contact-reason-icon');
+            const reasonLabelText = document.getElementById('contact-reason-label-text');
+            const reasonOptions = reasonMenu ? Array.from(reasonMenu.querySelectorAll('.contact-reason-select__option')) : [];
+            const subjectInput = document.getElementById('contact-subject');
+            const messageInput = document.getElementById('contact-message');
+            const labelPreview = document.getElementById('contact-label-preview');
+            const statusEl = document.getElementById('contact-status');
+
+            let repoSlug = DEFAULT_REPO;
+
+            function getReasonDetails() {
+                return REASON_CONFIG[reasonInput.value] || REASON_CONFIG.question;
+            }
+
+            function updateReasonPreview() {
+                const details = getReasonDetails();
+                if (labelPreview) {
+                    labelPreview.textContent = details.label;
+                }
+            }
+
+            function syncReasonDisplay(value) {
+                const details = REASON_CONFIG[value] || REASON_CONFIG.question;
+                if (reasonLabelText) {
+                    reasonLabelText.textContent = details.title;
+                }
+                if (reasonIcon) {
+                    reasonIcon.className = 'bi ' + details.icon + ' contact-reason-select__icon';
+                }
+                reasonOptions.forEach(function (option) {
+                    const isSelected = option.dataset.value === value;
+                    option.classList.toggle('contact-reason-select__option--selected', isSelected);
+                    option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+                    option.tabIndex = isSelected ? 0 : -1;
+                });
+            }
+
+            function setReasonValue(value) {
+                if (!reasonInput || !REASON_CONFIG[value]) {
+                    return;
+                }
+
+                reasonInput.value = value;
+                syncReasonDisplay(value);
+                updateReasonPreview();
+                reasonInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            function closeReasonMenu() {
+                if (!reasonTrigger || !reasonMenu) {
+                    return;
+                }
+
+                reasonMenu.hidden = true;
+                reasonTrigger.setAttribute('aria-expanded', 'false');
+            }
+
+            function openReasonMenu() {
+                if (!reasonTrigger || !reasonMenu) {
+                    return;
+                }
+
+                reasonMenu.hidden = false;
+                reasonTrigger.setAttribute('aria-expanded', 'true');
+                const selectedOption = reasonOptions.find(function (option) {
+                    return option.dataset.value === reasonInput.value;
+                });
+                (selectedOption || reasonOptions[0])?.focus();
+            }
+
+            function initReasonSelect() {
+                if (!reasonTrigger || !reasonMenu || !reasonInput) {
+                    return;
+                }
+
+                syncReasonDisplay(reasonInput.value);
+
+                reasonTrigger.addEventListener('click', function () {
+                    if (reasonMenu.hidden) {
+                        openReasonMenu();
+                    } else {
+                        closeReasonMenu();
+                    }
+                });
+
+                reasonTrigger.addEventListener('keydown', function (event) {
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openReasonMenu();
+                    }
+
+                    if (event.key === 'Escape') {
+                        closeReasonMenu();
+                    }
+                });
+
+                reasonOptions.forEach(function (option) {
+                    option.addEventListener('click', function () {
+                        setReasonValue(option.dataset.value);
+                        closeReasonMenu();
+                        reasonTrigger.focus();
+                    });
+                });
+
+                reasonMenu.addEventListener('keydown', function (event) {
+                    const currentIndex = reasonOptions.findIndex(function (option) {
+                        return option === document.activeElement;
+                    });
+
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        closeReasonMenu();
+                        reasonTrigger.focus();
+                        return;
+                    }
+
+                    if (event.key === 'ArrowDown') {
+                        event.preventDefault();
+                        const nextIndex = currentIndex < reasonOptions.length - 1 ? currentIndex + 1 : 0;
+                        reasonOptions[nextIndex].focus();
+                        return;
+                    }
+
+                    if (event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        const previousIndex = currentIndex > 0 ? currentIndex - 1 : reasonOptions.length - 1;
+                        reasonOptions[previousIndex].focus();
+                        return;
+                    }
+
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        const activeOption = reasonOptions[currentIndex];
+                        if (activeOption) {
+                            setReasonValue(activeOption.dataset.value);
+                            closeReasonMenu();
+                            reasonTrigger.focus();
+                        }
+                    }
+                });
+
+                document.addEventListener('click', function (event) {
+                    if (!reasonMenu.hidden && !event.target.closest('#contact-reason-select')) {
+                        closeReasonMenu();
+                    }
+                });
+            }
+
+            function resolveApiUrl(fileName) {
+                const base = window.App?.getGitHubApiBase?.() || window.App?.GitHubApiBase || '';
+                const trimmed = String(base).trim();
+                if (!trimmed) {
+                    return '';
+                }
+
+                try {
+                    return new URL(fileName, trimmed.replace(/\/+$/, '') + '/').href;
+                } catch (error) {
+                    return '';
+                }
+            }
+
+            function getFetchInit(init) {
+                if (window.App?.getGitHubFetchInit) {
+                    return window.App.getGitHubFetchInit(init);
+                }
+
+                return {
+                    ...(init || {}),
+                    credentials: 'include',
+                    headers: {
+                        Accept: 'application/json',
+                        ...((init && init.headers) || {}),
+                    },
+                };
+            }
+
+            async function loadRepoConfig() {
+                const configUrl = resolveApiUrl('github-config.php');
+                if (!configUrl) {
+                    return;
+                }
+
+                try {
+                    const response = await fetch(configUrl, getFetchInit({ cache: 'no-store' }));
+                    const payload = await response.json().catch(function () {
+                        return null;
+                    });
+
+                    if (response.ok && payload && payload.ok && payload.repo) {
+                        repoSlug = String(payload.repo).trim() || DEFAULT_REPO;
+                    }
+                } catch (error) {
+                    repoSlug = DEFAULT_REPO;
+                }
+            }
+
+            function detectOperatingSystem(userAgent, platform) {
+                const source = (userAgent + ' ' + platform).toLowerCase();
+                if (source.includes('windows')) {
+                    return 'Windows';
+                }
+                if (source.includes('android')) {
+                    return 'Android';
+                }
+                if (source.includes('iphone') || source.includes('ipad') || source.includes('ipod') || source.includes('ios')) {
+                    return 'iOS';
+                }
+                if (source.includes('mac os') || source.includes('macintosh') || source.includes('macintel')) {
+                    return 'macOS';
+                }
+                if (source.includes('linux')) {
+                    return 'Linux';
+                }
+                if (source.includes('cros')) {
+                    return 'ChromeOS';
+                }
+                return platform || 'Unknown';
+            }
+
+            function detectBrowser(userAgent) {
+                const source = String(userAgent || '');
+                const matchers = [
+                    { name: 'Edge', regex: /Edg\/([^\s]+)/ },
+                    { name: 'Opera', regex: /OPR\/([^\s]+)/ },
+                    { name: 'Chrome', regex: /Chrome\/([^\s]+)/ },
+                    { name: 'Firefox', regex: /Firefox\/([^\s]+)/ },
+                    { name: 'Safari', regex: /Version\/([^\s]+).*Safari/ },
+                ];
+
+                for (const matcher of matchers) {
+                    const result = source.match(matcher.regex);
+                    if (result) {
+                        return matcher.name + ' ' + result[1];
+                    }
+                }
+
+                return navigator.userAgentData?.brands?.map(function (brand) {
+                    return brand.brand + ' ' + brand.version;
+                }).join(', ') || 'Unknown';
+            }
+
+            function collectDiagnostics() {
+                const nav = window.navigator || {};
+                const screenInfo = window.screen || {};
+                const viewportWidth = Math.max(document.documentElement?.clientWidth || 0, window.innerWidth || 0);
+                const viewportHeight = Math.max(document.documentElement?.clientHeight || 0, window.innerHeight || 0);
+                const userAgent = String(nav.userAgent || '');
+                const platform = String(nav.userAgentData?.platform || nav.platform || '');
+                const languages = Array.isArray(nav.languages) && nav.languages.length
+                    ? nav.languages.join(', ')
+                    : String(nav.language || '');
+                const timezone = (window.Intl && Intl.DateTimeFormat)
+                    ? Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown'
+                    : 'Unknown';
+
+                return {
+                    browser: detectBrowser(userAgent),
+                    operatingSystem: detectOperatingSystem(userAgent, platform),
+                    viewport: viewportWidth + 'x' + viewportHeight,
+                    screen: String(screenInfo.width || 0) + 'x' + String(screenInfo.height || 0),
+                    pixelRatio: String(window.devicePixelRatio || 1),
+                    language: languages || 'Unknown',
+                    timezone,
+                    colorScheme: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+                    reducedMotion: window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduce' : 'no-preference',
+                    online: nav.onLine === false ? 'offline' : 'online',
+                    pageUrl: window.location.href,
+                    userAgent,
+                };
+            }
+
+            function buildIssueBody(reasonDetails, subject, message) {
+                const diagnostics = collectDiagnostics();
+                const lines = [
+                    'Reason: ' + reasonDetails.title,
+                    'GitHub Label: ' + reasonDetails.label,
+                    'Submitted From: Contact Page',
+                    '',
+                    'Environment',
+                    '- Browser: ' + diagnostics.browser,
+                    '- Operating System: ' + diagnostics.operatingSystem,
+                    '- Screen Resolution: ' + diagnostics.screen,
+                    '- Viewport: ' + diagnostics.viewport,
+                    '- Device Pixel Ratio: ' + diagnostics.pixelRatio,
+                    '- Language: ' + diagnostics.language,
+                    '- Time Zone: ' + diagnostics.timezone,
+                    '- Preferred Color Scheme: ' + diagnostics.colorScheme,
+                    '- Reduced Motion: ' + diagnostics.reducedMotion,
+                    '- Network Status: ' + diagnostics.online,
+                    '- Page URL: ' + diagnostics.pageUrl,
+                    '- User Agent: ' + diagnostics.userAgent,
+                ];
+
+                lines.push('');
+                lines.push('Subject');
+                lines.push(subject);
+                lines.push('');
+                lines.push('Message');
+                lines.push(message);
+
+                return lines.join('\n');
+            }
+
+            if (reasonInput) {
+                reasonInput.addEventListener('change', updateReasonPreview);
+            }
+
+            function validateRequiredField(input, message) {
+                if (!input) {
+                    return true;
+                }
+
+                if (!input.value.trim()) {
+                    input.setCustomValidity(message);
+                    input.reportValidity();
+                    return false;
+                }
+
+                input.setCustomValidity('');
+                return true;
+            }
+
+            [subjectInput, messageInput].forEach(function (input) {
+                if (!input) {
+                    return;
+                }
+
+                input.addEventListener('input', function () {
+                    if (input.value.trim()) {
+                        input.setCustomValidity('');
+                    }
+                });
+            });
+
+            initReasonSelect();
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const subjectValid = validateRequiredField(subjectInput, 'Please enter a subject.');
+                const messageValid = validateRequiredField(messageInput, 'Please enter a message.');
+
+                if (!subjectValid || !messageValid || !form.reportValidity()) {
+                    return;
+                }
+
+                const reasonDetails = getReasonDetails();
+                const subject = subjectInput.value.trim();
+                const message = messageInput.value.trim();
+
+                if (statusEl) {
+                    statusEl.textContent = 'Opening GitHub issue...';
+                }
+
+                const issueUrl = new URL('https://github.com/' + repoSlug + '/issues/new');
+                issueUrl.searchParams.set('labels', reasonDetails.label);
+                issueUrl.searchParams.set('title', subject);
+                issueUrl.searchParams.set('body', buildIssueBody(reasonDetails, subject, message));
+                window.location.assign(issueUrl.toString());
+            });
+
+            updateReasonPreview();
+            void loadRepoConfig();
+        })();
+    </script>
 </body>
 
 </html>

@@ -1,0 +1,839 @@
+/*
+ * Profile editor canvas styles.
+ *
+ * The <page-editor> canvas on people/edit.html gets the people-page__content
+ * class (via canvas-class) so profile fragments render with the same
+ * typography as the live profile page. These rules mirror the styles in
+ * components/people-page.js, plus editing styles for the raw
+ * <profile-identity> infobox elements (which the live page upgrades into an
+ * <aside> table at render time).
+ */
+
+.people-page__content {
+  color: #202122;
+  font: 1rem/1.65 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+body.theme-dark .people-page__content {
+  color: #eaecf0;
+}
+
+.people-page__content a {
+  color: #3366cc;
+}
+
+body.theme-dark .people-page__content a {
+  color: #6b9eff;
+}
+
+.people-page__content p {
+  margin: 0 0 0.9rem;
+}
+
+.people-page__content h1 {
+  margin: 0 0 1rem;
+  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
+  font-size: clamp(1.75rem, 4vw, 2.3rem);
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.people-page__content h2 {
+  margin: 1.75rem 0 0.65rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.25;
+  overflow: hidden;
+}
+
+body.theme-dark .people-page__content h2 {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.people-page__content h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.people-page__content ul,
+.people-page__content ol {
+  margin: 0 0 0.9rem;
+  padding-left: 1.5rem;
+}
+
+.people-page__content li {
+  margin-bottom: 0.35rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Inline-editable identity infobox (raw <profile-identity> markup).   */
+/* Shown as a right-aligned card; the live page floats it instead.     */
+/* ------------------------------------------------------------------ */
+
+.people-page__content [data-editor-include] {
+  display: block;
+}
+
+.people-page__content profile-identity {
+  display: block;
+  width: min(100%, 22rem);
+  margin: 0 0 1rem auto;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #f8f9fa;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+body.theme-dark .people-page__content profile-identity {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #1a1e24;
+}
+
+.people-page__content profile-identity table-photo {
+  display: block;
+  padding-bottom: 0.5rem;
+}
+
+.people-page__content profile-identity table-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.125rem;
+}
+
+.people-page__content profile-identity table-name,
+.people-page__content profile-identity table-gender,
+.people-page__content profile-identity table-birth,
+.people-page__content profile-identity table-death,
+.people-page__content profile-identity table-place-of-burial,
+.people-page__content profile-identity table-immediate-family {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  column-gap: 1rem;
+  padding: 0.4rem 0;
+}
+
+.people-page__content profile-identity table-name::before,
+.people-page__content profile-identity table-gender::before,
+.people-page__content profile-identity table-birth::before,
+.people-page__content profile-identity table-death::before,
+.people-page__content profile-identity table-place-of-burial::before,
+.people-page__content profile-identity table-immediate-family::before {
+  font-weight: 600;
+  color: #54595d;
+}
+
+body.theme-dark .people-page__content profile-identity table-name::before,
+body.theme-dark .people-page__content profile-identity table-gender::before,
+body.theme-dark .people-page__content profile-identity table-birth::before,
+body.theme-dark .people-page__content profile-identity table-death::before,
+body.theme-dark .people-page__content profile-identity table-place-of-burial::before,
+body.theme-dark .people-page__content profile-identity table-immediate-family::before {
+  color: #a7adb4;
+}
+
+.people-page__content profile-identity table-name::before { content: "Name"; }
+.people-page__content profile-identity table-gender::before { content: "Gender"; }
+.people-page__content profile-identity table-birth::before { content: "Birth"; }
+.people-page__content profile-identity table-death::before { content: "Death"; }
+.people-page__content profile-identity table-place-of-burial::before { content: "Place of burial"; }
+.people-page__content profile-identity table-immediate-family::before { content: "Immediate family"; }
+
+.people-page__content profile-identity table-immediate-family p {
+  margin: 0 0 0.55rem;
+}
+
+.people-page__content profile-identity table-immediate-family p:last-child {
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Profile-specific blocks                                              */
+/* ------------------------------------------------------------------ */
+
+.people-page__content figure.profile-figure {
+  margin: 0 0 1rem;
+  max-width: 22rem;
+}
+
+.people-page__content figure.profile-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.125rem;
+  box-sizing: border-box;
+}
+
+body.theme-dark .people-page__content figure.profile-figure img {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.people-page__content figure.profile-figure figcaption {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  color: #54595d;
+  line-height: 1.35;
+}
+
+body.theme-dark .people-page__content figure.profile-figure figcaption {
+  color: #a7adb4;
+}
+
+/* ------------------------------------------------------------------ */
+/* Editor tabs (Infobox / Profile page)                                */
+/* ------------------------------------------------------------------ */
+
+.profile-edit {
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+html body.profile-edit-page[data-has-full-header="true"] {
+  padding-top: var(--header-chrome-height, 55px);
+}
+
+/* Portal/other global styles set a small body margin; remove it on this
+   page so the fixed full-header aligns flush with the editor header. */
+body.profile-edit-page {
+  margin: 0;
+}
+
+.profile-edit__tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0 0 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+body.theme-dark .profile-edit__tabs {
+  border-bottom-color: rgba(255, 255, 255, 0.15);
+}
+
+.profile-edit__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.95rem;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 0.125rem 0.125rem 0 0;
+  margin-bottom: -1px;
+  background: transparent;
+  color: #54595d;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.theme-dark .profile-edit__tab {
+  color: #a7adb4;
+}
+
+.profile-edit__tab:hover {
+  color: #202122;
+}
+
+body.theme-dark .profile-edit__tab:hover {
+  color: #eaecf0;
+}
+
+.profile-edit__tab.is-active {
+  border-color: rgba(0, 0, 0, 0.15);
+  border-bottom-color: #ffffff;
+  background: #ffffff;
+  color: #202122;
+}
+
+body.theme-dark .profile-edit__tab.is-active {
+  border-color: rgba(255, 255, 255, 0.15);
+  border-bottom-color: #101418;
+  background: #101418;
+  color: #eaecf0;
+}
+
+.profile-edit__panel[hidden] {
+  display: none;
+}
+
+.profile-edit__section-tabs {
+  margin: 0;
+}
+
+/* Place the Save Changes group in the toolbar row and push it to the right
+   for the profile edit page only. */
+body.profile-edit-page .page-editor__toolbar-row .page-editor__save-group {
+  margin-left: auto;
+}
+
+/* Breadcrumb replacing the back link in the editor header (profile edit page) */
+body.profile-edit-page .page-editor__breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: 0.875rem -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+  color: var(--color-progressive, #3366cc);
+}
+body.profile-edit-page .page-editor__breadcrumb-list {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+body.profile-edit-page .page-editor__breadcrumb-list a {
+  color: inherit;
+  text-decoration: none;
+}
+body.profile-edit-page .page-editor__breadcrumb-list a:hover {
+  text-decoration: underline;
+}
+body.profile-edit-page .page-editor__breadcrumb-sep {
+  color: var(--color-subtle, #6b7280);
+}
+
+.profile-edit__infobox-panel {
+  padding: 1rem;
+}
+
+.profile-edit__infobox-panel[hidden] {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Structured infobox editor (<profile-infobox-editor>)                */
+/* ------------------------------------------------------------------ */
+
+.pie {
+  width: 100%;
+  max-width: 100%;
+  width: 100%;
+}
+
+.pie__intro {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: #54595d;
+  line-height: 1.5;
+}
+
+body.theme-dark .pie__intro {
+  color: #a7adb4;
+}
+
+.pie__status {
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.125rem;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+}
+
+body.theme-dark .pie__status {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #1a1e24;
+}
+
+.pie__status[data-type="error"] {
+  border-color: rgba(208, 44, 63, 0.5);
+  background: rgba(208, 44, 63, 0.08);
+  color: #b32230;
+}
+
+.pie__status[data-type="success"] {
+  border-color: rgba(20, 134, 88, 0.5);
+  background: rgba(20, 134, 88, 0.08);
+  color: #14794a;
+}
+
+.pie__group {
+  margin: 0 0 1.5rem;
+  padding: 0.5rem 1rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.125rem;
+}
+
+body.theme-dark .pie__group {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.pie__legend {
+  padding: 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.pie__row {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.55rem 0;
+}
+
+/* Date range UI */
+.pie__field--date .pie__date-range {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pie__field--date .pie__date-input {
+  min-width: 12rem;
+  padding: 0.45rem 0.6rem;
+}
+.pie__field--date .pie__date-to {
+  display: none;
+  align-items: center;
+}
+.pie__field--date .pie__date-and {
+  display: none;
+  color: #6b7280;
+  margin: 0 0.25rem;
+}
+.pie__field--date.is-between .pie__date-to {
+  display: inline-flex;
+}
+.pie__field--date.is-between .pie__date-and {
+  display: inline-block;
+}
+
+/* Cause-of-death suggestion dropdown */
+.pie__field--suggest {
+  position: relative;
+}
+.pie__suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 220;
+  background: var(--background-color-base, #ffffff);
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 0.25rem;
+  max-height: 12rem;
+  overflow: auto;
+  padding: 0.25rem;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+}
+.pie__suggestion-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 0.125rem;
+  color: inherit;
+}
+.pie__suggestion-button.is-active,
+.pie__suggestion-button:hover {
+  background: var(--background-color-interactive-subtle, #f1f3f5);
+}
+body.theme-dark .pie__suggestions {
+  background: #101418;
+  border-color: rgba(255,255,255,0.06);
+}
+
+.pie__row--location {
+  align-items: start;
+}
+
+.pie__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #54595d;
+}
+
+body.theme-dark .pie__label {
+  color: #c8ccd1;
+}
+
+.pie__field {
+  min-width: 0;
+}
+
+.pie__field input[type="text"],
+.pie__field input[type="number"],
+.pie__field input[type="search"],
+.pie__field input[type="date"],
+.pie__field select {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #a2a9b1;
+  border-radius: 0.125rem;
+  font: inherit;
+  font-size: 0.9rem;
+  background: #ffffff;
+  color: #202122;
+  box-sizing: border-box;
+}
+
+body.theme-dark .pie__field input[type="text"],
+body.theme-dark .pie__field input[type="number"],
+body.theme-dark .pie__field input[type="search"],
+body.theme-dark .pie__field select {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: #101418;
+  color: #eaecf0;
+}
+
+.pie__field input:focus,
+.pie__field select:focus {
+  outline: none;
+  border-color: #3366cc;
+  box-shadow: inset 0 0 0 1px #3366cc;
+}
+
+/* Ensure selects and native date inputs visually match height */
+.pie__field select,
+.pie__field input[type="date"] {
+  box-sizing: border-box;
+  height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pie__field--split {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pie__field--location {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.pie__location-search-wrap {
+  position: relative;
+}
+
+.pie__location-results {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 0.3rem 0;
+  list-style: none;
+  border: 1px solid #a2a9b1;
+  border-radius: 0.125rem;
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.pie__location-results[hidden] {
+  display: none !important;
+}
+
+body.theme-dark .pie__location-results {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: #171b20;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+}
+
+.pie__location-option {
+  margin: 0;
+}
+
+.pie__location-option-button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pie__location-option-button:hover,
+.pie__location-option-button.is-active {
+  background: rgba(51, 102, 204, 0.08);
+}
+
+body.theme-dark .pie__location-option-button:hover,
+body.theme-dark .pie__location-option-button.is-active {
+  background: rgba(107, 158, 255, 0.16);
+}
+
+.pie__location-option-title {
+  color: #202122;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+body.theme-dark .pie__location-option-title {
+  color: #eaecf0;
+}
+
+.pie__location-option-meta,
+.pie__location-empty {
+  color: #72777d;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+body.theme-dark .pie__location-option-meta,
+body.theme-dark .pie__location-empty {
+  color: #a7adb4;
+}
+
+.pie__location-empty {
+  padding: 0.6rem 0.65rem;
+}
+
+/* Photo upload & media picker */
+.pie__field--photo {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.pie__photo-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+  margin-left: 0.5rem;
+}
+.pie__button-secondary {
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.125rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+.pie__media-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Ensure the UA/author cascade doesn't force the modal visible when it
+   should be hidden via the `hidden` attribute or aria-hidden. */
+.pie__media-modal[hidden], .pie__media-modal[aria-hidden="true"] {
+  display: none !important;
+}
+.pie__media-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+}
+.pie__media-modal-panel {
+  position: relative;
+  width: min(92%, 64rem);
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--background-color-base, #fff);
+  border-radius: 0.375rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  padding: 0.5rem;
+  z-index: 360;
+}
+.pie__media-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.pie__media-modal-body { padding: 0.6rem; }
+.pie__media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.5rem; }
+.pie__media-thumb { display: inline-flex; flex-direction: column; gap: 0.25rem; align-items: stretch; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
+.pie__media-thumb img { width: 100%; height: 6.25rem; object-fit: cover; border-radius: 0.25rem; display:block; }
+.pie__media-thumb-label { font-size: 0.85rem; color: #333; padding: 0 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.theme-dark .pie__media-modal-panel { background: #101418; color: #eaecf0; border: 1px solid rgba(255,255,255,0.04); }
+
+.pie__location-details {
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.125rem;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.theme-dark .pie__location-details {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pie__location-detail-row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+}
+
+.pie__location-detail-row + .pie__location-detail-row {
+  margin-top: 0.45rem;
+}
+
+.pie__location-detail-label {
+  color: #54595d;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+body.theme-dark .pie__location-detail-label {
+  color: #c8ccd1;
+}
+
+.pie__location-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #3366cc;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.pie__location-toggle:hover {
+  text-decoration: underline;
+}
+
+body.theme-dark .pie__location-toggle {
+  color: #6b9eff;
+}
+
+.pie__location-toggle-icon {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.pie__field--radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+  align-items: center;
+}
+
+.pie__field--radios label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.pie__field--date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pie__field--date select {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.pie__field--date input[type="text"],
+.pie__field--date input[type="date"] {
+  width: 9rem;
+  flex: 0 0 auto;
+}
+
+.pie__circa {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.pie__date-preview {
+  font-size: 0.85rem;
+  color: #54595d;
+  font-style: italic;
+}
+
+body.theme-dark .pie__date-preview {
+  color: #a7adb4;
+}
+
+.pie__hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #72777d;
+}
+
+.pie__hint code {
+  font-size: 0.95em;
+}
+
+.pie__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.pie__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #3366cc;
+  border-radius: 0.125rem;
+  background: #3366cc;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pie__save:hover {
+  background: #2a4b8d;
+  border-color: #2a4b8d;
+}
+
+.pie__save:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.pie__actions-note {
+  font-size: 0.8rem;
+  color: #72777d;
+}
+
+@media (max-width: 600px) {
+  .pie__row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .pie__field--split {
+    flex-direction: column;
+  }
+
+  .pie__location-detail-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pie__location-detail-label {
+    text-align: left;
+  }
+}

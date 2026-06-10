@@ -11,9 +11,13 @@
 
 const PROFILE_TABLE_ROW_LABELS = {
   'table-name': 'Name',
+  'table-aka': 'Also known as',
   'table-gender': 'Gender',
+  'table-occupation': 'Occupation',
   'table-birth': 'Birth',
+  'table-baptism': 'Baptism',
   'table-death': 'Death',
+  'table-residence': 'Last residence',
   'table-place-of-burial': 'Place of burial',
   'table-immediate-family': 'Immediate family',
 };
@@ -95,9 +99,21 @@ class TableName extends ProfileTableRow {
   }
 }
 
+class TableAka extends ProfileTableRow {
+  static get rowLabel() {
+    return 'Also known as';
+  }
+}
+
 class TableGender extends ProfileTableRow {
   static get rowLabel() {
     return 'Gender';
+  }
+}
+
+class TableOccupation extends ProfileTableRow {
+  static get rowLabel() {
+    return 'Occupation';
   }
 }
 
@@ -107,9 +123,21 @@ class TableBirth extends ProfileTableRow {
   }
 }
 
+class TableBaptism extends ProfileTableRow {
+  static get rowLabel() {
+    return 'Baptism';
+  }
+}
+
 class TableDeath extends ProfileTableRow {
   static get rowLabel() {
     return 'Death';
+  }
+}
+
+class TableResidence extends ProfileTableRow {
+  static get rowLabel() {
+    return 'Last residence';
   }
 }
 
@@ -153,9 +181,13 @@ const PROFILE_TABLE_ELEMENTS = [
   ['profile-identity', ProfileIdentity],
   ['table-photo', TablePhoto],
   ['table-name', TableName],
+  ['table-aka', TableAka],
   ['table-gender', TableGender],
+  ['table-occupation', TableOccupation],
   ['table-birth', TableBirth],
+  ['table-baptism', TableBaptism],
   ['table-death', TableDeath],
+  ['table-residence', TableResidence],
   ['table-place-of-burial', TablePlaceOfBurial],
   ['table-immediate-family', TableImmediateFamily],
 ];

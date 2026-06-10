@@ -31,6 +31,54 @@ function readProfileSource(personDir) {
   return '';
 }
 
+function readProfileTableSource(personDir) {
+  const tablePath = path.join(personDir, 'data', 'profile-table.html');
+  if (fs.existsSync(tablePath)) {
+    return fs.readFileSync(tablePath, 'utf8');
+  }
+
+  return '';
+}
+
+function parseIdentityTag(html, tagName) {
+  const match = html.match(new RegExp(`<${tagName}\\b[^>]*>([\\s\\S]*?)<\\/${tagName}>`, 'i'));
+  if (!match) {
+    return '';
+  }
+
+  const firstLine = match[1].split(/<br\s*\/?>/i)[0] || match[1];
+  return stripHtml(firstLine);
+}
+
+function extractYear(value) {
+  const text = String(value || '').trim();
+  if (!text) {
+    return '';
+  }
+
+  const years = text.match(/\b(?:1[0-9]{3}|20[0-9]{2})\b/g);
+  return years ? years[years.length - 1] : '';
+}
+
+function parseProfileDates(profileHtml, tableHtml) {
+  const combined = `${profileHtml}\n${tableHtml}`;
+  const birthLine = parseIdentityTag(combined, 'table-birth');
+  const deathLine = parseIdentityTag(combined, 'table-death').replace(/\s*\(age[^)]*\)/gi, '');
+  const birthYear = extractYear(birthLine);
+  const deathYear = extractYear(deathLine);
+  const dates = {};
+
+  if (birthYear) {
+    dates.birthYear = birthYear;
+  }
+
+  if (deathYear) {
+    dates.deathYear = deathYear;
+  }
+
+  return dates;
+}
+
 function parseProfileName(html) {
   const withoutComments = html.replace(/<!--[\s\S]*?-->/g, '');
   const titleMatch = withoutComments.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i);
@@ -63,7 +111,9 @@ function listPersonIds() {
 
 function generatePeopleJson() {
   const people = listPersonIds().map((id) => {
-    const profileHtml = readProfileSource(path.join(peopleDir, id));
+    const personDir = path.join(peopleDir, id);
+    const profileHtml = readProfileSource(personDir);
+    const tableHtml = readProfileTableSource(personDir);
     const fullName = parseProfileName(profileHtml);
     const { firstName, lastName } = splitName(fullName);
 
@@ -71,6 +121,7 @@ function generatePeopleJson() {
       id,
       firstName: firstName || `Profile`,
       lastName: lastName || id,
+      ...parseProfileDates(profileHtml, tableHtml),
     };
   });
 

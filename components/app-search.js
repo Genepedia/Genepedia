@@ -139,10 +139,10 @@ body:not(.theme-dark) {
 }
 
 .header-chrome__search-form .app-search__dropdown {
-  min-width: 16rem;
+  min-width: 18rem;
   right: 0;
   left: auto;
-  width: max(16rem, 100%);
+  width: max(18rem, 100%);
 }
 
 .main-content.search-page {
@@ -490,6 +490,25 @@ body.theme-dark .search-page__result-link {
         return [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim();
     }
 
+    function formatPersonLifespan(entry) {
+        const birthYear = String(entry?.birthYear || '').trim();
+        const deathYear = String(entry?.deathYear || '').trim();
+
+        if (birthYear && deathYear) {
+            return `${birthYear}\u2013${deathYear}`;
+        }
+
+        if (birthYear) {
+            return `b. ${birthYear}`;
+        }
+
+        if (deathYear) {
+            return `d. ${deathYear}`;
+        }
+
+        return '';
+    }
+
     function scorePersonEntry(query, entry) {
         const normalizedQuery = normalizeSearchText(query);
         if (!normalizedQuery) {
@@ -593,6 +612,14 @@ body.theme-dark .search-page__result-link {
             title.className = 'app-search__option-title';
             title.textContent = getPersonDisplayName(match.entry);
             link.append(title);
+
+            const lifespan = formatPersonLifespan(match.entry);
+            if (lifespan) {
+                const description = document.createElement('span');
+                description.className = 'app-search__option-description';
+                description.textContent = lifespan;
+                link.append(description);
+            }
 
             item.append(link);
             dropdown.append(item);
@@ -916,6 +943,14 @@ body.theme-dark .search-page__result-link {
             title.className = 'search-page__result-title';
             title.textContent = getPersonDisplayName(match.entry);
             link.append(title);
+
+            const lifespan = formatPersonLifespan(match.entry);
+            if (lifespan) {
+                const description = document.createElement('span');
+                description.className = 'search-page__result-description';
+                description.textContent = lifespan;
+                link.append(description);
+            }
 
             item.append(link);
             list.append(item);

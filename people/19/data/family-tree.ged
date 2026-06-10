@@ -1,0 +1,202 @@
+﻿0 HEAD
+1 GEDC
+2 VERS 5.5.5
+2 FORM LINEAGE-LINKED
+3 VERS 5.5.5
+1 CHAR UTF-8
+1 SOUR GENEPEDIA
+2 NAME Genepedia
+2 VERS 1.0.0
+1 DEST GENEPEDIA
+1 DATE 10 JUN 2026
+1 FILE family-tree.ged
+1 LANG English
+1 SUBM @U1@
+0 @U1@ SUBM
+1 NAME Genepedia
+0 @P15@ INDI
+1 NAME Nelson Rolihlahla /Mandela/
+2 GIVN Nelson Rolihlahla
+2 SURN Mandela
+1 SEX M
+1 BIRT
+2 DATE 18 JUL 1918
+2 PLAC Mvezo, Cape Province, South Africa
+1 DEAT
+2 DATE 5 DEC 2013
+2 PLAC Houghton, Johannesburg, South Africa
+1 REFN 15
+2 TYPE genepedia
+1 FAMC @F1@
+1 FAMS @F3@
+1 FAMS @F4@
+1 FAMS @F5@
+0 @P16@ INDI
+1 NAME Gadla Henry Mphakanyiswa /Mandela/
+2 GIVN Gadla Henry Mphakanyiswa
+2 SURN Mandela
+1 SEX M
+1 BIRT
+2 DATE ABT 1880
+2 PLAC Mvezo, Cape Province, South Africa
+1 DEAT
+2 DATE 1928
+1 REFN 16
+2 TYPE genepedia
+1 FAMS @F1@
+1 FAMS @F2@
+0 @P17@ INDI
+1 NAME Nosekeni Nonqaphi Fanny /Mandela/
+2 GIVN Nosekeni Nonqaphi Fanny
+2 SURN Mandela
+1 SEX F
+1 DEAT
+2 DATE 1968
+1 REFN 17
+2 TYPE genepedia
+1 FAMS @F1@
+0 @P18@ INDI
+1 NAME Mabel Notancu /Timakwe/
+2 TYPE married
+2 GIVN Mabel Notancu
+2 SURN Timakwe
+1 NAME Mabel Notancu /Mandela/
+2 TYPE birth
+2 GIVN Mabel Notancu
+2 SURN Mandela
+1 SEX F
+1 REFN 18
+2 TYPE genepedia
+1 FAMC @F1@
+0 @P19@ INDI
+1 NAME Constance Mbekeni /Mandela/
+2 GIVN Constance Mbekeni
+2 SURN Mandela
+1 SEX F
+1 REFN 19
+2 TYPE genepedia
+1 FAMC @F1@
+0 @P20@ INDI
+1 NAME Daligqili /Mandela/
+2 GIVN Daligqili
+2 SURN Mandela
+1 SEX M
+1 REFN 20
+2 TYPE genepedia
+1 FAMC @F2@
+0 @P21@ INDI
+1 NAME Leabie Philiso /Mandela/
+2 GIVN Leabie Philiso
+2 SURN Mandela
+1 SEX F
+1 REFN 21
+2 TYPE genepedia
+1 FAMC @F2@
+0 @P22@ INDI
+1 NAME Nokuthamba /Bhulehluthi/
+2 GIVN Nokuthamba
+2 SURN Bhulehluthi
+1 SEX F
+1 REFN 22
+2 TYPE genepedia
+1 FAMC @F2@
+0 @P23@ INDI
+1 NAME Graça /Machel/
+2 GIVN Graça
+2 SURN Machel
+1 SEX F
+1 BIRT
+2 DATE 17 OCT 1945
+2 PLAC Incadine, Gaza Province, Mozambique
+1 REFN 23
+2 TYPE genepedia
+1 FAMS @F5@
+0 @P24@ INDI
+1 NAME Evelyn /Mase/
+2 GIVN Evelyn
+2 SURN Mase
+1 SEX F
+1 BIRT
+2 DATE 1922
+2 PLAC Engcobo, Cape Province, South Africa
+1 DEAT
+2 DATE 30 APR 2004
+1 REFN 24
+2 TYPE genepedia
+1 FAMS @F3@
+0 @P25@ INDI
+1 NAME Winnie /Madikizela-Mandela/
+2 GIVN Winnie
+2 SURN Madikizela-Mandela
+1 SEX F
+1 BIRT
+2 DATE 26 SEP 1936
+2 PLAC Bizana, Pondoland, South Africa
+1 DEAT
+2 DATE 2 APR 2018
+2 PLAC Johannesburg, South Africa
+1 REFN 25
+2 TYPE genepedia
+1 FAMS @F4@
+0 @P26@ INDI
+1 NAME Madiba Thembekile /Mandela/
+2 GIVN Madiba Thembekile
+2 SURN Mandela
+1 SEX M
+1 BIRT
+2 DATE 1945
+1 DEAT
+2 DATE 13 JUL 1969
+1 FAMC @F3@
+0 @P27@ INDI
+1 NAME Makgatho Lewanika /Mandela/
+2 GIVN Makgatho Lewanika
+2 SURN Mandela
+1 SEX M
+1 BIRT
+2 DATE 26 JUN 1950
+1 DEAT
+2 DATE 6 JAN 2005
+1 FAMC @F3@
+0 @P28@ INDI
+1 NAME Makaziwe /Mandela/
+2 GIVN Makaziwe
+2 SURN Mandela
+1 SEX F
+1 BIRT
+2 DATE 1954
+1 FAMC @F3@
+0 @F1@ FAM
+1 HUSB @P16@
+1 WIFE @P17@
+1 CHIL @P15@
+1 CHIL @P18@
+1 CHIL @P19@
+0 @F2@ FAM
+1 HUSB @P16@
+1 CHIL @P20@
+1 CHIL @P21@
+1 CHIL @P22@
+0 @F3@ FAM
+1 HUSB @P15@
+1 WIFE @P24@
+1 MARR
+2 DATE 5 OCT 1944
+1 DIV
+2 DATE 19 MAR 1958
+1 CHIL @P26@
+1 CHIL @P27@
+1 CHIL @P28@
+0 @F4@ FAM
+1 HUSB @P15@
+1 WIFE @P25@
+1 MARR
+2 DATE 14 JUN 1958
+1 DIV
+2 DATE 19 MAR 1996
+0 @F5@ FAM
+1 HUSB @P15@
+1 WIFE @P23@
+1 MARR
+2 DATE 18 JUL 1998
+0 TRLR
