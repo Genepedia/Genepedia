@@ -1063,11 +1063,13 @@
 
 			form.addEventListener("submit", (event) => {
 				event.preventDefault();
+				// The profile editor shell owns the single Save (it bundles the
+				// infobox files with profile.html into one pull request).
 				const globalSave = document.querySelector('.page-editor__button--save[data-action="publish"]');
 				if (globalSave) {
 					globalSave.click();
 				} else {
-					void this.#save();
+					document.dispatchEvent(new CustomEvent("profile-editor-save-request"));
 				}
 			});
 
@@ -1159,17 +1161,14 @@
 		}
 
 		// The profile's page title (its <h1>) is the display name, shown read-only
-		// in the editor header. Keep it in step with the infobox as the name fields
-		// change so what saves to profile.html always matches the infobox. Falls
-		// back to "First [Middle] Last (Birth Surname) Suffix" when no explicit
-		// display name is set (see displayNameFrom).
+		// in the WYSIWYG editor. Broadcast the effective name so the profile page
+		// editor keeps its heading in step with the infobox. Falls back to
+		// "First [Middle] Last (Birth Surname) Suffix" when no explicit display
+		// name is set (see displayNameFrom).
 		#syncPageTitle() {
-			const titleInput = document.querySelector(".page-editor__title-input");
-			if (!titleInput) return;
 			const name = displayNameFrom(this.#collect());
-			if (!name || titleInput.value === name) return;
-			titleInput.value = name;
-			titleInput.dispatchEvent(new Event("input", { bubbles: true }));
+			if (!name) return;
+			document.dispatchEvent(new CustomEvent("profile-display-name-change", { detail: { name } }));
 		}
 
 		#snapshotFormState() {
@@ -1211,9 +1210,20 @@
 		}
 
 		#notifyDirtyState() {
-			const editor = document.querySelector("page-editor");
+			const editor = document.querySelector("page-editor, profile-editor");
 			if (editor && typeof editor.refreshDirtyState === "function") {
 				editor.refreshDirtyState();
+			}
+			document.dispatchEvent(new CustomEvent("profile-editor-dirty-change"));
+		}
+
+		// Current identity table as a <profile-identity> fragment, used by the
+		// WYSIWYG profile editor to render the floated infobox preview live.
+		getIdentityFragmentHtml() {
+			try {
+				return buildFragment(this.#collect(), this.__familyHtml);
+			} catch (error) {
+				return "";
 			}
 		}
 
@@ -1287,6 +1297,7 @@
 			}
 
 			this.#fillForm();
+			this.#syncPageTitle();
 			requestAnimationFrame(() => {
 				requestAnimationFrame(() => {
 					this.#setSavedBaseline({ quiet: true });

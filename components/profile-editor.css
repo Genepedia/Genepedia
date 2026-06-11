@@ -204,7 +204,7 @@ body.theme-dark .people-page__content figure.profile-figure figcaption {
 }
 
 /* ------------------------------------------------------------------ */
-/* Editor tabs (Infobox / Profile page)                                */
+/* Profile editor shell (<profile-editor>)                              */
 /* ------------------------------------------------------------------ */
 
 .profile-edit {
@@ -221,30 +221,74 @@ body.profile-edit-page {
   margin: 0;
 }
 
-.profile-edit__tabs {
+/* Sticky toolbar: breadcrumb · tabs · status + Save. */
+.profile-edit__bar {
+  position: sticky;
+  top: var(--header-chrome-height, 55px);
+  z-index: 30;
   display: flex;
-  gap: 0.25rem;
-  margin: 0 0 1.25rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--background-color-base, #ffffff);
+}
+
+body.theme-dark .profile-edit__bar {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  background: #101418;
+}
+
+.profile-edit__breadcrumb {
+  font-size: 0.875rem;
+  color: var(--color-progressive, #3366cc);
+}
+
+.profile-edit__breadcrumb-list {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-edit__breadcrumb-list a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile-edit__breadcrumb-list a:hover {
+  text-decoration: underline;
+}
+
+.profile-edit__breadcrumb-sep {
+  color: var(--color-subtle, #6b7280);
+}
+
+.profile-edit__tabs {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.375rem;
+  background: #f8f9fa;
 }
 
 body.theme-dark .profile-edit__tabs {
-  border-bottom-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #1a1e24;
 }
 
 .profile-edit__tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.55rem 0.95rem;
-  border: 1px solid transparent;
-  border-bottom: 0;
-  border-radius: 0.125rem 0.125rem 0 0;
-  margin-bottom: -1px;
+  padding: 0.4rem 0.85rem;
+  border: 0;
+  border-radius: 0.25rem;
   background: transparent;
   color: #54595d;
   font: inherit;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -262,82 +306,562 @@ body.theme-dark .profile-edit__tab:hover {
 }
 
 .profile-edit__tab.is-active {
-  border-color: rgba(0, 0, 0, 0.15);
-  border-bottom-color: #ffffff;
-  background: #ffffff;
-  color: #202122;
+  background: #3366cc;
+  color: #ffffff;
 }
 
 body.theme-dark .profile-edit__tab.is-active {
-  border-color: rgba(255, 255, 255, 0.15);
-  border-bottom-color: #101418;
-  background: #101418;
-  color: #eaecf0;
+  background: #6b9eff;
+  color: #101418;
+}
+
+.profile-edit__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.profile-edit__status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-subtle, #54595d);
+}
+
+.profile-edit__status[data-type="success"] {
+  color: var(--color-success, #1a7f37);
+}
+
+.profile-edit__status[data-type="error"] {
+  color: var(--color-danger, #cf222e);
+}
+
+.profile-edit__status a {
+  color: inherit;
+}
+
+.profile-edit__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #3366cc;
+  border-radius: 0.25rem;
+  background: #3366cc;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-edit__save:hover:not(:disabled) {
+  background: #2a4b8d;
+  border-color: #2a4b8d;
+}
+
+.profile-edit__save:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .profile-edit__panel[hidden] {
   display: none;
 }
 
-.profile-edit__section-tabs {
-  margin: 0;
+.profile-edit__panels {
+  padding: 1.25rem;
 }
 
-/* Place the Save Changes group in the toolbar row and push it to the right
-   for the profile edit page only. */
-body.profile-edit-page .page-editor__toolbar-row .page-editor__save-group {
-  margin-left: auto;
+.profile-edit__error {
+  margin: 1.5rem;
+  color: var(--color-danger, #cf222e);
 }
 
-/* Breadcrumb replacing the back link in the editor header (profile edit page) */
-body.profile-edit-page .page-editor__breadcrumb {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font: 0.875rem -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
-  color: var(--color-progressive, #3366cc);
+/* ------------------------------------------------------------------ */
+/* WYSIWYG profile-page editor (<profile-page-editor>)                 */
+/* ------------------------------------------------------------------ */
+
+.ppe {
+  position: relative;
+  max-width: 60rem;
+  margin: 0 auto;
 }
 
-body.profile-edit-page .page-editor__breadcrumb-list {
+/* Formatting toolbar */
+.ppe__toolbar {
+  position: sticky;
+  top: calc(var(--header-chrome-height, 55px) + 3rem);
+  z-index: 15;
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
   align-items: center;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  gap: 0.15rem;
+  margin: 0 0 1rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.5rem;
+  background: rgba(248, 249, 250, 0.97);
+  backdrop-filter: blur(4px);
 }
 
-body.profile-edit-page .page-editor__breadcrumb-list a {
-  color: inherit;
-  text-decoration: none;
+body.theme-dark .ppe__toolbar {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(16, 20, 24, 0.97);
 }
 
-body.profile-edit-page .page-editor__breadcrumb-list a:hover {
-  text-decoration: underline;
-}
-
-body.profile-edit-page .page-editor__breadcrumb-sep {
-  color: var(--color-subtle, #6b7280);
-}
-
-/* The profile name is read-only here (owned by the Infobox display name), so it
-   reads as static heading text rather than an editable field. */
-.profile-edit .page-editor__title-input.profile-edit__title-static,
-.profile-edit .page-editor__title-input.profile-edit__title-static:focus {
-  border-color: transparent;
+.ppe__tool {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
   background: transparent;
-  padding-left: 0;
-  cursor: default;
-  outline: none;
-  box-shadow: none;
+  color: #54595d;
+  font-size: 1rem;
+  cursor: pointer;
 }
 
-.profile-edit__infobox-panel {
+body.theme-dark .ppe__tool {
+  color: #c8ccd1;
+}
+
+.ppe__tool:hover {
+  background: rgba(51, 102, 204, 0.1);
+  color: #3366cc;
+}
+
+body.theme-dark .ppe__tool:hover {
+  background: rgba(107, 158, 255, 0.16);
+  color: #6b9eff;
+}
+
+.ppe__toolbar-sep {
+  width: 1px;
+  height: 1.4rem;
+  margin: 0 0.25rem;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+body.theme-dark .ppe__toolbar-sep {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.ppe__status {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--color-subtle, #54595d);
+}
+
+.ppe__status[data-type="error"] {
+  color: var(--color-danger, #cf222e);
+}
+
+/* The canvas renders exactly like the live profile page. flow-root keeps the
+   floated infobox contained within the card. */
+.ppe__canvas {
+  display: flow-root;
+  padding: 1.75rem 2rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+body.theme-dark .ppe__canvas {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: #15181d;
+}
+
+.ppe__title {
+  margin: 0 0 1rem;
+}
+
+/* Floated identity card — mirrors the live page so prose wraps around it. */
+.ppe__canvas aside,
+.people-page__content aside {
+  float: right;
+  clear: right;
+  width: max-content;
+  max-width: min(50%, 100%);
+  margin: 0 0 1rem 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #f8f9fa;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+body.theme-dark .ppe__canvas aside,
+body.theme-dark .people-page__content aside {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #1a1e24;
+}
+
+.ppe__canvas aside table {
+  width: max-content;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.ppe__canvas aside table img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.125rem;
+}
+
+.ppe__canvas aside th,
+.ppe__canvas aside td {
+  padding: 0.4rem 0;
+  border: 0;
+  vertical-align: top;
+  text-align: left;
+}
+
+.ppe__canvas aside th {
+  width: 1%;
+  padding-right: 1rem;
+  white-space: nowrap;
+  font-weight: 600;
+  color: #54595d;
+}
+
+body.theme-dark .ppe__canvas aside th {
+  color: #a7adb4;
+}
+
+.ppe__infobox {
+  position: relative;
+  cursor: not-allowed;
+}
+
+.ppe__infobox-note {
+  margin: 0.6rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.15);
+  font-size: 0.72rem;
+  font-style: italic;
+  color: #72777d;
+  white-space: normal;
+}
+
+body.theme-dark .ppe__infobox-note {
+  border-top-color: rgba(255, 255, 255, 0.18);
+  color: #a7adb4;
+}
+
+/* The editable prose flows around the floated infobox. */
+.ppe__prose {
+  min-height: 12rem;
+  outline: none;
+}
+
+.ppe__prose:focus-visible {
+  outline: none;
+}
+
+.ppe__prose:empty::before {
+  content: "Write this profile…";
+  color: #9aa0a6;
+}
+
+/* Active formatting state on toolbar buttons. */
+.ppe__tool.is-active {
+  background: #3366cc;
+  color: #ffffff;
+}
+
+body.theme-dark .ppe__tool.is-active {
+  background: #6b9eff;
+  color: #101418;
+}
+
+/* Brand token chip ({{APP_NAME}} → Genepedia). */
+.ppe__brand {
+  border-radius: 0.2rem;
+  padding: 0 0.15rem;
+  background: rgba(51, 102, 204, 0.1);
+  color: inherit;
+  cursor: default;
+}
+
+body.theme-dark .ppe__brand {
+  background: rgba(107, 158, 255, 0.18);
+}
+
+/* Clickable floated infobox (jumps to the Infobox tab). */
+.ppe__infobox {
+  cursor: pointer;
+  transition: box-shadow 0.12s ease;
+}
+
+.ppe__infobox:hover,
+.ppe__infobox:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(51, 102, 204, 0.45);
+}
+
+.ppe__infobox-note {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0.6rem 0 0;
+  padding-top: 0.5rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.15);
+  font-size: 0.72rem;
+  font-style: italic;
+  color: #3366cc;
+}
+
+body.theme-dark .ppe__infobox-note {
+  border-top-color: rgba(255, 255, 255, 0.18);
+  color: #6b9eff;
+}
+
+/* Shared small button + popover/modal chrome. */
+.ppe__btn {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.25rem;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+body.theme-dark .ppe__btn {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: #1a1e24;
+}
+
+.ppe__btn--primary {
+  border-color: #3366cc;
+  background: #3366cc;
+  color: #ffffff;
+}
+
+.ppe__btn[hidden] {
+  display: none;
+}
+
+/* Link popover */
+.ppe__popover {
+  position: absolute;
+  z-index: 40;
+  width: min(20rem, calc(100% - 1rem));
+  padding: 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.5rem;
+  background: var(--background-color-base, #ffffff);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  display: grid;
+  gap: 0.5rem;
+}
+
+body.theme-dark .ppe__popover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #15181d;
+}
+
+.ppe__popover[hidden] {
+  display: none;
+}
+
+.ppe__popover-label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-subtle, #54595d);
+}
+
+.ppe__popover-label input {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #a2a9b1;
+  border-radius: 0.25rem;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 400;
+  background: #ffffff;
+  color: #202122;
+}
+
+body.theme-dark .ppe__popover-label input {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: #101418;
+  color: #eaecf0;
+}
+
+.ppe__popover-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.ppe__link-results {
+  margin: 0;
+  padding: 0.2rem 0;
+  list-style: none;
+  max-height: 11rem;
+  overflow: auto;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.25rem;
+}
+
+.ppe__link-results[hidden] {
+  display: none;
+}
+
+.ppe__link-result {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ppe__link-result:hover {
+  background: rgba(51, 102, 204, 0.1);
+}
+
+.ppe__link-result span {
+  color: var(--color-subtle, #72777d);
+  font-size: 0.78rem;
+}
+
+.ppe__link-empty {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.82rem;
+  color: var(--color-subtle, #72777d);
+}
+
+/* Image picker modal */
+.ppe__media-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ppe__media-modal[hidden] {
+  display: none;
+}
+
+.ppe__media-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.ppe__media-panel {
+  position: relative;
+  width: min(92%, 48rem);
+  max-height: 82vh;
+  overflow: auto;
+  border-radius: 0.5rem;
+  background: var(--background-color-base, #ffffff);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+}
+
+body.theme-dark .ppe__media-panel {
+  background: #15181d;
+}
+
+.ppe__media-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.ppe__media-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.ppe__media-x {
+  border: 0;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: inherit;
+}
+
+.ppe__media-body {
   padding: 1rem;
 }
 
-.profile-edit__infobox-panel[hidden] {
-  display: none;
+.ppe__media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: 0.6rem;
+}
+
+.ppe__media-thumb {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 0.35rem;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ppe__media-thumb:hover {
+  border-color: #3366cc;
+}
+
+.ppe__media-thumb img {
+  width: 100%;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: 0.35rem;
+}
+
+.ppe__media-thumb span {
+  padding: 0 0.2rem 0.25rem;
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ppe__media-url-row {
+  margin-top: 1rem;
+}
+
+/* Edit-summary field in the toolbar. */
+.profile-edit__summary {
+  flex: 0 1 16rem;
+  min-width: 8rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.25rem;
+  font: inherit;
+  font-size: 0.85rem;
+  background: #ffffff;
+  color: #202122;
+}
+
+body.theme-dark .profile-edit__summary {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: #1a1e24;
+  color: #eaecf0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1023,21 +1547,14 @@ body.theme-dark .pie__date-preview {
 
 /* Keep the structured form to a comfortable reading width and centre it
    so inputs don't stretch edge-to-edge on wide screens. */
-.profile-edit__infobox-panel .pie {
+.profile-edit__panel[data-edit-panel="infobox"] .pie {
   max-width: 52rem;
   margin-inline: auto;
 }
 
-/* The shared .page-editor__panel clips with overflow:hidden, which would
-   trap position:sticky. The infobox panel only holds the form, so it is safe
-   to let it overflow visibly and pin the section nav against the page scroll. */
-.profile-edit__infobox-panel {
-  overflow: visible;
-}
-
 .pie__section-nav {
   position: sticky;
-  top: var(--header-chrome-height, 55px);
+  top: calc(var(--header-chrome-height, 55px) + 3rem);
   z-index: 20;
   display: flex;
   flex-wrap: wrap;
