@@ -1962,7 +1962,7 @@ class PeoplePage extends HTMLElement {
                 <i class="bi bi-download" aria-hidden="true"></i>
               </button>
               ${state.canManage && !removal ? `
-                <button type="button" class="people-page__media-icon people-page__media-icon--danger" data-media-delete="${peoplePageEscapeHtml(image.name)}" title="Request removal" aria-label="Request removal">
+                <button type="button" class="people-page__media-icon people-page__media-icon--danger" data-media-delete="${peoplePageEscapeHtml(image.name)}" title="Remove" aria-label="Remove image">
                   <i class="bi bi-trash" aria-hidden="true"></i>
                 </button>
               ` : ''}
@@ -2170,20 +2170,24 @@ class PeoplePage extends HTMLElement {
       submitButton.disabled = true;
       const total = queue.length;
       const failures = [];
+      let directPublishes = 0;
+      let reviewPublishes = 0;
       let done = 0;
 
       for (const item of queue) {
         this.#setMediaStatus(
           contentEl,
-          total > 1 ? `Uploading image ${done + 1} of ${total}…` : 'Uploading image and opening a pull request…',
+          total > 1 ? `Uploading image ${done + 1} of ${total}…` : 'Uploading image…',
         );
         try {
-          await this.#submitMediaAction(personId, {
+          const result = await this.#submitMediaAction(personId, {
             action: 'upload',
             filename: item.filename,
             caption: (item.caption || '').trim(),
             content_base64: item.dataUrl.replace(/^data:[^;]+;base64,/, ''),
           });
+          if (result?.pull_request?.url) reviewPublishes += 1;
+          else directPublishes += 1;
           done += 1;
         } catch (error) {
           console.error(error);
@@ -2192,10 +2196,23 @@ class PeoplePage extends HTMLElement {
       }
 
       if (!failures.length) {
-        this.#setMediaStatus(contentEl, '', 'success', `
-          ${done > 1 ? `${done} images were submitted` : 'Image submitted'} for review.
-          ${done > 1 ? 'They' : 'It'} now ${done > 1 ? 'appear' : 'appears'} under “Pending review” below.
-        `);
+        if (reviewPublishes > 0 && directPublishes === 0) {
+          this.#setMediaStatus(contentEl, '', 'success', `
+            ${done > 1 ? `${done} images were submitted` : 'Image submitted'} for review.
+            ${done > 1 ? 'They' : 'It'} now ${done > 1 ? 'appear' : 'appears'} under “Pending review” below.
+          `);
+        } else if (reviewPublishes > 0) {
+          this.#setMediaStatus(contentEl, '', 'success', `
+            ${directPublishes} ${directPublishes === 1 ? 'image was uploaded' : 'images were uploaded'}.
+            ${reviewPublishes} ${reviewPublishes === 1 ? 'image was submitted' : 'images were submitted'} for review.
+          `);
+        } else {
+          this.#setMediaStatus(
+            contentEl,
+            done > 1 ? `${done} images uploaded.` : 'Image uploaded.',
+            'success',
+          );
+        }
         resetForm();
       } else {
         queue.length = 0;
@@ -2285,20 +2302,24 @@ class PeoplePage extends HTMLElement {
       return;
     }
 
-    if (!window.confirm(`Request removal of “${filename}”? This opens a pull request for review.`)) {
+    if (!window.confirm(`Remove “${filename}” from this profile?`)) {
       return;
     }
 
-    this.#setMediaStatus(contentEl, 'Opening a removal pull request…');
+    this.#setMediaStatus(contentEl, 'Removing image…');
 
     try {
       const result = await this.#submitMediaAction(personId, { action: 'delete', filename });
       const pr = result?.pull_request || {};
-      this.#setMediaStatus(contentEl, '', 'success', `
-        Removal submitted as pull request
-        ${pr.url ? `<a href="${peoplePageEscapeHtml(pr.url)}" target="_blank" rel="noopener noreferrer">#${peoplePageEscapeHtml(String(pr.number || ''))}</a>` : `#${peoplePageEscapeHtml(String(pr.number || ''))}`}.
-        The image stays visible until the request is approved.
-      `);
+      if (pr.url || pr.number) {
+        this.#setMediaStatus(contentEl, '', 'success', `
+          Removal submitted as pull request
+          ${pr.url ? `<a href="${peoplePageEscapeHtml(pr.url)}" target="_blank" rel="noopener noreferrer">#${peoplePageEscapeHtml(String(pr.number || ''))}</a>` : `#${peoplePageEscapeHtml(String(pr.number || ''))}`}.
+          The image stays visible until the request is approved.
+        `);
+      } else {
+        this.#setMediaStatus(contentEl, 'Image removed.', 'success');
+      }
       this.#closeMediaLightbox(contentEl);
       await this.#refreshMediaGallery(contentEl, personId);
     } catch (error) {
@@ -2354,7 +2375,7 @@ class PeoplePage extends HTMLElement {
       </button>
       ${canManage && !removalPending ? `
         <button type="button" class="people-page__button-danger" data-media-delete="${peoplePageEscapeHtml(image.name)}">
-          <i class="bi bi-trash" aria-hidden="true"></i><span>Request removal</span>
+          <i class="bi bi-trash" aria-hidden="true"></i><span>Remove</span>
         </button>
       ` : ''}
     `;
@@ -2648,7 +2669,7 @@ class PeoplePage extends HTMLElement {
               }
 
               const config = await response.json();
-              const entries = [config?.creator, ...(Array.isArray(config?.maintainers) ? config.maintainers : [])];
+              const entries = [config?.creator, config?.owner, ...(Array.isArray(config?.maintainers) ? config.maintainers : [])];
               entries.forEach((entry) => {
                 const login = String(entry?.githubLogin || '').trim().toLowerCase();
                 const personId = String(entry?.personId || '').trim() || id;

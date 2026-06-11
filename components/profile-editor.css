@@ -344,11 +344,8 @@ body.theme-dark .profile-edit__tab.is-active {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid #3366cc;
-  border-radius: 0.25rem;
-  background: #3366cc;
-  color: #ffffff;
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--border-radius-base, 0.125rem);
   font: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -356,13 +353,12 @@ body.theme-dark .profile-edit__tab.is-active {
 }
 
 .profile-edit__save:hover:not(:disabled) {
-  background: #2a4b8d;
-  border-color: #2a4b8d;
+  /* color & background handled by page-editor__button--save */
 }
 
 .profile-edit__save:disabled {
-  opacity: 0.5;
-  cursor: default;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .profile-edit__panel[hidden] {
@@ -376,6 +372,116 @@ body.theme-dark .profile-edit__tab.is-active {
 .profile-edit__error {
   margin: 1.5rem;
   color: var(--color-danger, #cf222e);
+}
+
+.profile-edit__claim-review {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.profile-edit__claim-review[hidden] {
+  display: none !important;
+}
+
+.profile-edit__claim-head {
+  margin-bottom: 1rem;
+}
+
+.profile-edit__claim-head h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.2;
+}
+
+.profile-edit__claim-head p {
+  margin: 0;
+  color: #54595d;
+}
+
+body.theme-dark .profile-edit__claim-head p {
+  color: #a2a9b1;
+}
+
+.profile-edit__match-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.profile-edit__match-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #a2a9b1;
+  border-radius: 4px;
+  background: #fff;
+}
+
+body.theme-dark .profile-edit__match-card {
+  border-color: #54595d;
+  background: #1b2025;
+}
+
+.profile-edit__match-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.profile-edit__match-card p {
+  margin: 0.15rem 0;
+  color: #54595d;
+}
+
+body.theme-dark .profile-edit__match-card p {
+  color: #a2a9b1;
+}
+
+.profile-edit__match-claim {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid #3366cc;
+  border-radius: 3px;
+  background: #3366cc;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-edit__match-claim:hover:not(:disabled) {
+  border-color: #2a4b8d;
+  background: #2a4b8d;
+}
+
+.profile-edit__match-claim:disabled {
+  border-color: #a2a9b1;
+  background: #eaecf0;
+  color: #54595d;
+  cursor: not-allowed;
+}
+
+.profile-edit__claim-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .profile-edit__match-card {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-edit__match-claim {
+    width: 100%;
+    white-space: normal;
+  }
 }
 
 /* ------------------------------------------------------------------ */

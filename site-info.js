@@ -62,6 +62,7 @@
     }
 
     let peopleRegistryScriptPromise = null;
+    const selfProfileClaimCache = new Map();
 
     function ensurePeopleRegistryScript() {
         if (window.PeopleRegistry) {
@@ -137,6 +138,207 @@
             .filter((id) => Number.isFinite(id));
         const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
         window.location.assign(resolveSiteUrl(`people/edit.html?person=${nextId}`));
+    }
+
+    function normalizeGitHubLogin(userOrLogin) {
+        if (typeof userOrLogin === 'string') {
+            return userOrLogin.trim().toLowerCase();
+        }
+
+        return String(userOrLogin?.login || userOrLogin?.githubLogin || '').trim().toLowerCase();
+    }
+
+    function readStoredGitHubUser() {
+        try {
+            const raw = localStorage.getItem('app-header-session');
+            const parsed = raw ? JSON.parse(raw) : null;
+            return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async function loadProfileConfig(personId) {
+        const id = String(personId || '').trim();
+        if (!id) {
+            return null;
+        }
+
+        try {
+            const response = await fetch(resolveSiteUrl(`people/${id}/profile.json`), { cache: 'no-store' });
+            if (!response.ok) {
+                return null;
+            }
+
+            const config = await response.json();
+            return config && typeof config === 'object' ? config : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function profileClaimMatchesLogin(profileConfig, login) {
+        const ownerLogin = String(profileConfig?.owner?.githubLogin || '').trim().toLowerCase();
+        return Boolean(login && ownerLogin && ownerLogin === login);
+    }
+
+    async function findClaimedProfileForUser(userOrLogin, options = {}) {
+        const login = normalizeGitHubLogin(userOrLogin);
+        if (!login) {
+            return null;
+        }
+
+        if (!options.refresh && selfProfileClaimCache.has(login)) {
+            return selfProfileClaimCache.get(login);
+        }
+
+        try {
+            await ensurePeopleRegistryScript();
+        } catch (error) {
+            console.warn('Profile lookup failed: could not load people registry.', error);
+            return null;
+        }
+
+        const people = await window.PeopleRegistry.loadPeopleRegistry({ refresh: Boolean(options.refresh) });
+        const configs = await Promise.all(people.map(async (person) => {
+            const id = String(person?.id || '').trim();
+            if (!id) {
+                return null;
+            }
+
+            const profileConfig = await loadProfileConfig(id);
+            return profileClaimMatchesLogin(profileConfig, login)
+                ? { id, person, profileConfig, owner: profileConfig.owner || null }
+                : null;
+        }));
+
+        const claimed = configs.find(Boolean) || null;
+        selfProfileClaimCache.set(login, claimed);
+        return claimed;
+    }
+
+    async function loadPersonCard(personId) {
+        const id = String(personId || '').trim();
+        if (!id) {
+            return null;
+        }
+
+        window.__personCardCache = window.__personCardCache || new Map();
+        if (window.__personCardCache.has(id)) {
+            return window.__personCardCache.get(id);
+        }
+
+        const promise = (async () => {
+            const card = {
+                personId: id,
+                profileUrl: window.PeopleRegistry?.resolvePersonProfileUrl
+                    ? window.PeopleRegistry.resolvePersonProfileUrl(id)
+                    : resolveSiteUrl(`people/${id}/profile.html`),
+                name: '',
+                photoUrl: '',
+            };
+
+            try {
+                await ensurePeopleRegistryScript();
+                const people = await window.PeopleRegistry.loadPeopleRegistry();
+                const entry = people.find((person) => String(person?.id) === id);
+                if (entry) {
+                    card.name = [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim();
+                }
+            } catch (error) {
+                // keep fallback name
+            }
+
+            try {
+                const response = await fetch(resolveSiteUrl(`people/${id}/data/profile-table.html`), { cache: 'no-store' });
+                if (response.ok) {
+                    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    const src = doc.querySelector('table-photo img')?.getAttribute('src')?.trim() || '';
+                    if (src && !/^https?:\/\//i.test(src)) {
+                        card.photoUrl = resolveSiteUrl(`people/${id}/data/${src.replace(/^\.?\//, '')}`);
+                    } else if (src) {
+                        card.photoUrl = src;
+                    }
+                }
+            } catch (error) {
+                // no portrait available
+            }
+
+            return card;
+        })();
+
+        window.__personCardCache.set(id, promise);
+        return promise;
+    }
+
+    async function resolveOwnProfilePhotoUrl(userOrLogin = null) {
+        const claimed = await findClaimedProfileForUser(userOrLogin);
+        if (!claimed?.id) {
+            return '';
+        }
+
+        const card = await loadPersonCard(claimed.id);
+        return String(card?.photoUrl || '').trim();
+    }
+
+    async function getNextPersonId() {
+        try {
+            await ensurePeopleRegistryScript();
+        } catch (error) {
+            console.warn('New profile navigation failed: could not load people registry.', error);
+            return '1';
+        }
+
+        const people = await window.PeopleRegistry.loadPeopleRegistry();
+        const numericIds = people
+            .map((person) => Number.parseInt(String(person?.id || ''), 10))
+            .filter((id) => Number.isFinite(id));
+        return String(numericIds.length ? Math.max(...numericIds) + 1 : 1);
+    }
+
+    async function resolveSelfProfileSetupUrl(userOrLogin = null, view = 'profile') {
+        const nextId = await getNextPersonId();
+        const url = new URL(resolveSiteUrl('people/edit.html'), window.location.href);
+        url.searchParams.set('person', nextId);
+        url.searchParams.set('self', '1');
+        const returnView = String(view || '').trim().toLowerCase();
+        if (returnView) {
+            url.searchParams.set('return', returnView);
+        }
+
+        const login = normalizeGitHubLogin(userOrLogin);
+        if (login) {
+            url.searchParams.set('login', login);
+        }
+
+        return url.href;
+    }
+
+    async function resolveOwnProfileUrl(userOrLogin = null, view = 'profile') {
+        const user = userOrLogin || readStoredGitHubUser();
+        const claimed = await findClaimedProfileForUser(user);
+        const targetView = String(view || 'profile').trim().toLowerCase();
+
+        if (!claimed?.id) {
+            return resolveSelfProfileSetupUrl(user, targetView);
+        }
+
+        if (targetView === 'edit') {
+            const url = new URL(resolveSiteUrl('people/edit.html'), window.location.href);
+            url.searchParams.set('person', claimed.id);
+            return url.href;
+        }
+
+        const url = new URL(`people/${claimed.id}/profile.html`, getSiteBaseUrl());
+        if (targetView === 'tree') {
+            url.hash = 'tree';
+        }
+        return url.href;
+    }
+
+    async function navigateToOwnProfile(view = 'profile', userOrLogin = null) {
+        const url = await resolveOwnProfileUrl(userOrLogin, view);
+        window.location.assign(url);
     }
 
     const textTemplates = new WeakMap();
@@ -387,6 +589,13 @@
     app.resolvePageEditUrl = resolvePageEditUrl;
     app.navigateToRandomProfile = navigateToRandomProfile;
     app.navigateToNewTree = navigateToNewTree;
+    app.getGitHubUser = readStoredGitHubUser;
+    app.findClaimedProfileForUser = findClaimedProfileForUser;
+    app.loadPersonCard = loadPersonCard;
+    app.resolveOwnProfilePhotoUrl = resolveOwnProfilePhotoUrl;
+    app.resolveSelfProfileSetupUrl = resolveSelfProfileSetupUrl;
+    app.resolveOwnProfileUrl = resolveOwnProfileUrl;
+    app.navigateToOwnProfile = navigateToOwnProfile;
     app.applyBranding = applyBranding;
     app.BrandToken = BRAND_TOKEN;
 

@@ -4,16 +4,16 @@
     "name": "Shaun Roselt",
     "githubLogin": "ShaunRoselt"
   },
+  "owner": {
+    "personId": "1",
+    "name": "Shaun Roselt",
+    "githubLogin": "ShaunRoselt"
+  },
   "maintainers": [
     {
       "personId": "1",
       "name": "Shaun Roselt",
       "githubLogin": "ShaunRoselt"
     }
-  ],
-  "claim": {
-    "personId": "1",
-    "name": "Shaun Roselt",
-    "githubLogin": "ShaunRoselt"
-  }
+  ]
 }

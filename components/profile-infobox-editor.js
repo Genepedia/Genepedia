@@ -9,7 +9,8 @@
  * <script type="application/json" class="profile-infobox-data"> element, next to
  * the rendered <table-*> rows used by the live page. The immediate-family block
  * is generated from the family tree, so it is preserved verbatim and never
- * edited here. Saving opens a pull request via github-submit-page-edit.php.
+ * edited here. Saving is handled by github-submit-page-edit.php, which commits
+ * directly for managed profiles and opens a pull request otherwise.
  */
 (function () {
 	"use strict";
@@ -963,7 +964,7 @@
 			void loadDeathCausesList();
 
 			// Register a provider so the page editor can collect this infobox
-			// fragment and include it in the same PR when the global Save is used.
+			// fragment and include it in the same publish when the global Save is used.
 			if (!Array.isArray(window.__extraPublishFileProviders)) window.__extraPublishFileProviders = [];
 			this.__extraPublishProvider = async () => {
 				try {
@@ -1064,7 +1065,7 @@
 			form.addEventListener("submit", (event) => {
 				event.preventDefault();
 				// The profile editor shell owns the single Save (it bundles the
-				// infobox files with profile.html into one pull request).
+				// infobox files with profile.html into one publish).
 				const globalSave = document.querySelector('.page-editor__button--save[data-action="publish"]');
 				if (globalSave) {
 					globalSave.click();
@@ -1224,6 +1225,14 @@
 				return buildFragment(this.#collect(), this.__familyHtml);
 			} catch (error) {
 				return "";
+			}
+		}
+
+		getProfileData() {
+			try {
+				return normalizeData(this.#collect());
+			} catch (error) {
+				return normalizeData(this.__data);
 			}
 		}
 
@@ -1989,7 +1998,11 @@
 						const result = await this.#submitPhotoUpload(file);
 						if (result?.filename) {
 							this.#setPhotoSrc(`images/${result.filename}`);
-							this.#setStatus("Image submitted for review.", "success");
+							if (result.payload?.pull_request?.url) {
+								this.#setStatus("Image submitted for review.", "success");
+							} else {
+								this.#setStatus("Image uploaded.", "success");
+							}
 						}
 					} catch (error) {
 						console.error(error);
@@ -2355,7 +2368,7 @@
 			const creatingGedcom = publishFiles.some((file) => file.path.endsWith("/family-tree.ged"));
 
 			if (save) save.disabled = true;
-			this.#setStatus("Saving infobox and opening a pull request…");
+			this.#setStatus("Saving infobox…");
 
 			try {
 				const requestBody = {
@@ -2394,10 +2407,11 @@
 				}
 
 				const pr = payload.pull_request || {};
-				const link = pr.url
-					? `pull request #${pr.number} (${pr.url})`
-					: "a pull request";
-				this.#setStatus(`Infobox saved — ${link} opened for review.`, "success");
+				if (pr.url) {
+					this.#setStatus(`Infobox saved — pull request #${pr.number} (${pr.url}) opened for review.`, "success");
+				} else {
+					this.#setStatus("Infobox saved and committed.", "success");
+				}
 				if (creatingGedcom) {
 					this.__gedcomExists = true;
 				}
