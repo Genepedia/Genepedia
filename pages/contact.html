@@ -202,6 +202,23 @@
             color: var(--color-progressive);
             font-weight: 600;
         }
+
+        .contact-page__status[data-state="success"] {
+            color: var(--color-success, #1a7f37);
+        }
+
+        .contact-page__status[data-state="error"] {
+            color: var(--color-danger, #cf222e);
+        }
+
+        .contact-page__status[data-state="pending"] {
+            color: var(--color-subtle);
+        }
+
+        .contact-page__status a {
+            color: inherit;
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -632,36 +649,44 @@
                 };
             }
 
-            function buildIssueBody(reasonDetails, subject, message) {
+            function buildDiagnosticsText() {
                 const diagnostics = collectDiagnostics();
-                const lines = [
+                return [
+                    'Browser: ' + diagnostics.browser,
+                    'Operating System: ' + diagnostics.operatingSystem,
+                    'Screen Resolution: ' + diagnostics.screen,
+                    'Viewport: ' + diagnostics.viewport,
+                    'Device Pixel Ratio: ' + diagnostics.pixelRatio,
+                    'Language: ' + diagnostics.language,
+                    'Time Zone: ' + diagnostics.timezone,
+                    'Preferred Color Scheme: ' + diagnostics.colorScheme,
+                    'Reduced Motion: ' + diagnostics.reducedMotion,
+                    'Network Status: ' + diagnostics.online,
+                    'Page URL: ' + diagnostics.pageUrl,
+                    'User Agent: ' + diagnostics.userAgent,
+                ].join('\n');
+            }
+
+            // Fallback issue body for the "open on GitHub instead" link shown only
+            // when the background API submission could not be used.
+            function buildIssueBody(reasonDetails, subject, message) {
+                return [
                     'Reason: ' + reasonDetails.title,
-                    'GitHub Label: ' + reasonDetails.label,
-                    'Submitted From: Contact Page',
+                    '',
+                    'Message',
+                    message,
                     '',
                     'Environment',
-                    '- Browser: ' + diagnostics.browser,
-                    '- Operating System: ' + diagnostics.operatingSystem,
-                    '- Screen Resolution: ' + diagnostics.screen,
-                    '- Viewport: ' + diagnostics.viewport,
-                    '- Device Pixel Ratio: ' + diagnostics.pixelRatio,
-                    '- Language: ' + diagnostics.language,
-                    '- Time Zone: ' + diagnostics.timezone,
-                    '- Preferred Color Scheme: ' + diagnostics.colorScheme,
-                    '- Reduced Motion: ' + diagnostics.reducedMotion,
-                    '- Network Status: ' + diagnostics.online,
-                    '- Page URL: ' + diagnostics.pageUrl,
-                    '- User Agent: ' + diagnostics.userAgent,
-                ];
+                    buildDiagnosticsText(),
+                ].join('\n');
+            }
 
-                lines.push('');
-                lines.push('Subject');
-                lines.push(subject);
-                lines.push('');
-                lines.push('Message');
-                lines.push(message);
-
-                return lines.join('\n');
+            function buildGitHubIssueUrl(reasonDetails, subject, message) {
+                const issueUrl = new URL('https://github.com/' + repoSlug + '/issues/new');
+                issueUrl.searchParams.set('labels', reasonDetails.label);
+                issueUrl.searchParams.set('title', subject);
+                issueUrl.searchParams.set('body', buildIssueBody(reasonDetails, subject, message));
+                return issueUrl.toString();
             }
 
             function validateRequiredField(input, message) {
@@ -677,6 +702,127 @@
 
                 input.setCustomValidity('');
                 return true;
+            }
+
+            function setContactStatus(text, options) {
+                const statusEl = document.getElementById('contact-status');
+                if (!statusEl) {
+                    return;
+                }
+                const opts = options || {};
+                statusEl.dataset.state = opts.state || '';
+                if (opts.html) {
+                    statusEl.innerHTML = opts.html;
+                } else {
+                    statusEl.textContent = text || '';
+                }
+            }
+
+            function escapeHtml(value) {
+                return String(value).replace(/[&<>"']/g, function (char) {
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;',
+                    }[char];
+                });
+            }
+
+            // Submit the contact form by asking the API to open a GitHub issue in
+            // the background. The visitor stays on the page; we only fall back to a
+            // manual GitHub link if the API is unavailable.
+            async function submitContactForm(form) {
+                const subjectInput = document.getElementById('contact-subject');
+                const messageInput = document.getElementById('contact-message');
+                const submitButton = form.querySelector('button[type="submit"]');
+
+                const subjectValid = validateRequiredField(subjectInput, 'Please enter a subject.');
+                const messageValid = validateRequiredField(messageInput, 'Please enter a message.');
+                if (!subjectValid || !messageValid || !form.reportValidity()) {
+                    return;
+                }
+
+                const reasonInput = getReasonElements().input;
+                const reasonKey = reasonInput?.value || 'question';
+                const reasonDetails = getReasonDetails();
+                const subject = subjectInput.value.trim();
+                const message = messageInput.value.trim();
+
+                const endpoint = resolveApiUrl('github-contact.php');
+                if (!endpoint) {
+                    // No API configured for this deployment — degrade gracefully to a
+                    // pre-filled GitHub issue the visitor can submit manually.
+                    setContactStatus('', {
+                        state: 'error',
+                        html: 'The contact service is unavailable right now. '
+                            + '<a href="' + escapeHtml(buildGitHubIssueUrl(reasonDetails, subject, message))
+                            + '" target="_blank" rel="noopener noreferrer">Open an issue on GitHub instead</a>.',
+                    });
+                    return;
+                }
+
+                if (submitButton) {
+                    submitButton.disabled = true;
+                }
+                setContactStatus('Sending your message…', { state: 'pending' });
+
+                try {
+                    const response = await fetch(endpoint, getFetchInit({
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            reason: reasonKey,
+                            subject: subject,
+                            message: message,
+                            details: buildDiagnosticsText(),
+                        }),
+                    }));
+
+                    const payload = await response.json().catch(function () {
+                        return null;
+                    });
+
+                    if (response.ok && payload && payload.ok) {
+                        form.reset();
+                        setReasonValue('question');
+                        const issueUrl = String(payload.url || '');
+                        const successHtml = 'Thanks! Your message has been sent'
+                            + (issueUrl
+                                ? ' — you can <a href="' + escapeHtml(issueUrl)
+                                    + '" target="_blank" rel="noopener noreferrer">follow it on GitHub</a>.'
+                                : '.');
+                        setContactStatus('', { state: 'success', html: successHtml });
+                        return;
+                    }
+
+                    // The issue is opened under the visitor's own GitHub account, so
+                    // signing in is required. Offer that, plus a manual fallback that
+                    // still posts as them (never as the Genepedia bot).
+                    if (response.status === 401 || (payload && payload.error === 'authentication_required')) {
+                        setContactStatus('', {
+                            state: 'error',
+                            html: 'Please sign in with GitHub (top-right) so your message is sent under your name, then try again — or '
+                                + '<a href="' + escapeHtml(buildGitHubIssueUrl(reasonDetails, subject, message))
+                                + '" target="_blank" rel="noopener noreferrer">open the issue on GitHub</a>.',
+                        });
+                        return;
+                    }
+
+                    throw new Error((payload && payload.message) || 'Request failed.');
+                } catch (error) {
+                    setContactStatus('', {
+                        state: 'error',
+                        html: 'Sorry, we could not send your message. Please try again, or '
+                            + '<a href="' + escapeHtml(buildGitHubIssueUrl(reasonDetails, subject, message))
+                            + '" target="_blank" rel="noopener noreferrer">open an issue on GitHub</a>.',
+                    });
+                } finally {
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                    }
+                }
             }
 
             if (document.documentElement.dataset.contactFormBound !== 'true') {
@@ -704,30 +850,7 @@
                     }
 
                     event.preventDefault();
-
-                    const subjectInput = document.getElementById('contact-subject');
-                    const messageInput = document.getElementById('contact-message');
-                    const statusEl = document.getElementById('contact-status');
-                    const subjectValid = validateRequiredField(subjectInput, 'Please enter a subject.');
-                    const messageValid = validateRequiredField(messageInput, 'Please enter a message.');
-
-                    if (!subjectValid || !messageValid || !form.reportValidity()) {
-                        return;
-                    }
-
-                    const reasonDetails = getReasonDetails();
-                    const subject = subjectInput.value.trim();
-                    const message = messageInput.value.trim();
-
-                    if (statusEl) {
-                        statusEl.textContent = 'Opening GitHub issue...';
-                    }
-
-                    const issueUrl = new URL('https://github.com/' + repoSlug + '/issues/new');
-                    issueUrl.searchParams.set('labels', reasonDetails.label);
-                    issueUrl.searchParams.set('title', subject);
-                    issueUrl.searchParams.set('body', buildIssueBody(reasonDetails, subject, message));
-                    window.location.assign(issueUrl.toString());
+                    void submitContactForm(form);
                 });
             }
 

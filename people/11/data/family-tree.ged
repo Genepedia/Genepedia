@@ -1,0 +1,27 @@
+0 HEAD
+1 GEDC
+2 VERS 5.5.5
+2 FORM LINEAGE-LINKED
+3 VERS 5.5.5
+1 CHAR UTF-8
+1 SOUR GENEPEDIA
+2 NAME Genepedia
+2 VERS 1.0.0
+1 DEST GENEPEDIA
+1 DATE 10 JUN 2026
+1 FILE family-tree.ged
+1 LANG English
+1 SUBM @U1@
+0 @U1@ SUBM
+1 NAME Genepedia
+0 @P11@ INDI
+1 NAME Elon Reeve Musk /Musk/
+2 GIVN Elon
+2 SURN Musk
+1 SEX M
+1 BIRT
+2 DATE 28 JUN 1971
+2 PLAC Pretoria, Transvaal, South Africa
+1 REFN 11
+2 TYPE genepedia
+0 TRLR

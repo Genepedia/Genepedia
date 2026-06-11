@@ -138,12 +138,29 @@ body.theme-dark .people-page__content profile-identity table-immediate-family::b
   color: #a7adb4;
 }
 
-.people-page__content profile-identity table-name::before { content: "Name"; }
-.people-page__content profile-identity table-gender::before { content: "Gender"; }
-.people-page__content profile-identity table-birth::before { content: "Birth"; }
-.people-page__content profile-identity table-death::before { content: "Death"; }
-.people-page__content profile-identity table-place-of-burial::before { content: "Place of burial"; }
-.people-page__content profile-identity table-immediate-family::before { content: "Immediate family"; }
+.people-page__content profile-identity table-name::before {
+  content: "Name";
+}
+
+.people-page__content profile-identity table-gender::before {
+  content: "Gender";
+}
+
+.people-page__content profile-identity table-birth::before {
+  content: "Birth";
+}
+
+.people-page__content profile-identity table-death::before {
+  content: "Death";
+}
+
+.people-page__content profile-identity table-place-of-burial::before {
+  content: "Place of burial";
+}
+
+.people-page__content profile-identity table-immediate-family::before {
+  content: "Immediate family";
+}
 
 .people-page__content profile-identity table-immediate-family p {
   margin: 0 0 0.55rem;
@@ -280,6 +297,7 @@ body.profile-edit-page .page-editor__breadcrumb {
   font: 0.875rem -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
   color: var(--color-progressive, #3366cc);
 }
+
 body.profile-edit-page .page-editor__breadcrumb-list {
   display: flex;
   gap: 0.5rem;
@@ -288,15 +306,30 @@ body.profile-edit-page .page-editor__breadcrumb-list {
   padding: 0;
   list-style: none;
 }
+
 body.profile-edit-page .page-editor__breadcrumb-list a {
   color: inherit;
   text-decoration: none;
 }
+
 body.profile-edit-page .page-editor__breadcrumb-list a:hover {
   text-decoration: underline;
 }
+
 body.profile-edit-page .page-editor__breadcrumb-sep {
   color: var(--color-subtle, #6b7280);
+}
+
+/* The profile name is read-only here (owned by the Infobox display name), so it
+   reads as static heading text rather than an editable field. */
+.profile-edit .page-editor__title-input.profile-edit__title-static,
+.profile-edit .page-editor__title-input.profile-edit__title-static:focus {
+  border-color: transparent;
+  background: transparent;
+  padding-left: 0;
+  cursor: default;
+  outline: none;
+  box-shadow: none;
 }
 
 .profile-edit__infobox-panel {
@@ -422,6 +455,7 @@ body.theme-dark .pie__group {
 body.theme-dark .pie__field--date.is-between .pie__date-range-row--divider {
   color: #a7adb4;
 }
+
 .pie__date-input-wrap {
   position: relative;
   display: inline-flex;
@@ -483,10 +517,12 @@ body.theme-dark .pie__date-picker-button:focus-visible {
   color: #6b9eff;
   background: rgba(107, 158, 255, 0.12);
 }
+
 /* Cause-of-death suggestion dropdown */
 .pie__field--suggest {
   position: relative;
 }
+
 .pie__suggestions {
   position: absolute;
   left: 0;
@@ -494,13 +530,14 @@ body.theme-dark .pie__date-picker-button:focus-visible {
   top: calc(100% + 0.4rem);
   z-index: 220;
   background: var(--background-color-base, #ffffff);
-  border: 1px solid rgba(0,0,0,0.12);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 0.25rem;
   max-height: 12rem;
   overflow: auto;
   padding: 0.25rem;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
+
 .pie__suggestion-button {
   display: block;
   width: 100%;
@@ -512,13 +549,15 @@ body.theme-dark .pie__date-picker-button:focus-visible {
   border-radius: 0.125rem;
   color: inherit;
 }
+
 .pie__suggestion-button.is-active,
 .pie__suggestion-button:hover {
   background: var(--background-color-interactive-subtle, #f1f3f5);
 }
+
 body.theme-dark .pie__suggestions {
   background: #101418;
-  border-color: rgba(255,255,255,0.06);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 .pie__row--location,
@@ -754,16 +793,20 @@ body.theme-dark .pie__photo-empty-text {
   align-items: center;
   justify-content: center;
 }
+
 /* Ensure the UA/author cascade doesn't force the modal visible when it
    should be hidden via the `hidden` attribute or aria-hidden. */
-.pie__media-modal[hidden], .pie__media-modal[aria-hidden="true"] {
+.pie__media-modal[hidden],
+.pie__media-modal[aria-hidden="true"] {
   display: none !important;
 }
+
 .pie__media-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.55);
 }
+
 .pie__media-modal-panel {
   position: relative;
   width: min(92%, 64rem);
@@ -771,24 +814,64 @@ body.theme-dark .pie__photo-empty-text {
   overflow: auto;
   background: var(--background-color-base, #fff);
   border-radius: 0.375rem;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
   padding: 0.5rem;
   z-index: 360;
 }
+
 .pie__media-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
-.pie__media-modal-body { padding: 0.6rem; }
-.pie__media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.5rem; }
-.pie__media-thumb { display: inline-flex; flex-direction: column; gap: 0.25rem; align-items: stretch; padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
-.pie__media-thumb img { width: 100%; height: 6.25rem; object-fit: cover; border-radius: 0.25rem; display:block; }
-.pie__media-thumb-label { font-size: 0.85rem; color: #333; padding: 0 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-body.theme-dark .pie__media-modal-panel { background: #101418; color: #eaecf0; border: 1px solid rgba(255,255,255,0.04); }
+
+.pie__media-modal-body {
+  padding: 0.6rem;
+}
+
+.pie__media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.5rem;
+}
+
+.pie__media-thumb {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: stretch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pie__media-thumb img {
+  width: 100%;
+  height: 6.25rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  display: block;
+}
+
+.pie__media-thumb-label {
+  font-size: 0.85rem;
+  color: #333;
+  padding: 0 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.theme-dark .pie__media-modal-panel {
+  background: #101418;
+  color: #eaecf0;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
 
 .pie__location-details {
   padding: 0.8rem 0.95rem;
@@ -809,7 +892,7 @@ body.theme-dark .pie__location-details {
   gap: 0.45rem 0.75rem;
 }
 
-.pie__location-detail-row + .pie__location-detail-row {
+.pie__location-detail-row+.pie__location-detail-row {
   margin-top: 0.45rem;
 }
 
@@ -932,6 +1015,88 @@ body.theme-dark .pie__date-preview {
 .pie__save:disabled {
   opacity: 0.6;
   cursor: progress;
+}
+
+/* ------------------------------------------------------------------ */
+/* Infobox section quick-nav + readability                             */
+/* ------------------------------------------------------------------ */
+
+/* Keep the structured form to a comfortable reading width and centre it
+   so inputs don't stretch edge-to-edge on wide screens. */
+.profile-edit__infobox-panel .pie {
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+/* The shared .page-editor__panel clips with overflow:hidden, which would
+   trap position:sticky. The infobox panel only holds the form, so it is safe
+   to let it overflow visibly and pin the section nav against the page scroll. */
+.profile-edit__infobox-panel {
+  overflow: visible;
+}
+
+.pie__section-nav {
+  position: sticky;
+  top: var(--header-chrome-height, 55px);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 1.25rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.5rem;
+  background: rgba(248, 249, 250, 0.97);
+  backdrop-filter: blur(4px);
+}
+
+body.theme-dark .pie__section-nav {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(16, 20, 24, 0.97);
+}
+
+.pie__section-nav-link {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #54595d;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+body.theme-dark .pie__section-nav-link {
+  color: #a7adb4;
+}
+
+.pie__section-nav-link:hover {
+  background: rgba(51, 102, 204, 0.08);
+  color: #3366cc;
+}
+
+body.theme-dark .pie__section-nav-link:hover {
+  background: rgba(107, 158, 255, 0.14);
+  color: #6b9eff;
+}
+
+.pie__section-nav-link.is-active {
+  background: #3366cc;
+  border-color: #3366cc;
+  color: #ffffff;
+}
+
+body.theme-dark .pie__section-nav-link.is-active {
+  background: #6b9eff;
+  border-color: #6b9eff;
+  color: #101418;
+}
+
+/* Offset scroll-into-view so a jumped-to section clears the sticky nav. */
+.pie__group {
+  scroll-margin-top: calc(var(--header-chrome-height, 55px) + 4rem);
 }
 
 @media (max-width: 600px) {

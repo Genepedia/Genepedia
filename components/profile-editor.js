@@ -78,6 +78,102 @@
     }
     window.PageEditorBlocks.registerLibrary('profile', PROFILE_BLOCK_LIBRARY);
 
+    function resolveSiteUrl(path, fallback) {
+        return window.App?.resolveSiteUrl ? window.App.resolveSiteUrl(path) : fallback;
+    }
+
+    // Replace the editor's plain "Back to page" link with a People → Profile
+    // breadcrumb so editors keep their bearings. Safe to call more than once —
+    // it no-ops if a breadcrumb already exists.
+    function buildBreadcrumb(editor) {
+        if (!editor || editor.querySelector('.page-editor__breadcrumb')) {
+            return;
+        }
+        const backEl = editor.querySelector('.page-editor__back');
+        if (!backEl) {
+            return;
+        }
+
+        const peopleIndexUrl = resolveSiteUrl('people/', '../people/');
+        const profileUrl = resolveSiteUrl(`people/${personId}/profile.html`, `../people/${personId}/profile.html`);
+        const titleInput = editor.querySelector('.page-editor__title-input');
+        const titleText = (titleInput && titleInput.value && titleInput.value.trim()) ? titleInput.value.trim() : 'Profile';
+
+        const nav = document.createElement('nav');
+        nav.className = 'page-editor__breadcrumb';
+        nav.setAttribute('aria-label', 'Breadcrumb');
+
+        const ol = document.createElement('ol');
+        ol.className = 'page-editor__breadcrumb-list';
+
+        const liHome = document.createElement('li');
+        liHome.className = 'page-editor__breadcrumb-item';
+        const aHome = document.createElement('a');
+        aHome.href = peopleIndexUrl;
+        aHome.textContent = 'People';
+        liHome.appendChild(aHome);
+
+        const liSep = document.createElement('li');
+        liSep.className = 'page-editor__breadcrumb-sep';
+        liSep.setAttribute('aria-hidden', 'true');
+        liSep.textContent = '›';
+
+        const liCurrent = document.createElement('li');
+        liCurrent.className = 'page-editor__breadcrumb-item';
+        const aCur = document.createElement('a');
+        aCur.href = profileUrl;
+        aCur.textContent = titleText;
+        liCurrent.appendChild(aCur);
+
+        ol.append(liHome, liSep, liCurrent);
+        nav.appendChild(ol);
+        backEl.replaceWith(nav);
+    }
+
+    // The profile's page title is its display name, which is owned by the
+    // Infobox tab — editing it here as free text doesn't make sense. So the
+    // field is shown read-only (it still travels with the save as the page's
+    // <h1>); the Infobox "Display name" is where the name is actually changed.
+    function makeTitleStatic(editor) {
+        const titleInput = editor.querySelector('.page-editor__title-input');
+        if (titleInput && titleInput.dataset.profileStatic !== 'true') {
+            titleInput.dataset.profileStatic = 'true';
+            titleInput.readOnly = true;
+            titleInput.tabIndex = -1;
+            titleInput.classList.add('profile-edit__title-static');
+            titleInput.setAttribute('aria-label', 'Profile name (set from the infobox display name)');
+            titleInput.removeAttribute('placeholder');
+        }
+        const titleLabel = editor.querySelector('.page-editor__title-label');
+        if (titleLabel) {
+            titleLabel.textContent = 'Profile name';
+        }
+    }
+
+    // Ctrl/Cmd+S saves the profile (both tabs share the editor's global Save).
+    // The shared page-editor only binds undo/redo, so this is added here, scoped
+    // to the profile edit page.
+    function bindSaveShortcut() {
+        if (document.documentElement.dataset.profileSaveShortcutBound === 'true') {
+            return;
+        }
+        document.documentElement.dataset.profileSaveShortcutBound = 'true';
+
+        document.addEventListener('keydown', (event) => {
+            if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's' || event.shiftKey || event.altKey) {
+                return;
+            }
+            const saveButton = document.querySelector('.page-editor__button--save[data-action="publish"]');
+            if (!saveButton) {
+                return;
+            }
+            event.preventDefault();
+            if (!saveButton.disabled) {
+                saveButton.click();
+            }
+        });
+    }
+
     function configureEditor() {
         const editor = document.querySelector('page-editor');
         if (!editor) {
@@ -108,48 +204,9 @@
                 : `../people/${personId}/data`;
             editor.setAttribute('asset-base', assetBase);
 
-                // Replace the simple "Back to page" link with a breadcrumb on the
-                // profile edit page so users see context (People → Profile).
-                const backEl = editor.querySelector('.page-editor__back');
-                if (backEl) {
-                    const peopleIndexUrl = window.App?.resolveSiteUrl ? window.App.resolveSiteUrl('people/') : '../people/';
-                    const profileUrl = window.App?.resolveSiteUrl ? window.App.resolveSiteUrl(`people/${personId}/profile.html`) : `../people/${personId}/profile.html`;
-                    const titleInput = editor.querySelector('.page-editor__title-input');
-                    const titleText = (titleInput && titleInput.value && titleInput.value.trim()) ? titleInput.value.trim() : 'Profile';
-
-                    const nav = document.createElement('nav');
-                    nav.className = 'page-editor__breadcrumb';
-                    nav.setAttribute('aria-label', 'Breadcrumb');
-
-                    const ol = document.createElement('ol');
-                    ol.className = 'page-editor__breadcrumb-list';
-
-                    const liHome = document.createElement('li');
-                    liHome.className = 'page-editor__breadcrumb-item';
-                    const aHome = document.createElement('a');
-                    aHome.href = peopleIndexUrl;
-                    aHome.textContent = 'People';
-                    liHome.appendChild(aHome);
-
-                    const liSep = document.createElement('li');
-                    liSep.className = 'page-editor__breadcrumb-sep';
-                    liSep.setAttribute('aria-hidden', 'true');
-                    liSep.textContent = '›';
-
-                    const liCurrent = document.createElement('li');
-                    liCurrent.className = 'page-editor__breadcrumb-item';
-                    const aCur = document.createElement('a');
-                    aCur.href = profileUrl;
-                    aCur.textContent = titleText;
-                    liCurrent.appendChild(aCur);
-
-                    ol.appendChild(liHome);
-                    ol.appendChild(liSep);
-                    ol.appendChild(liCurrent);
-                    nav.appendChild(ol);
-
-                    backEl.replaceWith(nav);
-                }
+            // Replace the simple "Back to page" link with a breadcrumb on the
+            // profile edit page so users see context (People → Profile).
+            buildBreadcrumb(editor);
         }
     }
 
@@ -203,7 +260,7 @@
             toolbarRow.prepend(sectionTabs);
         }
 
-        
+
 
         const infoboxPanel = document.createElement('div');
         infoboxPanel.className = 'page-editor__panel profile-edit__infobox-panel';
@@ -220,48 +277,8 @@
         // Ensure the header shows a breadcrumb (People → Profile) instead of
         // a single "Back to page" button. Run here after the editor upgrades
         // so the header markup exists.
-        if (!editor.querySelector('.page-editor__breadcrumb')) {
-            const backEl = editor.querySelector('.page-editor__back');
-            if (backEl) {
-                const peopleIndexUrl = window.App?.resolveSiteUrl ? window.App.resolveSiteUrl('people/') : '../people/';
-                const profileUrl = window.App?.resolveSiteUrl ? window.App.resolveSiteUrl(`people/${personId}/profile.html`) : `../people/${personId}/profile.html`;
-                const titleInput = editor.querySelector('.page-editor__title-input');
-                const titleText = (titleInput && titleInput.value && titleInput.value.trim()) ? titleInput.value.trim() : 'Profile';
-
-                const nav = document.createElement('nav');
-                nav.className = 'page-editor__breadcrumb';
-                nav.setAttribute('aria-label', 'Breadcrumb');
-
-                const ol = document.createElement('ol');
-                ol.className = 'page-editor__breadcrumb-list';
-
-                const liHome = document.createElement('li');
-                liHome.className = 'page-editor__breadcrumb-item';
-                const aHome = document.createElement('a');
-                aHome.href = peopleIndexUrl;
-                aHome.textContent = 'People';
-                liHome.appendChild(aHome);
-
-                const liSep = document.createElement('li');
-                liSep.className = 'page-editor__breadcrumb-sep';
-                liSep.setAttribute('aria-hidden', 'true');
-                liSep.textContent = '›';
-
-                const liCurrent = document.createElement('li');
-                liCurrent.className = 'page-editor__breadcrumb-item';
-                const aCur = document.createElement('a');
-                aCur.href = profileUrl;
-                aCur.textContent = titleText;
-                liCurrent.appendChild(aCur);
-
-                ol.appendChild(liHome);
-                ol.appendChild(liSep);
-                ol.appendChild(liCurrent);
-                nav.appendChild(ol);
-
-                backEl.replaceWith(nav);
-            }
-        }
+        buildBreadcrumb(editor);
+        makeTitleStatic(editor);
 
         const saveGroup = editor.querySelector('.page-editor__save-group');
         const status = editor.querySelector('.page-editor__status');
@@ -346,4 +363,5 @@
     configureEditor();
     configureInfobox();
     setupTabs();
+    bindSaveShortcut();
 })();

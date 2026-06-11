@@ -928,6 +928,19 @@ class PeoplePage extends HTMLElement {
     return ['edit-href'];
   }
 
+  // Monotonic token identifying the most recently requested tab load. Each call
+  // to #loadTab claims a new token; async loaders check it before writing to the
+  // shared content element so a slow earlier tab can never overwrite a newer one
+  // (e.g. clicking Changes then immediately Media must show Media, not Changes).
+  #tabLoadSeq = 0;
+  #activeTabToken = 0;
+  #activeTabName = '';
+
+  // True when the given load token has been superseded by a newer tab request.
+  #isStaleTabLoad(token) {
+    return token !== this.#activeTabToken;
+  }
+
   connectedCallback() {
     if (this.__rendered) return;
     this.__rendered = true;
@@ -1305,6 +1318,14 @@ class PeoplePage extends HTMLElement {
         const match = title.match(/download as\s+(.+)/i);
         const type = (match && match[1]) ? match[1].toLowerCase().replace(/\s+/g, '') : title.toLowerCase().replace(/\s+/g, '');
 
+        // On the Tree tab the download dropdown should export the family tree
+        // itself, not screenshot the embedded viewer (whose shadow DOM a generic
+        // capture can't reach). Delegate the relevant formats to the component.
+        if (this.#activeTabName === 'tree' && await this.#handleTreeDownload(type)) {
+          closeAllMenus();
+          return;
+        }
+
         const manager = await ensureManager();
         if (manager && typeof manager.handleDownload === 'function') {
           try {
@@ -1352,6 +1373,46 @@ class PeoplePage extends HTMLElement {
 
   #getContentElement() {
     return this.querySelector('.people-page__content');
+  }
+
+  // Export the Tree tab for the shared toolbar download dropdown. Returns true
+  // when the format was handled here; false lets the generic manager take over.
+  async #handleTreeDownload(type) {
+    const fmt = String(type || '').toLowerCase();
+    const tree = this.#getContentElement()?.querySelector('family-tree');
+
+    if ((fmt === 'svg' || fmt === 'png') && tree && typeof tree.exportTreeImage === 'function') {
+      try {
+        return await tree.exportTreeImage(fmt);
+      } catch (error) {
+        console.error('Tree export failed', error);
+        return false;
+      }
+    }
+
+    if (fmt === 'gedcom') {
+      try {
+        const response = await fetch(this.#resolveDataUrl('family-tree.ged'), { cache: 'no-store' });
+        if (!response.ok) {
+          return false;
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${this.#resolveProfileSlug()}-family-tree.ged`;
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        return true;
+      } catch (error) {
+        console.error('GEDCOM download failed', error);
+        return false;
+      }
+    }
+
+    return false;
   }
 
   #resolveDataUrl(filename) {
@@ -1455,7 +1516,7 @@ class PeoplePage extends HTMLElement {
     document.head.append(link);
   }
 
-  async #loadChangesTab() {
+  async #loadChangesTab(token) {
     const contentEl = this.#getContentElement();
     if (!contentEl) {
       return;
@@ -1469,7 +1530,17 @@ class PeoplePage extends HTMLElement {
         throw new Error('Change history is unavailable for this profile.');
       }
 
+      if (this.#isStaleTabLoad(token)) {
+        return;
+      }
       await pageTabs.mountChangesView(contentEl, sourcePaths);
+      if (this.#isStaleTabLoad(token)) {
+        // A newer tab was requested while mountChangesView was writing to the
+        // shared content element. Reload whatever tab is now current so its
+        // content — not this stale change history — is what stays on screen.
+        void this.#loadTab(this.#activeTabName);
+        return;
+      }
       this.dispatchEvent(
         new CustomEvent('people-page-tab-loaded', {
           bubbles: true,
@@ -1478,6 +1549,9 @@ class PeoplePage extends HTMLElement {
         }),
       );
     } catch (error) {
+      if (this.#isStaleTabLoad(token)) {
+        return;
+      }
       contentEl.innerHTML = '<p>Could not load change history. Please try again.</p>';
       console.error(error);
     }
@@ -1489,23 +1563,29 @@ class PeoplePage extends HTMLElement {
       return;
     }
 
+    // Claim this load. Any earlier in-flight load becomes stale and will skip
+    // its DOM writes, so rapidly switching tabs always settles on the last one.
+    const token = ++this.#tabLoadSeq;
+    this.#activeTabToken = token;
+    this.#activeTabName = tab;
+
     if (tab === 'changes') {
-      await this.#loadChangesTab();
+      await this.#loadChangesTab(token);
       return;
     }
 
     if (tab === 'tree') {
-      await this.#loadTreeTab();
+      await this.#loadTreeTab(token);
       return;
     }
 
     if (tab === 'media') {
-      await this.#loadMediaTab();
+      await this.#loadMediaTab(token);
       return;
     }
 
     if (tab === 'talk') {
-      await this.#loadTalkTab();
+      await this.#loadTalkTab(token);
       return;
     }
 
@@ -1518,7 +1598,11 @@ class PeoplePage extends HTMLElement {
         throw new Error(`Failed to load ${url}: ${response.status}`);
       }
 
-      contentEl.innerHTML = await this.#prepareContentHtml(await response.text(), tab);
+      const html = await this.#prepareContentHtml(await response.text(), tab);
+      if (this.#isStaleTabLoad(token)) {
+        return;
+      }
+      contentEl.innerHTML = html;
 
       this.dispatchEvent(
         new CustomEvent('people-page-tab-loaded', {
@@ -1528,10 +1612,15 @@ class PeoplePage extends HTMLElement {
         }),
       );
     } catch (error) {
+      if (this.#isStaleTabLoad(token)) {
+        return;
+      }
       contentEl.innerHTML = '<p>Could not load this tab. Please try again.</p>';
       console.error(error);
     } finally {
-      contentEl.removeAttribute('aria-busy');
+      if (!this.#isStaleTabLoad(token)) {
+        contentEl.removeAttribute('aria-busy');
+      }
     }
   }
 
@@ -1575,7 +1664,7 @@ class PeoplePage extends HTMLElement {
   // Tree tab
   // -------------------------------------------------------------------
 
-  async #loadTreeTab() {
+  async #loadTreeTab(token) {
     const contentEl = this.#getContentElement();
     if (!contentEl) {
       return;
@@ -1592,12 +1681,16 @@ class PeoplePage extends HTMLElement {
       hasTree = false;
     }
 
+    if (this.#isStaleTabLoad(token)) {
+      return;
+    }
+
     if (!hasTree) {
       contentEl.innerHTML = `
-        <p>No family tree has been added to this profile yet.</p>
+        <p>This profile is missing its required <code>data/family-tree.ged</code> file.</p>
         <p class="people-page__tree-hint">
-          Profile maintainers can add a <code>data/family-tree.ged</code> GEDCOM file to show an
-          interactive family tree here.
+          Every {{APP_NAME}} profile must have a GEDCOM family tree. Open the profile editor and save
+          the infobox to create one, or run <code>node scripts/ensure-profile-gedcom.mjs</code> in the repository.
         </p>
       `;
       contentEl.removeAttribute('aria-busy');
@@ -1609,9 +1702,16 @@ class PeoplePage extends HTMLElement {
       await this.#ensureFamilyTreeComponent();
     } catch (error) {
       console.error(error);
+      if (this.#isStaleTabLoad(token)) {
+        return;
+      }
       contentEl.innerHTML = '<p>Could not load the family tree viewer.</p>';
       contentEl.removeAttribute('aria-busy');
       this.#notifyTabLoaded('tree');
+      return;
+    }
+
+    if (this.#isStaleTabLoad(token)) {
       return;
     }
 
@@ -1663,7 +1763,7 @@ class PeoplePage extends HTMLElement {
   // Media tab
   // -------------------------------------------------------------------
 
-  async #loadMediaTab() {
+  async #loadMediaTab(token) {
     const contentEl = this.#getContentElement();
     if (!contentEl) {
       return;
@@ -1713,6 +1813,9 @@ class PeoplePage extends HTMLElement {
 
     this.#bindMediaUi(contentEl, personId);
     await this.#refreshMediaGallery(contentEl, personId);
+    if (this.#isStaleTabLoad(token)) {
+      return;
+    }
     contentEl.removeAttribute('aria-busy');
     this.#notifyTabLoaded('media');
   }
@@ -2391,7 +2494,7 @@ class PeoplePage extends HTMLElement {
   // Talk tab
   // -------------------------------------------------------------------
 
-  async #loadTalkTab() {
+  async #loadTalkTab(token) {
     const contentEl = this.#getContentElement();
     if (!contentEl) {
       return;
@@ -2437,6 +2540,9 @@ class PeoplePage extends HTMLElement {
 
     this.#bindTalkUi(contentEl, personId);
     await this.#refreshTalk(contentEl, personId);
+    if (this.#isStaleTabLoad(token)) {
+      return;
+    }
     contentEl.removeAttribute('aria-busy');
     this.#notifyTabLoaded('talk');
   }

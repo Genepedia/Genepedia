@@ -26,6 +26,13 @@
 		maxScale: 2.8,
 	};
 
+	// Sizing used to pick the Tree tab's initial zoom: a node's Edit/Add buttons
+	// (.node__actions .icon-button, 28px in tree space) should open at the same
+	// on-screen size as the standard site buttons — footer social icons are 36px
+	// and the header notifications button is 39px, so ~37px is the target.
+	const NODE_ACTION_BUTTON_PX = 28;
+	const SITE_BUTTON_PX = 37;
+
 	const BOOTSTRAP_ICONS_HREF =
 		"https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css";
 
@@ -75,6 +82,62 @@
 			throw new Error("The GEDCOM library (window.AppGedcom) is not available.");
 		}
 		return api.loadTreeData(url);
+	}
+
+	// Read the <table-photo> portrait out of a person's identity table and return
+	// it as a site-resolved URL (or "" when there is none). The src is resolved
+	// relative to the person's data/ folder.
+	async function readPersonPhotoFromFile(id, fileName) {
+		const url = resolveSitePath(`people/${encodeURIComponent(id)}/data/${fileName}`);
+		const response = await fetch(url, { cache: "no-store" });
+		if (!response.ok) return "";
+		const doc = new DOMParser().parseFromString(await response.text(), "text/html");
+		const src = doc.querySelector("table-photo img")?.getAttribute("src")?.trim() || "";
+		if (!src) return "";
+		if (/^(https?:)?\/\//i.test(src) || src.startsWith("data:")) return src;
+		return resolveSitePath(
+			`people/${encodeURIComponent(id)}/data/${src.replace(/^\.?\//, "")}`,
+		);
+	}
+
+	// Resolve the portrait for a Genepedia person from their identity table.
+	// GEDCOM has no portrait field, so node avatars are hydrated from each
+	// person's profile. Infobox-edited profiles keep the table in its own
+	// profile-table.html fragment; older profiles inline it in profile.html — so
+	// both are tried. Results are cached (as promises) per person.
+	const personPhotoCache = new Map();
+	function resolveGenepediaPhotoUrl(genepediaId) {
+		const id = String(genepediaId || "").trim();
+		if (!id) return Promise.resolve("");
+		if (personPhotoCache.has(id)) return personPhotoCache.get(id);
+
+		const promise = (async () => {
+			for (const fileName of ["profile-table.html", "profile.html"]) {
+				try {
+					const url = await readPersonPhotoFromFile(id, fileName);
+					if (url) return url;
+				} catch (error) {
+					// Try the next candidate file.
+				}
+			}
+			return "";
+		})();
+
+		personPhotoCache.set(id, promise);
+		return promise;
+	}
+
+	// Populate person.photoUrl for every person that maps to a Genepedia profile.
+	// Runs before the first render so portraits appear immediately. Failures are
+	// silent — the node simply falls back to its placeholder icon.
+	async function enrichPeopleWithPhotos(people) {
+		await Promise.all(
+			(people || []).map(async (person) => {
+				if (!person || person.photoUrl) return;
+				const url = await resolveGenepediaPhotoUrl(person.genepediaId);
+				if (url) person.photoUrl = url;
+			}),
+		);
 	}
 
 	function clamp(value, min, max) {
@@ -262,7 +325,7 @@
 			return unionWidth;
 		}
 
-		function layout(rootUnionId) {
+		function layout(rootUnionId, opts = {}) {
 			const positions = {
 				people: new Map(),
 				unions: new Map(),
@@ -366,8 +429,27 @@
 				stack.delete(unionId);
 			}
 
-			const rootWidth = measureUnion(rootUnionId);
-			layoutUnion(rootUnionId, CONFIG.padding, 0, new Set());
+			const rootUnion = indexes.unionsById.get(rootUnionId);
+			let rootWidth;
+			if (rootUnion) {
+				rootWidth = measureUnion(rootUnionId);
+				layoutUnion(rootUnionId, CONFIG.padding, 0, new Set());
+			} else {
+				// No valid union to root on — e.g. a lone individual whose GEDCOM has
+				// no family records yet. Still place the focused person's own node so
+				// the Tree tab is never blank and always shows the person box.
+				rootWidth = CONFIG.nodeWidth;
+				const fallbackId =
+					opts.fallbackPersonId && indexes.peopleById.has(opts.fallbackPersonId)
+						? opts.fallbackPersonId
+						: data.people[0]?.id ?? null;
+				if (fallbackId) {
+					positions.people.set(fallbackId, {
+						x: CONFIG.padding + CONFIG.nodeWidth / 2,
+						y: CONFIG.padding + CONFIG.nodeHeight / 2,
+					});
+				}
+			}
 
 			// Normalize all positions into a positive coordinate space with padding.
 			const bbox = computeBBox(positions.people);
@@ -1651,8 +1733,6 @@ a.node__name:focus-visible {
 			<div id="treePeopleStats" class="toolbar__stats" aria-live="polite"></div>
 			<button id="fitBtn" class="icon-button" type="button" aria-label="Fit to screen" data-tooltip="Fit to screen"><i class="bi bi-arrows-fullscreen" aria-hidden="true"></i></button>
 			<button id="resetBtn" class="icon-button" type="button" aria-label="Reset view" data-tooltip="Reset view"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
-			<button id="downloadSvgBtn" class="icon-button" type="button" aria-label="Download SVG" data-tooltip="Download SVG"><i class="bi bi-filetype-svg" aria-hidden="true"></i></button>
-			<button id="downloadPngBtn" class="icon-button" type="button" aria-label="Download PNG" data-tooltip="Download PNG"><i class="bi bi-filetype-png" aria-hidden="true"></i></button>
 			<button id="zoomOutBtn" class="icon-button" type="button" aria-label="Zoom out" data-tooltip="Zoom out"><i class="bi bi-dash-lg" aria-hidden="true"></i></button>
 			<button id="zoomInBtn" class="icon-button" type="button" aria-label="Zoom in" data-tooltip="Zoom in"><i class="bi bi-plus-lg" aria-hidden="true"></i></button>
 		</div>
@@ -1769,6 +1849,7 @@ a.node__name:focus-visible {
 			await ensureGedcomLibrary();
 
 			let data = await loadTreeData(gedUrl);
+			await enrichPeopleWithPhotos(data.people);
 			let indexes = buildIndexes(data);
 			let engine = createLayoutEngine(data, indexes);
 			let currentRootUnionId = data.rootUnionId;
@@ -2247,7 +2328,9 @@ a.node__name:focus-visible {
 			const renderTree = (opts = {}) => {
 				closeTreeSearch();
 				const prevTransform = panZoom.get();
-				layoutResult = engine.layout(currentRootUnionId);
+				layoutResult = engine.layout(currentRootUnionId, {
+					fallbackPersonId: opts.selectPersonId || initialPersonId || null,
+				});
 				rendered = render({
 					data,
 					indexes,
@@ -2329,10 +2412,17 @@ a.node__name:focus-visible {
 			const initialPersonId = findPersonIdByRef(personRef);
 			if (initialPersonId) {
 				currentRootUnionId = getPreferredRootUnionIdForPerson(initialPersonId);
-				// Open zoomed in on the selected person so the node text reads at
-				// roughly the same size as body text on the rest of the website
-				// (node name is 14px; ~1.15x lands it near the page's 16px).
-				renderTree({ selectPersonId: initialPersonId, source: "init", transformMode: "pan", scale: 1.15 });
+				// Open zoomed in on the selected person so the node's Edit/Add
+				// buttons render at the same size as the standard site buttons
+				// (footer social = 36px, header notifications = 39px). The node
+				// action buttons are 28px in tree space, so this scale lands them
+				// at ~37px on screen.
+				renderTree({
+					selectPersonId: initialPersonId,
+					source: "init",
+					transformMode: "pan",
+					scale: SITE_BUTTON_PX / NODE_ACTION_BUTTON_PX,
+				});
 			} else {
 				renderTree();
 			}
@@ -2345,8 +2435,6 @@ a.node__name:focus-visible {
 
 			const fitBtn = root.getElementById("fitBtn");
 			const resetBtn = root.getElementById("resetBtn");
-			const downloadSvgBtn = root.getElementById("downloadSvgBtn");
-			const downloadPngBtn = root.getElementById("downloadPngBtn");
 			const zoomInBtn = root.getElementById("zoomInBtn");
 			const zoomOutBtn = root.getElementById("zoomOutBtn");
 
@@ -2362,15 +2450,14 @@ a.node__name:focus-visible {
 				panZoom.set(defaultTransform);
 			});
 
-			downloadSvgBtn?.addEventListener("click", () => {
-				if (!layoutResult) return;
-				const { svg: exportSvg } = buildExportSvg({ data, indexes, layoutResult });
-				downloadBlob("family-tree.svg", new Blob([exportSvg], { type: "image/svg+xml;charset=utf-8" }));
-			});
-			downloadPngBtn?.addEventListener("click", async () => {
-				try {
-					if (!layoutResult) return;
-					const exported = buildExportSvg({ data, indexes, layoutResult });
+			// The in-tree SVG/PNG buttons were removed in favour of the shared
+			// download dropdown in the full-page toolbar. That dropdown is tab-aware,
+			// so on the Tree tab it calls this method to export the rendered tree.
+			this.exportTreeImage = async (format = "svg") => {
+				if (!layoutResult) return false;
+				const exported = buildExportSvg({ data, indexes, layoutResult });
+				const fmt = String(format || "svg").toLowerCase();
+				if (fmt === "png") {
 					const pngBlob = await svgToPngBlob({
 						svg: exported.svg,
 						width: exported.width,
@@ -2378,10 +2465,13 @@ a.node__name:focus-visible {
 						scale: 2,
 					});
 					downloadBlob("family-tree.png", pngBlob);
-				} catch (err) {
-					console.error(err);
+					return true;
 				}
-			});
+				// Default and "svg" both produce the vector export.
+				downloadBlob("family-tree.svg", new Blob([exported.svg], { type: "image/svg+xml;charset=utf-8" }));
+				return true;
+			};
+
 			zoomInBtn?.addEventListener("click", () => panZoom.zoomIn());
 			zoomOutBtn?.addEventListener("click", () => panZoom.zoomOut());
 

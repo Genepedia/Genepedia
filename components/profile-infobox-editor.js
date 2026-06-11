@@ -576,7 +576,7 @@
 		const data = emptyData();
 		if (!raw || typeof raw !== "object") return data;
 		const scalarKeys = [
-				"title", "firstName", "middleName", "lastName", "birthSurname", "suffix",
+			"title", "firstName", "middleName", "lastName", "birthSurname", "suffix",
 			"displayName", "status", "gender", "occupation", "lastResidence",
 		];
 		for (const key of scalarKeys) {
@@ -787,7 +787,7 @@
 				</div>
 				<div class="pie__row">
 					<label class="pie__label" for="pie-display">Display name</label>
-					<div class="pie__field"><input id="pie-display" type="text" data-field="displayName" placeholder="e.g. Thomas Henry Roselt"></div>
+					<div class="pie__field"><input id="pie-display" type="text" data-field="displayName" placeholder="First Name Last Name (Birth Surname)"></div>
 				</div>
 				<div class="pie__row">
 					<label class="pie__label" for="pie-aka">Also known as</label>
@@ -953,10 +953,12 @@
 			this.__locationFields = new Map();
 			this.__savedSnapshot = "";
 			this.__establishingBaseline = false;
+			this.__gedcomExists = false;
 
 			this.innerHTML = TEMPLATE;
 			this.#populateSelects();
 			this.#bind();
+			this.#buildSectionNav();
 			void loadOccupationsList();
 			void loadDeathCausesList();
 
@@ -965,10 +967,7 @@
 			if (!Array.isArray(window.__extraPublishFileProviders)) window.__extraPublishFileProviders = [];
 			this.__extraPublishProvider = async () => {
 				try {
-					const data = this.#collect();
-					const fragment = buildFragment(data, this.__familyHtml);
-					const path = `people/${this.__personId}/data/profile-table.html`;
-					return [{ path, content: fragment }];
+					return this.#buildInfoboxPublishFiles();
 				} catch (err) {
 					console.warn('Error building infobox publish file', err);
 					return [];
@@ -1077,6 +1076,9 @@
 				if (target?.matches?.('[data-date^="birth"],[data-date^="baptism"],[data-date^="death"],[data-date^="burial"]')) {
 					this.#updatePreviews();
 				}
+				if (target?.matches?.('[data-field="title"],[data-field="firstName"],[data-field="middleName"],[data-field="lastName"],[data-field="birthSurname"],[data-field="suffix"],[data-field="displayName"]')) {
+					this.#syncPageTitle();
+				}
 			});
 			form.addEventListener("change", (event) => {
 				const target = event.target;
@@ -1092,6 +1094,82 @@
 			};
 			form.addEventListener("input", notifyDirty, true);
 			form.addEventListener("change", notifyDirty, true);
+		}
+
+		// Build a sticky quick-nav from the fieldset legends so editors can jump
+		// straight to a section (Name, Birth, Death, Photo, …) on this long form
+		// instead of scrolling. The active chip is kept in sync as you scroll.
+		#buildSectionNav() {
+			const { form } = this.#els();
+			if (!form) return;
+
+			const groups = Array.from(form.querySelectorAll(".pie__group"));
+			if (groups.length < 2) return;
+
+			const nav = document.createElement("nav");
+			nav.className = "pie__section-nav";
+			nav.setAttribute("aria-label", "Infobox sections");
+
+			const links = new Map();
+			groups.forEach((group, index) => {
+				if (!group.id) group.id = `pie-section-${index}`;
+				const legend = group.querySelector(".pie__legend");
+				const label = (legend?.textContent || `Section ${index + 1}`).trim();
+
+				const link = document.createElement("button");
+				link.type = "button";
+				link.className = "pie__section-nav-link";
+				link.textContent = label;
+				link.dataset.target = group.id;
+				link.addEventListener("click", () => {
+					group.scrollIntoView({ behavior: "smooth", block: "start" });
+					this.#setActiveSection(group.id);
+				});
+				nav.appendChild(link);
+				links.set(group.id, link);
+			});
+
+			form.insertBefore(nav, groups[0]);
+			this.__sectionLinks = links;
+			this.#setActiveSection(groups[0].id);
+
+			// Highlight whichever section is nearest the top as the editor scrolls.
+			if (typeof IntersectionObserver === "function") {
+				this.__sectionObserver?.disconnect();
+				this.__sectionObserver = new IntersectionObserver(
+					(entries) => {
+						const visible = entries
+							.filter((entry) => entry.isIntersecting)
+							.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+						if (visible?.target?.id) {
+							this.#setActiveSection(visible.target.id);
+						}
+					},
+					{ rootMargin: "-45% 0px -50% 0px", threshold: 0 },
+				);
+				groups.forEach((group) => this.__sectionObserver.observe(group));
+			}
+		}
+
+		#setActiveSection(id) {
+			if (!this.__sectionLinks) return;
+			this.__sectionLinks.forEach((link, linkId) => {
+				link.classList.toggle("is-active", linkId === id);
+			});
+		}
+
+		// The profile's page title (its <h1>) is the display name, shown read-only
+		// in the editor header. Keep it in step with the infobox as the name fields
+		// change so what saves to profile.html always matches the infobox. Falls
+		// back to "First [Middle] Last (Birth Surname) Suffix" when no explicit
+		// display name is set (see displayNameFrom).
+		#syncPageTitle() {
+			const titleInput = document.querySelector(".page-editor__title-input");
+			if (!titleInput) return;
+			const name = displayNameFrom(this.#collect());
+			if (!name || titleInput.value === name) return;
+			titleInput.value = name;
+			titleInput.dispatchEvent(new Event("input", { bubbles: true }));
 		}
 
 		#snapshotFormState() {
@@ -1139,8 +1217,48 @@
 			}
 		}
 
+		#buildStarterGedcom(data) {
+			const starter = window.AppGedcomStarter;
+			if (!starter?.buildProfileGedcomFromInfoboxData) {
+				return "";
+			}
+			return starter.buildProfileGedcomFromInfoboxData(this.__personId, data);
+		}
+
+		#buildInfoboxPublishFiles(data = null) {
+			const collected = data || this.#collect();
+			const fragment = buildFragment(collected, this.__familyHtml);
+			const files = [{
+				path: `people/${this.__personId}/data/profile-table.html`,
+				content: fragment,
+			}];
+
+			if (!this.__gedcomExists) {
+				const gedcom = this.#buildStarterGedcom(collected);
+				if (gedcom) {
+					files.push({
+						path: `people/${this.__personId}/data/family-tree.ged`,
+						content: gedcom,
+					});
+				}
+			}
+
+			return files;
+		}
+
+		async #checkGedcomExists() {
+			try {
+				const url = resolveSiteUrl(`people/${this.__personId}/data/family-tree.ged`);
+				const response = await fetch(url, { cache: "no-store" });
+				this.__gedcomExists = response.ok;
+			} catch (error) {
+				this.__gedcomExists = false;
+			}
+		}
+
 		async #loadExisting() {
 			this.#setStatus("Loading…");
+			await this.#checkGedcomExists();
 			try {
 				const url = resolveSiteUrl(`people/${this.__personId}/data/profile-table.html`);
 				const response = await fetch(url, { cache: "no-store" });
@@ -1179,6 +1297,7 @@
 		}
 
 		disconnectedCallback() {
+			this.__sectionObserver?.disconnect();
 			if (this.__extraPublishProvider && Array.isArray(window.__extraPublishFileProviders)) {
 				const idx = window.__extraPublishFileProviders.indexOf(this.__extraPublishProvider);
 				if (idx >= 0) window.__extraPublishFileProviders.splice(idx, 1);
@@ -1952,7 +2071,7 @@
 				btn.type = 'button';
 				btn.className = 'pie__media-thumb';
 				btn.dataset.mediaName = img.name;
-				btn.innerHTML = `<img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.name)}"><span class="pie__media-thumb-label">${escapeHtml(img.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g,' '))}</span>`;
+				btn.innerHTML = `<img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.name)}"><span class="pie__media-thumb-label">${escapeHtml(img.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '))}</span>`;
 				btn.addEventListener("click", () => {
 					this.#setPhotoSrc(`images/${img.name}`);
 					this.#closePhotoMediaPicker();
@@ -2218,24 +2337,33 @@
 
 			const data = this.#collect();
 			this.__data = data;
-			const fragment = buildFragment(data, this.__familyHtml);
-			const path = `people/${this.__personId}/data/profile-table.html`;
+			const publishFiles = this.#buildInfoboxPublishFiles(data);
+			const primary = publishFiles[0];
+			const path = primary.path;
 			const name = displayNameFrom(data) || `profile ${this.__personId}`;
+			const creatingGedcom = publishFiles.some((file) => file.path.endsWith("/family-tree.ged"));
 
 			if (save) save.disabled = true;
 			this.#setStatus("Saving infobox and opening a pull request…");
 
 			try {
+				const requestBody = {
+					path,
+					content: primary.content,
+					commit_message: `Update infobox for ${name}`,
+					pr_title: `Update infobox for ${name}`,
+					pr_body: creatingGedcom
+						? `Updates the identity infobox (\`${path}\`) and creates the required \`family-tree.ged\` file for this profile.`
+						: `Updates the identity infobox (\`${path}\`) via the profile editor.`,
+				};
+				if (publishFiles.length > 1) {
+					requestBody.files = publishFiles;
+				}
+
 				const response = await fetch(submitUrl, fetchInit({
 					method: "POST",
 					headers: { "Content-Type": "application/json", Accept: "application/json" },
-					body: JSON.stringify({
-						path,
-						content: fragment,
-						commit_message: `Update infobox for ${name}`,
-						pr_title: `Update infobox for ${name}`,
-						pr_body: `Updates the identity infobox (\`${path}\`) via the profile editor.`,
-					}),
+					body: JSON.stringify(requestBody),
 				}));
 
 				let payload = null;
@@ -2259,6 +2387,9 @@
 					? `pull request #${pr.number} (${pr.url})`
 					: "a pull request";
 				this.#setStatus(`Infobox saved — ${link} opened for review.`, "success");
+				if (creatingGedcom) {
+					this.__gedcomExists = true;
+				}
 				this.#setSavedBaseline();
 			} catch (error) {
 				console.error(error);

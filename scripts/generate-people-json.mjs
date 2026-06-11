@@ -134,3 +134,11 @@ function generatePeopleJson() {
 const payload = generatePeopleJson();
 fs.writeFileSync(outputPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
 console.log(`Wrote ${payload.people.length} people to ${path.relative(repoRoot, outputPath)}`);
+
+const missingGedcom = listPersonIds().filter((id) => {
+  return !fs.existsSync(path.join(peopleDir, id, 'data', 'family-tree.ged'));
+});
+if (missingGedcom.length) {
+  console.warn(`Missing family-tree.ged for profile(s): ${missingGedcom.join(', ')}`);
+  console.warn('Run: node scripts/ensure-profile-gedcom.mjs');
+}
