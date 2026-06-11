@@ -1,10 +1,11 @@
 {
-  "generatedAt": "2026-06-11T19:48:14.516Z",
+  "generatedAt": "2026-06-11T20:12:28.616Z",
   "people": [
     {
       "id": "1",
       "firstName": "Shaun",
-      "lastName": "Roselt"
+      "lastName": "Roselt",
+      "birthYear": "1998"
     },
     {
       "id": "2",
