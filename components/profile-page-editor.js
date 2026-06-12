@@ -120,9 +120,24 @@
 		{ command: "unlink", icon: "bi-link", label: "Remove link" },
 		{ action: "image", icon: "bi-image", label: "Insert image" },
 		{ action: "table", icon: "bi-table", label: "Insert Table" },
+		{ action: "chart", icon: "bi-bar-chart", label: "Insert Chart" },
 		{ separator: true },
 		{ command: "removeFormat", icon: "bi-eraser", label: "Clear formatting" },
 	];
+
+	const CHART_TYPE_OPTIONS = [
+		{ id: "bar", label: "Bar chart" },
+		{ id: "line", label: "Line chart" },
+		{ id: "pie", label: "Pie chart" },
+	];
+
+	const CHART_COLORS = [
+		"#3366cc", "#dc3912", "#ff9900", "#109618", "#990099",
+		"#0099c6", "#dd4477", "#66aa00", "#b82e2e", "#316395",
+		"#994499", "#22aa99", "#aaaa11", "#6633cc", "#e67300",
+	];
+
+	const CHART_SAMPLE_VALUES = [25, 40, 30, 55];
 
 	const SPECIAL_CHARACTER_GROUPS = [
 		{
@@ -337,6 +352,235 @@
 		return parts.join("");
 	}
 
+	function parseChartNumber(value) {
+		const parsed = Number.parseFloat(String(value).replace(/,/g, ""));
+		return Number.isFinite(parsed) ? parsed : 0;
+	}
+
+	function chartColor(index) {
+		return CHART_COLORS[index % CHART_COLORS.length];
+	}
+
+	function truncateChartLabel(label, max = 14) {
+		const text = String(label || "").trim();
+		if (text.length <= max) return text;
+		return `${text.slice(0, max - 1)}…`;
+	}
+
+	function buildBarChartSvg(labels, values, title) {
+		const width = 520;
+		const height = 300;
+		const margin = { top: title ? 34 : 18, right: 18, bottom: 54, left: 52 };
+		const plotW = width - margin.left - margin.right;
+		const plotH = height - margin.top - margin.bottom;
+		const maxVal = Math.max(...values, 1);
+		const count = labels.length;
+		const barGap = count > 1 ? 10 : 0;
+		const barWidth = count ? (plotW - barGap * (count - 1)) / count : plotW;
+		const baseline = margin.top + plotH;
+		const parts = [
+			`<svg class="ppe-profile-chart__svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title || "Bar chart")}">`,
+		];
+
+		if (title) {
+			parts.push(`<text x="${margin.left}" y="20" class="ppe-chart-title">${escapeHtml(title)}</text>`);
+		}
+
+		for (let tick = 0; tick <= 4; tick += 1) {
+			const y = margin.top + plotH - (plotH * tick) / 4;
+			parts.push(`<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" class="ppe-chart-grid"/>`);
+		}
+
+		parts.push(`<line x1="${margin.left}" y1="${baseline}" x2="${width - margin.right}" y2="${baseline}" class="ppe-chart-axis"/>`);
+
+		labels.forEach((label, index) => {
+			const value = values[index] || 0;
+			const barHeight = (value / maxVal) * plotH;
+			const x = margin.left + index * (barWidth + barGap);
+			const y = baseline - barHeight;
+			parts.push(`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" fill="${chartColor(index)}" rx="2"/>`);
+			parts.push(`<text x="${(x + barWidth / 2).toFixed(1)}" y="${height - 18}" text-anchor="middle" class="ppe-chart-label">${escapeHtml(truncateChartLabel(label))}</text>`);
+		});
+
+		parts.push("</svg>");
+		return parts.join("");
+	}
+
+	function buildLineChartSvg(labels, values, title) {
+		const width = 520;
+		const height = 300;
+		const margin = { top: title ? 34 : 18, right: 18, bottom: 54, left: 52 };
+		const plotW = width - margin.left - margin.right;
+		const plotH = height - margin.top - margin.bottom;
+		const maxVal = Math.max(...values, 1);
+		const count = labels.length;
+		const baseline = margin.top + plotH;
+		const step = count > 1 ? plotW / (count - 1) : 0;
+		const parts = [
+			`<svg class="ppe-profile-chart__svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title || "Line chart")}">`,
+		];
+
+		if (title) {
+			parts.push(`<text x="${margin.left}" y="20" class="ppe-chart-title">${escapeHtml(title)}</text>`);
+		}
+
+		for (let tick = 0; tick <= 4; tick += 1) {
+			const y = margin.top + plotH - (plotH * tick) / 4;
+			parts.push(`<line x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}" class="ppe-chart-grid"/>`);
+		}
+
+		parts.push(`<line x1="${margin.left}" y1="${baseline}" x2="${width - margin.right}" y2="${baseline}" class="ppe-chart-axis"/>`);
+
+		const points = labels.map((label, index) => {
+			const x = margin.left + index * step;
+			const y = baseline - ((values[index] || 0) / maxVal) * plotH;
+			return { x, y, label };
+		});
+
+		if (points.length > 1) {
+			const polyline = points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ");
+			parts.push(`<polyline points="${polyline}" class="ppe-chart-line" fill="none"/>`);
+		}
+
+		points.forEach((point, index) => {
+			parts.push(`<circle cx="${point.x.toFixed(1)}" cy="${point.y.toFixed(1)}" r="4.5" fill="${chartColor(index)}" class="ppe-chart-point"/>`);
+			parts.push(`<text x="${point.x.toFixed(1)}" y="${height - 18}" text-anchor="middle" class="ppe-chart-label">${escapeHtml(truncateChartLabel(point.label))}</text>`);
+		});
+
+		parts.push("</svg>");
+		return parts.join("");
+	}
+
+	function buildPieChartSvg(labels, values, title) {
+		const width = 520;
+		const height = 300;
+		const cx = 150;
+		const cy = title ? 162 : 150;
+		const radius = 96;
+		const total = values.reduce((sum, value) => sum + Math.max(value, 0), 0) || 1;
+		const parts = [
+			`<svg class="ppe-profile-chart__svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(title || "Pie chart")}">`,
+		];
+
+		if (title) {
+			parts.push(`<text x="24" y="24" class="ppe-chart-title">${escapeHtml(title)}</text>`);
+		}
+
+		let startAngle = -Math.PI / 2;
+		values.forEach((value, index) => {
+			const slice = Math.max(value, 0);
+			if (slice <= 0) return;
+			const angle = (slice / total) * Math.PI * 2;
+			const endAngle = startAngle + angle;
+			const x1 = cx + radius * Math.cos(startAngle);
+			const y1 = cy + radius * Math.sin(startAngle);
+			const x2 = cx + radius * Math.cos(endAngle);
+			const y2 = cy + radius * Math.sin(endAngle);
+			const largeArc = angle > Math.PI ? 1 : 0;
+			parts.push(`<path d="M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z" fill="${chartColor(index)}"/>`);
+			startAngle = endAngle;
+		});
+
+		const legendX = 270;
+		let legendY = title ? 58 : 44;
+		labels.forEach((label, index) => {
+			const value = values[index] || 0;
+			const percent = total > 0 ? Math.round((Math.max(value, 0) / total) * 100) : 0;
+			parts.push(`<rect x="${legendX}" y="${legendY - 10}" width="12" height="12" fill="${chartColor(index)}" rx="2"/>`);
+			parts.push(`<text x="${legendX + 18}" y="${legendY}" class="ppe-chart-legend">${escapeHtml(truncateChartLabel(label, 18))} (${percent}%)</text>`);
+			legendY += 22;
+		});
+
+		parts.push("</svg>");
+		return parts.join("");
+	}
+
+	function buildProfileChartSvg({ type, title, labels, values }) {
+		const chartType = CHART_TYPE_OPTIONS.some((option) => option.id === type) ? type : "bar";
+		if (chartType === "line") return buildLineChartSvg(labels, values, title);
+		if (chartType === "pie") return buildPieChartSvg(labels, values, title);
+		return buildBarChartSvg(labels, values, title);
+	}
+
+	function buildProfileChartHtml({ type, title, labels, values }) {
+		const normalized = normalizeChartOptions({ type, title, labels, values });
+		const caption = normalized.title;
+		const svg = buildProfileChartSvg(normalized);
+		const figcaption = caption ? `<figcaption>${escapeHtml(caption)}</figcaption>` : "";
+		const label = escapeHtml(caption || "Chart");
+		const data = serializeChartData(normalized);
+		return `<figure class="ppe-profile-chart" contenteditable="false" tabindex="0" role="group" aria-label="${label}" data-chart="${data}" title="Double-click to edit">${svg}${figcaption}</figure>`;
+	}
+
+	function normalizeChartOptions(options) {
+		const type = CHART_TYPE_OPTIONS.some((option) => option.id === options?.type) ? options.type : "bar";
+		const title = String(options?.title || "").trim();
+		const rawLabels = Array.isArray(options?.labels) ? options.labels : [];
+		const rawValues = Array.isArray(options?.values) ? options.values : [];
+		const count = clampTableInt(Math.max(rawLabels.length, rawValues.length, 2), 2, 12, 4);
+		const labels = [];
+		const values = [];
+		for (let index = 0; index < count; index += 1) {
+			labels.push(String(rawLabels[index] || "").trim() || `Category ${index + 1}`);
+			const value = parseChartNumber(rawValues[index]);
+			values.push(Number.isFinite(value) ? value : CHART_SAMPLE_VALUES[index % CHART_SAMPLE_VALUES.length]);
+		}
+		return { type, title, labels, values };
+	}
+
+	function serializeChartData(options) {
+		const normalized = normalizeChartOptions(options);
+		return escapeHtml(JSON.stringify({
+			type: normalized.type,
+			title: normalized.title,
+			labels: normalized.labels,
+			values: normalized.values,
+		}));
+	}
+
+	function parseChartFromFigure(figure) {
+		const raw = figure?.getAttribute("data-chart");
+		if (raw) {
+			try {
+				return normalizeChartOptions(JSON.parse(raw));
+			} catch (error) {
+				/* fall through to SVG parsing */
+			}
+		}
+		return parseChartFromFigureSvg(figure);
+	}
+
+	function parseChartFromFigureSvg(figure) {
+		const svg = figure?.querySelector("svg");
+		const title = figure?.querySelector("figcaption")?.textContent?.trim()
+			|| svg?.querySelector(".ppe-chart-title")?.textContent?.trim()
+			|| "";
+		let type = "bar";
+		if (svg?.querySelector("polyline.ppe-chart-line")) {
+			type = "line";
+		} else if (svg?.querySelector("path") && !svg?.querySelector("rect[fill]")) {
+			type = "pie";
+		}
+
+		let labels = [];
+		if (type === "pie") {
+			labels = [...(svg?.querySelectorAll(".ppe-chart-legend") || [])].map((element) => (
+				element.textContent.replace(/\s*\(\d+%\)\s*$/, "").trim()
+			));
+		} else {
+			labels = [...(svg?.querySelectorAll(".ppe-chart-label") || [])].map((element) => element.textContent.trim());
+		}
+
+		const values = labels.map((_, index) => CHART_SAMPLE_VALUES[index % CHART_SAMPLE_VALUES.length]);
+		return normalizeChartOptions({ type, title, labels, values });
+	}
+
+	function renderChartTypeOptions() {
+		return CHART_TYPE_OPTIONS.map((option) => (
+			`<option value="${option.id}">${escapeHtml(option.label)}</option>`
+		)).join("");
+	}
+
 	function renderToolbarHtml() {
 		const parts = PRIMARY_INLINE_TOOLS.map((btn) => renderToolButton(btn));
 		parts.push(renderUnderlineMenu());
@@ -365,6 +609,17 @@
 	const PASTE_ALLOWED_ATTRS = { A: ["href"], OL: ["type"], U: ["class"], TABLE: ["class"], TH: ["colspan", "rowspan"], TD: ["colspan", "rowspan"] };
 	const MAX_BLOCK_INDENT = 8;
 	const BLOCK_INDENT_SELECTOR = "p, h1, h2, h3, h4, h5, h6, blockquote, dt, dd";
+	const ATOMIC_BLOCK_SELECTOR = "figure.ppe-profile-chart";
+
+	function prepareAtomicChartElement(figure) {
+		if (!figure) return;
+		const caption = figure.querySelector("figcaption")?.textContent?.trim() || "Chart";
+		figure.setAttribute("contenteditable", "false");
+		figure.setAttribute("tabindex", "0");
+		figure.setAttribute("role", "group");
+		figure.setAttribute("aria-label", caption);
+		figure.setAttribute("title", "Click to select or deselect. Right-click for options. Double-click to edit.");
+	}
 
 	function placeCaretIn(node, atEnd = true) {
 		if (!node) return;
@@ -880,6 +1135,72 @@
 							</div>
 						</div>
 					</div>
+
+					<div class="ppe__chart-modal" hidden aria-hidden="true">
+						<div class="ppe__media-backdrop" data-chart-close></div>
+						<div class="ppe__chart-panel" role="dialog" aria-label="Insert Chart" aria-modal="true">
+							<header class="ppe__media-header">
+								<h2>Insert Chart</h2>
+								<button type="button" class="ppe__media-x" aria-label="Close" data-chart-close>✕</button>
+							</header>
+							<div class="ppe__chart-body">
+								<div class="ppe__chart-form">
+									<label class="ppe__chart-field">
+										<span>Chart type</span>
+										<select class="ppe__chart-type">${renderChartTypeOptions()}</select>
+									</label>
+									<label class="ppe__chart-field">
+										<span>Data points</span>
+										<input type="number" class="ppe__chart-points" min="2" max="12" value="4" inputmode="numeric">
+									</label>
+									<label class="ppe__chart-field ppe__chart-field--wide">
+										<span>Caption</span>
+										<input type="text" class="ppe__chart-title" placeholder="Optional chart caption">
+									</label>
+								</div>
+								<div class="ppe__chart-data-wrap">
+									<div class="ppe__chart-data-label">Data</div>
+									<table class="ppe__chart-data">
+										<thead>
+											<tr>
+												<th scope="col">Label</th>
+												<th scope="col">Value</th>
+											</tr>
+										</thead>
+										<tbody></tbody>
+									</table>
+								</div>
+								<div class="ppe__chart-preview-wrap">
+									<div class="ppe__chart-preview-label">Preview</div>
+									<div class="ppe__chart-preview" aria-hidden="true"></div>
+								</div>
+								<div class="ppe__popover-actions">
+									<button type="button" class="ppe__btn ppe__btn--primary ppe__chart-insert">Insert Chart</button>
+									<button type="button" class="ppe__btn" data-chart-close>Cancel</button>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="ppe__chart-context-menu" role="menu" aria-label="Chart actions" hidden>
+						<button type="button" class="ppe__chart-context-item" role="menuitem" data-chart-action="edit">
+							<i class="bi bi-pencil" aria-hidden="true"></i>
+							<span>Edit</span>
+						</button>
+						<button type="button" class="ppe__chart-context-item" role="menuitem" data-chart-action="duplicate">
+							<i class="bi bi-files" aria-hidden="true"></i>
+							<span>Duplicate</span>
+						</button>
+						<button type="button" class="ppe__chart-context-item" role="menuitem" data-chart-action="copy">
+							<i class="bi bi-clipboard" aria-hidden="true"></i>
+							<span>Copy</span>
+						</button>
+						<div class="ppe__menu-sep" role="separator"></div>
+						<button type="button" class="ppe__chart-context-item ppe__chart-context-item--danger" role="menuitem" data-chart-action="delete">
+							<i class="bi bi-trash" aria-hidden="true"></i>
+							<span>Delete</span>
+						</button>
+					</div>
 				</div>
 			`;
 
@@ -888,6 +1209,8 @@
 			this.#bindLinkPopover();
 			this.#bindMediaModal();
 			this.#bindTableModal();
+			this.#bindChartModal();
+			this.#bindChartContextMenu();
 			this.__onProfilePhotoChange = () => this.refreshInfoboxPreview();
 			document.addEventListener("profile-photo-change", this.__onProfilePhotoChange);
 			this.#loadExisting();
@@ -899,6 +1222,15 @@
 			}
 			if (this.__onOutsideMenu) {
 				document.removeEventListener("mousedown", this.__onOutsideMenu);
+			}
+			if (this.__onOutsideChartMenu) {
+				document.removeEventListener("mousedown", this.__onOutsideChartMenu);
+			}
+			if (this.__hideChartContextMenuOnScroll) {
+				document.removeEventListener("scroll", this.__hideChartContextMenuOnScroll, true);
+			}
+			if (this.__onChartContextMenuKeydown) {
+				document.removeEventListener("keydown", this.__onChartContextMenuKeydown);
 			}
 			if (this.__onProfilePhotoChange) {
 				document.removeEventListener("profile-photo-change", this.__onProfilePhotoChange);
@@ -1262,6 +1594,10 @@
 				this.#openTableModal();
 				return;
 			}
+			if (action === "chart") {
+				this.#openChartModal();
+				return;
+			}
 
 			const block = button.dataset.block;
 			if (block) {
@@ -1296,17 +1632,28 @@
 			prose.addEventListener("input", () => this.#onProseChanged());
 			prose.addEventListener("paste", (event) => this.#handlePaste(event));
 			prose.addEventListener("blur", () => this.#syncProsePlaceholder());
+			prose.addEventListener("mousedown", (event) => this.#handleProsePointerDown(event));
 			prose.addEventListener("keydown", (event) => {
 				if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "u") {
 					event.preventDefault();
 					this.#applyUnderlineStyle("solid");
+					return;
 				}
-			});
+				if (event.key === "Backspace" || event.key === "Delete") {
+					if (this.#tryDeleteAtomicBlock(event)) return;
+				}
+				if (this.#nudgeAtomicBlockSelection(event)) return;
+				if (this.#nudgeCaretToAdjacentAtomicBlock(event)) return;
+				if (event.key === "Escape") {
+					this.#clearAtomicBlockSelection();
+				}
+			}, true);
 
 			// Reflect the caret's formatting in the toolbar.
 			this.__onSelectionChange = () => {
 				const selection = window.getSelection();
 				if (selection?.anchorNode && prose.contains(selection.anchorNode)) {
+					this.#syncAtomicBlockSelectionFromRange();
 					this.#updateToolbarState();
 				}
 			};
@@ -1322,6 +1669,450 @@
 					// Older engines: ignore.
 				}
 			}, { once: true });
+			this.#wireAtomicBlocks(prose);
+		}
+
+		#wireAtomicBlocks(root = this.#els().prose) {
+			if (!root) return;
+			root.querySelectorAll(ATOMIC_BLOCK_SELECTOR).forEach((figure) => {
+				prepareAtomicChartElement(figure);
+				this.#attachAtomicChartHandlers(figure);
+			});
+		}
+
+		#attachAtomicChartHandlers(figure) {
+			if (!figure || figure.dataset.ppeAtomicWired === "true") return;
+			figure.dataset.ppeAtomicWired = "true";
+			figure.addEventListener("focus", () => this.#selectAtomicBlock(figure));
+			figure.addEventListener("contextmenu", (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				this.#showChartContextMenu(event, figure);
+			});
+			figure.addEventListener("keydown", (event) => {
+				if (this.#nudgeAtomicBlockSelection(event)) return;
+				if (event.key === "Backspace" || event.key === "Delete") {
+					event.preventDefault();
+					this.#removeAtomicBlock(figure);
+				}
+			});
+			figure.addEventListener("dblclick", (event) => {
+				event.preventDefault();
+				event.stopPropagation();
+				this.#openChartEditor(figure);
+			});
+		}
+
+		#handleProsePointerDown(event) {
+			const { prose } = this.#els();
+			if (!prose) return;
+
+			const block = event.target.closest(ATOMIC_BLOCK_SELECTOR);
+			if (block && prose.contains(block)) {
+				this.#hideChartContextMenu();
+				event.preventDefault();
+				if (block.classList.contains("is-selected")) {
+					this.#deselectAtomicBlock(block);
+					return;
+				}
+				prose.focus({ preventScroll: true });
+				this.#selectAtomicBlock(block);
+				return;
+			}
+
+			this.#clearAtomicBlockSelection();
+		}
+
+		#closestAtomicBlock(node) {
+			const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+			return element?.closest?.(ATOMIC_BLOCK_SELECTOR) || null;
+		}
+
+		#findAtomicBlockInRange(range) {
+			if (!range) return null;
+			if (!range.collapsed) {
+				const ancestor = range.commonAncestorContainer;
+				if (ancestor?.nodeType === Node.ELEMENT_NODE && ancestor.matches?.(ATOMIC_BLOCK_SELECTOR)) {
+					return ancestor;
+				}
+				const startBlock = this.#closestAtomicBlock(range.startContainer);
+				const endBlock = this.#closestAtomicBlock(range.endContainer);
+				if (startBlock && startBlock === endBlock) return startBlock;
+				if (startBlock) return startBlock;
+			}
+			return this.#closestAtomicBlock(range.startContainer);
+		}
+
+		#isCaretImmediatelyBefore(range, block) {
+			if (!range?.collapsed || !block?.parentNode) return false;
+			if (range.startContainer !== block.parentNode) return false;
+			return range.startOffset === [...block.parentNode.children].indexOf(block);
+		}
+
+		#isCaretImmediatelyAfter(range, block) {
+			if (!range?.collapsed || !block?.parentNode) return false;
+			if (range.startContainer !== block.parentNode) return false;
+			return range.startOffset === [...block.parentNode.children].indexOf(block) + 1;
+		}
+
+		#collapseRangeFromAtomicBlock(range) {
+			const block = this.#findAtomicBlockInRange(range);
+			if (!block) {
+				if (!range.collapsed) range.collapse(false);
+				return range;
+			}
+
+			this.#clearAtomicBlockSelection();
+			if (this.#isCaretImmediatelyBefore(range, block) || this.#isCaretImmediatelyAfter(range, block)) {
+				return range;
+			}
+
+			const next = document.createRange();
+			next.setStartAfter(block);
+			next.collapse(true);
+			return next;
+		}
+
+		#ensureEditableCaret(range) {
+			const { prose } = this.#els();
+			if (!prose || !range) return range;
+
+			const textContainer = range.startContainer.nodeType === Node.TEXT_NODE
+				? range.startContainer.parentElement
+				: range.startContainer;
+			if (textContainer?.closest?.("p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote")) {
+				return range;
+			}
+
+			if (range.startContainer === prose) {
+				const offset = range.startOffset;
+				const child = prose.childNodes[offset];
+				const prev = offset > 0 ? prose.childNodes[offset - 1] : null;
+
+				if (child?.nodeType === Node.ELEMENT_NODE && child.matches("p, h1, h2, h3, h4, h5, h6, blockquote")) {
+					const next = document.createRange();
+					next.selectNodeContents(child);
+					next.collapse(true);
+					return next;
+				}
+				if (prev?.nodeType === Node.ELEMENT_NODE && prev.matches("p, h1, h2, h3, h4, h5, h6, blockquote")) {
+					const next = document.createRange();
+					next.selectNodeContents(prev);
+					next.collapse(false);
+					return next;
+				}
+
+				const needsParagraph = (node) => node?.nodeType === Node.ELEMENT_NODE
+					&& (node.matches(ATOMIC_BLOCK_SELECTOR) || node.matches("table.ppe-profile-table, figure.profile-figure"));
+				if (needsParagraph(child) || needsParagraph(prev)) {
+					const paragraph = document.createElement("p");
+					paragraph.innerHTML = "<br>";
+					if (child) prose.insertBefore(paragraph, child);
+					else prose.appendChild(paragraph);
+					const next = document.createRange();
+					next.selectNodeContents(paragraph);
+					next.collapse(Boolean(child && needsParagraph(child)));
+					return next;
+				}
+			}
+
+			const block = this.#closestAtomicBlock(range.startContainer);
+			if (block) {
+				const next = document.createRange();
+				next.setStartAfter(block);
+				next.collapse(true);
+				return this.#ensureEditableCaret(next);
+			}
+
+			return range;
+		}
+
+		#getInsertionRange() {
+			const { prose } = this.#els();
+			if (!prose) return null;
+
+			let range = null;
+			if (this.__savedRange) {
+				const host = this.__savedRange.commonAncestorContainer;
+				const element = host.nodeType === Node.ELEMENT_NODE ? host : host.parentNode;
+				if (element && prose.contains(element)) {
+					range = this.__savedRange.cloneRange();
+				}
+			}
+			if (!range) {
+				const selection = window.getSelection();
+				if (selection?.rangeCount) {
+					const current = selection.getRangeAt(0);
+					const host = current.commonAncestorContainer;
+					const element = host.nodeType === Node.ELEMENT_NODE ? host : host.parentNode;
+					if (element && prose.contains(element)) {
+						range = current.cloneRange();
+					}
+				}
+			}
+			if (!range) {
+				range = document.createRange();
+				range.selectNodeContents(prose);
+				range.collapse(false);
+			}
+
+			range = this.#collapseRangeFromAtomicBlock(range);
+			return this.#ensureEditableCaret(range);
+		}
+
+		#insertHtmlIntoProse(html) {
+			const { prose } = this.#els();
+			if (!prose) return;
+			prose.focus();
+			const range = this.#getInsertionRange();
+			if (!range) return;
+			const selection = window.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange(range);
+			document.execCommand("insertHTML", false, html);
+		}
+
+		#placeCaretBesideAtomicBlock(block, side) {
+			if (!block) return;
+			this.#clearAtomicBlockSelection();
+			const { prose } = this.#els();
+			prose?.focus({ preventScroll: true });
+			const range = document.createRange();
+			if (side === "before") range.setStartBefore(block);
+			else range.setStartAfter(block);
+			range.collapse(true);
+			const caret = this.#ensureEditableCaret(range);
+			const selection = window.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange(caret);
+			this.__savedRange = caret.cloneRange();
+		}
+
+		#nudgeAtomicBlockSelection(event) {
+			const block = this.__selectedAtomicBlock?.classList?.contains("is-selected")
+				? this.__selectedAtomicBlock
+				: this.#findAtomicBlockInSelection();
+			if (!block) return false;
+			if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+				event.preventDefault();
+				this.#placeCaretBesideAtomicBlock(block, "before");
+				return true;
+			}
+			if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+				event.preventDefault();
+				this.#placeCaretBesideAtomicBlock(block, "after");
+				return true;
+			}
+			return false;
+		}
+
+		#getEditableBlockForRange(range) {
+			let node = range?.startContainer;
+			if (!node) return null;
+			if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+			return node?.closest?.("p, h1, h2, h3, h4, h5, h6, li, blockquote, td, th") || null;
+		}
+
+		#isCaretAtBlockStart(range) {
+			if (!range?.collapsed) return false;
+			const block = this.#getEditableBlockForRange(range);
+			if (!block) return false;
+			const start = document.createRange();
+			start.selectNodeContents(block);
+			start.collapse(true);
+			return range.compareBoundaryPoints(Range.START_TO_START, start) === 0;
+		}
+
+		#isCaretAtBlockEnd(range) {
+			if (!range?.collapsed) return false;
+			const block = this.#getEditableBlockForRange(range);
+			if (!block) return false;
+			const end = document.createRange();
+			end.selectNodeContents(block);
+			end.collapse(false);
+			return range.compareBoundaryPoints(Range.END_TO_END, end) === 0;
+		}
+
+		#isEffectivelyEmptyBlock(element) {
+			if (!element?.matches?.("p, h1, h2, h3, h4, h5, h6, blockquote")) return false;
+			return !String(element.textContent || "").replace(/\u200b/g, "").trim();
+		}
+
+		#findAtomicBlockForArrowNavigation(event) {
+			const key = event.key;
+			if (key !== "ArrowUp" && key !== "ArrowDown" && key !== "ArrowLeft" && key !== "ArrowRight") {
+				return null;
+			}
+			if (this.__selectedAtomicBlock?.classList?.contains("is-selected")) {
+				return null;
+			}
+
+			const { prose } = this.#els();
+			const selection = window.getSelection();
+			if (!prose || !selection?.rangeCount || !selection.isCollapsed) return null;
+
+			const range = selection.getRangeAt(0);
+			if (!prose.contains(range.commonAncestorContainer)) return null;
+
+			const isUpOrLeft = key === "ArrowUp" || key === "ArrowLeft";
+			const isDownOrRight = key === "ArrowDown" || key === "ArrowRight";
+
+			if (isUpOrLeft) {
+				for (const block of prose.querySelectorAll(ATOMIC_BLOCK_SELECTOR)) {
+					if (this.#isCaretImmediatelyAfter(range, block)) return block;
+				}
+			}
+			if (isDownOrRight) {
+				for (const block of prose.querySelectorAll(ATOMIC_BLOCK_SELECTOR)) {
+					if (this.#isCaretImmediatelyBefore(range, block)) return block;
+				}
+			}
+
+			const editableBlock = this.#getEditableBlockForRange(range);
+			if (!editableBlock) return null;
+
+			if (isUpOrLeft) {
+				const previous = editableBlock.previousElementSibling;
+				if (!previous?.matches(ATOMIC_BLOCK_SELECTOR)) return null;
+				if (this.#isCaretAtBlockStart(range) || this.#isEffectivelyEmptyBlock(editableBlock)) {
+					return previous;
+				}
+			}
+			if (isDownOrRight) {
+				const next = editableBlock.nextElementSibling;
+				if (!next?.matches(ATOMIC_BLOCK_SELECTOR)) return null;
+				if (this.#isCaretAtBlockEnd(range) || this.#isEffectivelyEmptyBlock(editableBlock)) {
+					return next;
+				}
+			}
+
+			return null;
+		}
+
+		#nudgeCaretToAdjacentAtomicBlock(event) {
+			const block = this.#findAtomicBlockForArrowNavigation(event);
+			if (!block) return false;
+			event.preventDefault();
+			this.#selectAtomicBlock(block);
+			return true;
+		}
+
+		#selectAtomicBlock(block) {
+			if (!block) return;
+			this.#clearAtomicBlockSelection();
+			block.classList.add("is-selected");
+			this.__selectedAtomicBlock = block;
+
+			const range = document.createRange();
+			range.selectNode(block);
+			const selection = window.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange(range);
+			block.focus({ preventScroll: true });
+		}
+
+		#deselectAtomicBlock(block) {
+			if (!block) return;
+			this.#clearAtomicBlockSelection();
+			block.blur();
+			this.#placeCaretBesideAtomicBlock(block, "after");
+		}
+
+		#clearAtomicBlockSelection() {
+			const { prose } = this.#els();
+			prose?.querySelectorAll(`${ATOMIC_BLOCK_SELECTOR}.is-selected`).forEach((block) => {
+				block.classList.remove("is-selected");
+			});
+			this.__selectedAtomicBlock = null;
+		}
+
+		#findAtomicBlockInSelection() {
+			const selection = window.getSelection();
+			if (!selection?.rangeCount) return null;
+			return this.#findAtomicBlockInRange(selection.getRangeAt(0));
+		}
+
+		#syncAtomicBlockSelectionFromRange() {
+			const block = this.#findAtomicBlockInSelection()
+				|| (this.__selectedAtomicBlock?.isConnected ? this.__selectedAtomicBlock : null);
+			const { prose } = this.#els();
+			prose?.querySelectorAll(`${ATOMIC_BLOCK_SELECTOR}.is-selected`).forEach((figure) => {
+				if (figure !== block) figure.classList.remove("is-selected");
+			});
+			if (block) {
+				block.classList.add("is-selected");
+				this.__selectedAtomicBlock = block;
+			} else {
+				this.__selectedAtomicBlock = null;
+			}
+		}
+
+		#getAdjacentAtomicBlock(key) {
+			const { prose } = this.#els();
+			const selection = window.getSelection();
+			if (!prose || !selection?.rangeCount || !selection.isCollapsed) return null;
+
+			const range = selection.getRangeAt(0);
+			if (!prose.contains(range.commonAncestorContainer)) return null;
+
+			let node = range.startContainer;
+			if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+			if (!node) return null;
+
+			const block = node.closest?.("p, h1, h2, h3, h4, h5, h6, li, div") || node;
+			if (key === "Backspace" && range.startOffset === 0) {
+				const previous = block.previousElementSibling;
+				if (previous?.matches(ATOMIC_BLOCK_SELECTOR)) return previous;
+			}
+			if (key === "Delete") {
+				const atEnd = range.startContainer.nodeType === Node.TEXT_NODE
+					? range.startOffset === range.startContainer.length
+					: range.startOffset === (range.startContainer.childNodes?.length || 0);
+				if (atEnd) {
+					const next = block.nextElementSibling;
+					if (next?.matches(ATOMIC_BLOCK_SELECTOR)) return next;
+				}
+			}
+			return null;
+		}
+
+		#tryDeleteAtomicBlock(event) {
+			let block = this.__selectedAtomicBlock?.isConnected
+				? this.__selectedAtomicBlock
+				: null;
+			if (!block) block = this.#findAtomicBlockInSelection();
+			if (!block) block = this.#getAdjacentAtomicBlock(event.key);
+			if (!block) return false;
+
+			event.preventDefault();
+			this.#removeAtomicBlock(block);
+			return true;
+		}
+
+		#removeAtomicBlock(block) {
+			const { prose } = this.#els();
+			if (!block || !prose?.contains(block)) return;
+
+			this.#hideChartContextMenu();
+			const parent = block.parentNode;
+			const after = block.nextElementSibling;
+			const before = block.previousElementSibling;
+			block.remove();
+			this.#clearAtomicBlockSelection();
+
+			if (after && prose.contains(after)) {
+				placeCaretIn(after, false);
+			} else if (before && prose.contains(before)) {
+				placeCaretIn(before, true);
+			} else if (parent) {
+				const paragraph = document.createElement("p");
+				paragraph.innerHTML = "<br>";
+				parent.appendChild(paragraph);
+				placeCaretIn(paragraph, false);
+			}
+
+			prose.focus({ preventScroll: true });
+			this.#afterCommand();
 		}
 
 		#updateToolbarState() {
@@ -1371,6 +2162,9 @@
 		}
 
 		#proseIsEmpty(prose) {
+			if (prose?.querySelector(`${ATOMIC_BLOCK_SELECTOR}, table.ppe-profile-table, figure.profile-figure`)) {
+				return false;
+			}
 			return !String(prose?.textContent || "").replace(/\u00a0/g, " ").trim();
 		}
 
@@ -1701,11 +2495,294 @@
 			if (!prose) return;
 
 			const html = buildProfileTableHtml(this.#readTableModalOptions());
-			prose.focus();
-			this.#restoreSelection();
-			document.execCommand("insertHTML", false, `${html}<p></p>`);
+			this.#insertHtmlIntoProse(`${html}<p><br></p>`);
 			this.#afterCommand();
 			this.#closeTableModal();
+		}
+
+		#bindChartContextMenu() {
+			const menu = this.querySelector(".ppe__chart-context-menu");
+			if (!menu) return;
+
+			menu.addEventListener("click", (event) => {
+				const item = event.target.closest("[data-chart-action]");
+				if (!item) return;
+				event.preventDefault();
+				const block = this.__chartContextTarget;
+				if (!block?.isConnected) {
+					this.#hideChartContextMenu();
+					return;
+				}
+				const action = item.dataset.chartAction;
+				this.#hideChartContextMenu();
+				if (action === "edit") this.#openChartEditor(block);
+				else if (action === "duplicate") this.#duplicateAtomicChart(block);
+				else if (action === "copy") void this.#copyAtomicChart(block);
+				else if (action === "delete") this.#removeAtomicBlock(block);
+			});
+
+			this.__onOutsideChartMenu = (event) => {
+				const menuEl = this.querySelector(".ppe__chart-context-menu");
+				if (menuEl?.hidden) return;
+				if (event.target.closest(".ppe__chart-context-menu")) return;
+				this.#hideChartContextMenu();
+			};
+			this.__hideChartContextMenuOnScroll = () => this.#hideChartContextMenu();
+			this.__onChartContextMenuKeydown = (event) => {
+				if (event.key === "Escape") this.#hideChartContextMenu();
+			};
+
+			document.addEventListener("mousedown", this.__onOutsideChartMenu);
+			document.addEventListener("scroll", this.__hideChartContextMenuOnScroll, true);
+			document.addEventListener("keydown", this.__onChartContextMenuKeydown);
+		}
+
+		#hideChartContextMenu() {
+			const menu = this.querySelector(".ppe__chart-context-menu");
+			if (!menu) return;
+			menu.hidden = true;
+			menu.setAttribute("aria-hidden", "true");
+			this.__chartContextTarget = null;
+		}
+
+		#showChartContextMenu(event, figure) {
+			const menu = this.querySelector(".ppe__chart-context-menu");
+			if (!menu || !figure) return;
+
+			this.#closeMenus();
+			this.#selectAtomicBlock(figure);
+			this.__chartContextTarget = figure;
+
+			menu.hidden = false;
+			menu.setAttribute("aria-hidden", "false");
+			menu.style.visibility = "hidden";
+			menu.style.left = "0px";
+			menu.style.top = "0px";
+
+			const padding = 8;
+			const rect = menu.getBoundingClientRect();
+			let x = event.clientX;
+			let y = event.clientY;
+			if (x + rect.width > window.innerWidth - padding) {
+				x = window.innerWidth - rect.width - padding;
+			}
+			if (y + rect.height > window.innerHeight - padding) {
+				y = window.innerHeight - rect.height - padding;
+			}
+			menu.style.left = `${Math.max(padding, x)}px`;
+			menu.style.top = `${Math.max(padding, y)}px`;
+			menu.style.visibility = "";
+		}
+
+		#duplicateAtomicChart(block) {
+			const { prose } = this.#els();
+			if (!block || !prose?.contains(block)) return;
+
+			const options = parseChartFromFigure(block);
+			const wrapper = document.createElement("div");
+			wrapper.innerHTML = buildProfileChartHtml(options);
+			const clone = wrapper.firstElementChild;
+			if (!clone) return;
+
+			prepareAtomicChartElement(clone);
+			block.insertAdjacentElement("afterend", clone);
+			this.#attachAtomicChartHandlers(clone);
+			this.#selectAtomicBlock(clone);
+			this.#afterCommand();
+		}
+
+		async #copyAtomicChart(block) {
+			if (!block) return;
+			const options = parseChartFromFigure(block);
+			this.__chartClipboard = options;
+			try {
+				await navigator.clipboard.writeText(JSON.stringify(options));
+			} catch (error) {
+				/* clipboard may be unavailable */
+			}
+		}
+
+		#bindChartModal() {
+			const modal = this.querySelector(".ppe__chart-modal");
+			if (!modal) return;
+
+			modal.querySelectorAll("[data-chart-close]").forEach((el) => {
+				el.addEventListener("click", () => this.#closeChartModal());
+			});
+			modal.querySelector(".ppe__chart-insert")?.addEventListener("click", () => this.#insertChart());
+			modal.addEventListener("input", (event) => {
+				if (event.target.matches(".ppe__chart-points")) {
+					this.#syncChartDataRows();
+				}
+				if (event.target.matches(".ppe__chart-type, .ppe__chart-title, .ppe__chart-points, .ppe__chart-label, .ppe__chart-value")) {
+					this.#updateChartPreview();
+				}
+			});
+			modal.addEventListener("change", (event) => {
+				if (event.target.matches(".ppe__chart-type, .ppe__chart-points")) {
+					if (event.target.matches(".ppe__chart-points")) {
+						this.#syncChartDataRows();
+					}
+					this.#updateChartPreview();
+				}
+			});
+		}
+
+		#readChartModalOptions() {
+			const modal = this.querySelector(".ppe__chart-modal");
+			const rows = [...(modal?.querySelectorAll(".ppe__chart-data tbody tr") || [])];
+			return normalizeChartOptions({
+				type: modal?.querySelector(".ppe__chart-type")?.value || "bar",
+				title: modal?.querySelector(".ppe__chart-title")?.value || "",
+				labels: rows.map((row, index) => {
+					const label = row.querySelector(".ppe__chart-label")?.value?.trim();
+					return label || `Category ${index + 1}`;
+				}),
+				values: rows.map((row) => parseChartNumber(row.querySelector(".ppe__chart-value")?.value)),
+			});
+		}
+
+		#updateChartPreview() {
+			const preview = this.querySelector(".ppe__chart-preview");
+			if (!preview) return;
+			preview.innerHTML = buildProfileChartHtml(this.#readChartModalOptions());
+		}
+
+		#syncChartDataRows(presetOptions = null) {
+			const modal = this.querySelector(".ppe__chart-modal");
+			const tbody = modal?.querySelector(".ppe__chart-data tbody");
+			const pointsInput = modal?.querySelector(".ppe__chart-points");
+			if (!modal || !tbody || !pointsInput) return;
+
+			const existing = presetOptions || this.#readChartModalOptions();
+			const count = clampTableInt(existing.labels?.length || pointsInput.value, 2, 12, 4);
+			pointsInput.value = String(count);
+			tbody.innerHTML = "";
+
+			for (let index = 0; index < count; index += 1) {
+				const row = document.createElement("tr");
+				const label = existing.labels[index] || `Category ${index + 1}`;
+				const value = Number.isFinite(existing.values[index])
+					? existing.values[index]
+					: CHART_SAMPLE_VALUES[index % CHART_SAMPLE_VALUES.length];
+				row.innerHTML = `
+					<td><input type="text" class="ppe__chart-label" value="${escapeHtml(label)}"></td>
+					<td><input type="number" class="ppe__chart-value" value="${escapeHtml(String(value))}" min="0" step="any" inputmode="decimal"></td>
+				`;
+				tbody.appendChild(row);
+			}
+		}
+
+		#populateChartModal(options = null) {
+			const modal = this.querySelector(".ppe__chart-modal");
+			if (!modal) return;
+
+			const defaults = {
+				type: "bar",
+				title: "",
+				labels: ["Category 1", "Category 2", "Category 3", "Category 4"],
+				values: CHART_SAMPLE_VALUES.slice(0, 4),
+			};
+			const next = normalizeChartOptions(options || defaults);
+			const type = modal.querySelector(".ppe__chart-type");
+			const points = modal.querySelector(".ppe__chart-points");
+			const title = modal.querySelector(".ppe__chart-title");
+			if (type) type.value = next.type;
+			if (points) points.value = String(next.labels.length);
+			if (title) title.value = next.title;
+
+			this.#syncChartDataRows(next);
+			this.#updateChartPreview();
+		}
+
+		#setChartModalMode(mode = "insert") {
+			const modal = this.querySelector(".ppe__chart-modal");
+			if (!modal) return;
+			const isEdit = mode === "edit";
+			const heading = modal.querySelector(".ppe__media-header h2");
+			const panel = modal.querySelector(".ppe__chart-panel");
+			const button = modal.querySelector(".ppe__chart-insert");
+			if (heading) heading.textContent = isEdit ? "Edit Chart" : "Insert Chart";
+			if (panel) panel.setAttribute("aria-label", isEdit ? "Edit Chart" : "Insert Chart");
+			if (button) button.textContent = isEdit ? "Update Chart" : "Insert Chart";
+		}
+
+		#showChartModal() {
+			const modal = this.querySelector(".ppe__chart-modal");
+			if (!modal) return;
+			modal.hidden = false;
+			modal.setAttribute("aria-hidden", "false");
+			document.body.style.overflow = "hidden";
+		}
+
+		#openChartModal() {
+			this.#saveSelection();
+			this.__editingChart = null;
+			this.#setChartModalMode("insert");
+			this.#populateChartModal();
+			this.#showChartModal();
+			this.querySelector(".ppe__chart-type")?.focus();
+		}
+
+		#openChartEditor(figure) {
+			if (!figure?.matches?.(ATOMIC_BLOCK_SELECTOR)) return;
+			this.__editingChart = figure;
+			this.#selectAtomicBlock(figure);
+			this.#setChartModalMode("edit");
+			this.#populateChartModal(parseChartFromFigure(figure));
+			this.#showChartModal();
+			this.querySelector(".ppe__chart-type")?.focus();
+		}
+
+		#closeChartModal() {
+			const modal = this.querySelector(".ppe__chart-modal");
+			if (!modal) return;
+			modal.hidden = true;
+			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+			this.__editingChart = null;
+			this.#setChartModalMode("insert");
+		}
+
+		#replaceChartFigure(figure, options) {
+			const wrapper = document.createElement("div");
+			wrapper.innerHTML = buildProfileChartHtml(options);
+			const replacement = wrapper.firstElementChild;
+			if (!replacement) return null;
+			figure.replaceWith(replacement);
+			prepareAtomicChartElement(replacement);
+			this.#attachAtomicChartHandlers(replacement);
+			return replacement;
+		}
+
+		#insertChart() {
+			const { prose } = this.#els();
+			if (!prose) return;
+
+			const options = this.#readChartModalOptions();
+			if (!options.values.some((value) => value > 0)) {
+				const modal = this.querySelector(".ppe__chart-modal");
+				const firstValue = modal?.querySelector(".ppe__chart-value");
+				firstValue?.focus();
+				return;
+			}
+
+			const editing = this.__editingChart?.isConnected ? this.__editingChart : null;
+			const html = buildProfileChartHtml(options);
+			let chart = null;
+			if (editing) {
+				chart = this.#replaceChartFigure(editing, options);
+				prose.focus({ preventScroll: true });
+			} else {
+				this.#insertHtmlIntoProse(`${html}<p><br></p>`);
+				this.#wireAtomicBlocks(prose);
+				chart = prose.querySelector(`${ATOMIC_BLOCK_SELECTOR}:last-of-type`)
+					|| [...prose.querySelectorAll(ATOMIC_BLOCK_SELECTOR)].at(-1);
+			}
+
+			if (chart) this.#selectAtomicBlock(chart);
+			this.#afterCommand();
+			this.#closeChartModal();
 		}
 
 		async #loadMediaGrid() {
@@ -1827,14 +2904,13 @@
 
 		#insertImage(src, caption) {
 			const { prose } = this.#els();
-			prose.focus();
-			this.#restoreSelection();
+			if (!prose) return;
 			const isRelative = !/^(https?:)?\/\//i.test(src) && !src.startsWith("data:");
 			const displaySrc = isRelative ? this.#resolveImageUrl(src) : src;
 			const dataAttr = isRelative ? ` data-ppe-src="${escapeHtml(src)}"` : "";
 			const cap = escapeHtml(caption || "");
 			const html = `<figure class="profile-figure"><img src="${escapeHtml(displaySrc)}"${dataAttr} alt="${cap}"><figcaption>${cap || "Add a caption"}</figcaption></figure>`;
-			document.execCommand("insertHTML", false, html);
+			this.#insertHtmlIntoProse(`${html}<p><br></p>`);
 			this.#afterCommand();
 		}
 
@@ -1874,6 +2950,7 @@
 				this.#rewriteImagesForDisplay(prose, { track: true });
 				// Show {{APP_NAME}} as the brand name (preserved on save).
 				applyBrandTokensForDisplay(prose);
+				this.#wireAtomicBlocks(prose);
 				this.#syncProsePlaceholder();
 			}
 			this.__savedProse = this.#getProseHtml();

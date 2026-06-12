@@ -211,6 +211,91 @@ body.theme-dark .people-page__gallery img {
   color: var(--page-toolbar-muted);
 }
 
+.people-page__content figure.ppe-profile-chart {
+  margin: 1rem 0;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.people-page__content:has(> aside) > figure.ppe-profile-chart {
+  max-width: calc(100% - min(50%, 20rem) - 1.25rem);
+}
+
+.people-page__content figure.ppe-profile-chart figcaption {
+  margin-top: 0.4rem;
+  font-size: 0.8125rem;
+  color: var(--page-toolbar-muted);
+  line-height: 1.35;
+}
+
+.ppe-profile-chart__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ppe-chart-axis {
+  stroke: rgba(0, 0, 0, 0.22);
+  stroke-width: 1.25;
+}
+
+.ppe-chart-grid {
+  stroke: rgba(0, 0, 0, 0.08);
+  stroke-width: 1;
+}
+
+.ppe-chart-line {
+  stroke: #3366cc;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.ppe-chart-point {
+  stroke: #ffffff;
+  stroke-width: 1.5;
+}
+
+.ppe-chart-label,
+.ppe-chart-legend {
+  font-size: 11px;
+  fill: #54595d;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+.ppe-chart-title {
+  font-size: 13px;
+  font-weight: 600;
+  fill: #202122;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+body.theme-dark .ppe-chart-axis {
+  stroke: rgba(255, 255, 255, 0.24);
+}
+
+body.theme-dark .ppe-chart-grid {
+  stroke: rgba(255, 255, 255, 0.08);
+}
+
+body.theme-dark .ppe-chart-line {
+  stroke: #6b9eff;
+}
+
+body.theme-dark .ppe-chart-point {
+  stroke: #15181d;
+}
+
+body.theme-dark .ppe-chart-label,
+body.theme-dark .ppe-chart-legend {
+  fill: #a7adb4;
+}
+
+body.theme-dark .ppe-chart-title {
+  fill: #eaecf0;
+}
+
 .people-page__tree-frame {
   display: block;
   width: 100%;

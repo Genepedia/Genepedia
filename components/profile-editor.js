@@ -876,7 +876,7 @@
 
 			const user = await this.#getCurrentUser();
 			if (!user?.login) {
-				this.#setStatus("Sign in with GitHub (site header) before saving this new profile.", "error");
+				this.#setStatus("You must be logged in to create a new profile.", "error");
 				return;
 			}
 
@@ -907,7 +907,7 @@
 
 				if (!response.ok || !payload?.ok) {
 					if (response.status === 401 || payload?.error === "authentication_required") {
-						this.#setStatus("Sign in with GitHub (site header) to create this profile.", "error");
+						this.#setStatus("You must be logged in to create a new profile.", "error");
 					} else {
 						this.#setStatus(payload?.message || `Save failed (${response.status}).`, "error");
 					}
