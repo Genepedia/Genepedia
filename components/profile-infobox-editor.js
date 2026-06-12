@@ -580,7 +580,7 @@
 			suffix: "",
 			displayName: "",
 			alsoKnownAs: [],
-			status: "deceased",
+			status: "unknown",
 			gender: "unknown",
 			occupation: "",
 			lastResidence: "",
@@ -624,7 +624,10 @@
 			data.photo.alt = String(raw.photo.alt || "");
 		}
 		if (!GENDERS.some((g) => g.value === data.gender)) data.gender = "unknown";
-		if (data.status !== "living" && data.status !== "deceased") data.status = "deceased";
+		if (data.status !== "living" && data.status !== "deceased" && data.status !== "unknown") {
+			const hasDeath = Boolean(String(data.death?.date || "").trim() || String(data.death?.place || "").trim());
+			data.status = hasDeath ? "deceased" : "unknown";
+		}
 		return data;
 	}
 
@@ -664,6 +667,7 @@
 
 		const deathLines = splitLines(identityEl.querySelector("table-death"));
 		if (deathLines.length) {
+			data.status = "deceased";
 			data.death.date = parseFriendlyToStored(deathLines[0].replace(/\s*\(age[^)]*\)/i, ""));
 			if (deathLines[1]) data.death.place = deathLines[1];
 			const causeLine = deathLines.find((l) => /^\(.*\)$/.test(l));
@@ -781,26 +785,23 @@
 		<form class="pie" autocomplete="off">
 			<div class="pie__status" role="status" hidden></div>
 
-
-
 			<fieldset class="pie__group">
 				<legend class="pie__legend">Name</legend>
 				<div class="pie__row">
 					<label class="pie__label" for="pie-title">Title</label>
 					<div class="pie__field"><input id="pie-title" type="text" data-field="title" placeholder="Title"></div>
 				</div>
-				<div class="pie__row">
+				<div class="pie__row pie__row--align-top">
 					<label class="pie__label" for="pie-first">Name</label>
-					<div class="pie__field pie__field--split">
-						<input id="pie-first" type="text" data-field="firstName" placeholder="First Name">
-						<input id="pie-middle" type="text" data-field="middleName" placeholder="Middle Name">
-					</div>
-				</div>
-				<div class="pie__row">
-					<label class="pie__label" for="pie-last">Last name</label>
-					<div class="pie__field pie__field--split">
-						<input id="pie-last" type="text" data-field="lastName" placeholder="Last Name">
-						<input id="pie-suffix" type="text" data-field="suffix" placeholder="Suffix">
+					<div class="pie__field pie__field--name">
+						<div class="pie__field pie__field--split">
+							<input id="pie-first" type="text" data-field="firstName" placeholder="First Name">
+							<input id="pie-middle" type="text" data-field="middleName" placeholder="Middle Name">
+						</div>
+						<div class="pie__field pie__field--split">
+							<input id="pie-last" type="text" data-field="lastName" placeholder="Last Name">
+							<input id="pie-suffix" type="text" data-field="suffix" placeholder="Suffix">
+						</div>
 					</div>
 				</div>
 				<div class="pie__row">
@@ -809,7 +810,7 @@
 				</div>
 				<div class="pie__row">
 					<label class="pie__label" for="pie-display">Display name</label>
-					<div class="pie__field"><input id="pie-display" type="text" data-field="displayName" placeholder="First Name Last Name (Birth Surname)"></div>
+					<div class="pie__field"><input id="pie-display" type="text" data-field="displayName" placeholder="First Name + Last Name (Birth Surname)"></div>
 				</div>
 				<div class="pie__row">
 					<label class="pie__label" for="pie-aka">Also known as</label>
@@ -824,6 +825,7 @@
 					<div class="pie__field pie__field--radios" data-radio="status">
 						<label><input type="radio" name="pie-status" value="living"> Living</label>
 						<label><input type="radio" name="pie-status" value="deceased"> Deceased</label>
+						<label><input type="radio" name="pie-status" value="unknown"> Unknown</label>
 					</div>
 				</div>
 				<div class="pie__row">
@@ -877,7 +879,7 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="pie__group pie__group--death" data-event="death">
+			<fieldset class="pie__group pie__group--death" data-event="death" hidden>
 				<legend class="pie__legend">Death</legend>
 				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date of death</span>
@@ -897,7 +899,7 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="pie__group pie__group--death" data-event="burial">
+			<fieldset class="pie__group pie__group--death" data-event="burial" hidden>
 				<legend class="pie__legend">Burial or cremation</legend>
 				<div class="pie__row">
 					<span class="pie__label">Type</span>
@@ -920,45 +922,32 @@
 				</div>
 			</fieldset>
 
-			<fieldset class="pie__group pie__group--photo">
-				<legend class="pie__legend">Photo</legend>
-				<input id="pie-photo-src" type="hidden" data-field="photo.src">
-				<div class="pie__photo-preview-wrap" id="pie-photo-preview-wrap" hidden>
-					<img id="pie-photo-preview-img" class="pie__photo-preview-img" alt="">
-				</div>
-				<div class="pie__photo-empty" id="pie-photo-empty">
-					<i class="bi bi-image pie__photo-empty-icon" aria-hidden="true"></i>
-					<p class="pie__photo-empty-text">No photo selected</p>
-				</div>
-				<div class="pie__photo-actions">
-					<input id="pie-photo-file" type="file" accept="image/*" hidden>
-					<button type="button" class="page-editor__button" data-photo-upload>
-						<i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
-						<span>Upload photo</span>
-					</button>
-					<button type="button" class="page-editor__button" data-photo-choose>
-						<i class="bi bi-images" aria-hidden="true"></i>
-						<span>Choose from media</span>
-					</button>
-					<button type="button" class="page-editor__button page-editor__button--small page-editor__sidebar-delete" data-photo-remove hidden>
-						<i class="bi bi-trash" aria-hidden="true"></i>
-						<span>Remove photo</span>
-					</button>
-				</div>
-				<div class="pie__media-modal" hidden aria-hidden="true">
-					<div class="pie__media-modal-backdrop" data-media-modal-close></div>
-					<div class="pie__media-modal-panel">
-						<header class="pie__media-modal-header">
-							<h2>Choose an image</h2>
-							<button type="button" class="pie__media-modal-close" aria-label="Close" data-media-modal-close>✕</button>
-						</header>
-						<div class="pie__media-modal-body">
-							<p class="pie__media-modal-status">Loading images…</p>
-							<div class="pie__media-grid"></div>
+			<input id="pie-photo-src" type="hidden" data-field="photo.src">
+			<input id="pie-photo-file" type="file" accept="image/*" hidden>
+			<div class="pie__media-modal pie__photo-modal" hidden aria-hidden="true">
+				<div class="pie__media-modal-backdrop" data-media-modal-close></div>
+				<div class="pie__media-modal-panel">
+					<header class="pie__media-modal-header">
+						<h2>Profile Picture</h2>
+						<button type="button" class="pie__media-modal-close" aria-label="Close" data-media-modal-close>✕</button>
+					</header>
+					<div class="pie__media-modal-body">
+						<div class="pie__photo-modal-toolbar" hidden>
+							<button type="button" class="page-editor__button page-editor__sidebar-delete" data-photo-remove hidden>
+								<i class="bi bi-trash" aria-hidden="true"></i>
+								<span>Remove picture</span>
+							</button>
 						</div>
+						<button type="button" class="pie__photo-dropzone" data-photo-dropzone>
+							<i class="bi bi-cloud-arrow-up pie__photo-dropzone-icon" aria-hidden="true"></i>
+							<span class="pie__photo-dropzone-title">Drag a picture here, or click to upload</span>
+							<span class="pie__photo-dropzone-hint">JPG, PNG, GIF, WebP, or SVG</span>
+						</button>
+						<p class="pie__media-modal-status">Loading images…</p>
+						<div class="pie__media-grid"></div>
 					</div>
 				</div>
-			</fieldset>
+			</div>
 		</form>
 	`;
 
@@ -977,11 +966,17 @@
 			this.__savedSnapshot = "";
 			this.__establishingBaseline = false;
 			this.__gedcomExists = false;
+			this.__pendingPhotoFile = null;
+			this.__pendingPhotoPreviewUrl = "";
 
 			this.innerHTML = TEMPLATE;
+			this.__photoModalEl = this.querySelector(".pie__media-modal");
+			this.__photoModalHome = this.querySelector(".pie");
+			this.__photoModalRestoreParent = null;
+			this.__photoFileInputHome = null;
 			this.#populateSelects();
 			this.#bind();
-			this.#buildSectionNav();
+			this.#syncStatusSections();
 			void loadOccupationsList();
 			void loadDeathCausesList();
 
@@ -1107,6 +1102,7 @@
 			});
 			form.addEventListener("change", (event) => {
 				const target = event.target;
+				if (target?.name === "pie-status") this.#syncStatusSections();
 				if (target?.matches?.('[data-date$=".precision"]')) this.#updateDateVisibility();
 				if (target?.matches?.('[data-date]')) this.#updatePreviews();
 			});
@@ -1119,68 +1115,6 @@
 			};
 			form.addEventListener("input", notifyDirty, true);
 			form.addEventListener("change", notifyDirty, true);
-		}
-
-		// Build a sticky quick-nav from the fieldset legends so editors can jump
-		// straight to a section (Name, Birth, Death, Photo, …) on this long form
-		// instead of scrolling. The active chip is kept in sync as you scroll.
-		#buildSectionNav() {
-			const { form } = this.#els();
-			if (!form) return;
-
-			const groups = Array.from(form.querySelectorAll(".pie__group"));
-			if (groups.length < 2) return;
-
-			const nav = document.createElement("nav");
-			nav.className = "pie__section-nav";
-			nav.setAttribute("aria-label", "Infobox sections");
-
-			const links = new Map();
-			groups.forEach((group, index) => {
-				if (!group.id) group.id = `pie-section-${index}`;
-				const legend = group.querySelector(".pie__legend");
-				const label = (legend?.textContent || `Section ${index + 1}`).trim();
-
-				const link = document.createElement("button");
-				link.type = "button";
-				link.className = "pie__section-nav-link";
-				link.textContent = label;
-				link.dataset.target = group.id;
-				link.addEventListener("click", () => {
-					group.scrollIntoView({ behavior: "smooth", block: "start" });
-					this.#setActiveSection(group.id);
-				});
-				nav.appendChild(link);
-				links.set(group.id, link);
-			});
-
-			form.insertBefore(nav, groups[0]);
-			this.__sectionLinks = links;
-			this.#setActiveSection(groups[0].id);
-
-			// Highlight whichever section is nearest the top as the editor scrolls.
-			if (typeof IntersectionObserver === "function") {
-				this.__sectionObserver?.disconnect();
-				this.__sectionObserver = new IntersectionObserver(
-					(entries) => {
-						const visible = entries
-							.filter((entry) => entry.isIntersecting)
-							.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-						if (visible?.target?.id) {
-							this.#setActiveSection(visible.target.id);
-						}
-					},
-					{ rootMargin: "-45% 0px -50% 0px", threshold: 0 },
-				);
-				groups.forEach((group) => this.__sectionObserver.observe(group));
-			}
-		}
-
-		#setActiveSection(id) {
-			if (!this.__sectionLinks) return;
-			this.__sectionLinks.forEach((link, linkId) => {
-				link.classList.toggle("is-active", linkId === id);
-			});
 		}
 
 		// The profile's page title (its <h1>) is the display name, shown read-only
@@ -1341,7 +1275,8 @@
 		}
 
 		disconnectedCallback() {
-			this.__sectionObserver?.disconnect();
+			this.#clearPendingPhotoFile();
+			this.#closePhotoMediaPicker();
 			if (this.__extraPublishProvider && Array.isArray(window.__extraPublishFileProviders)) {
 				const idx = window.__extraPublishFileProviders.indexOf(this.__extraPublishProvider);
 				if (idx >= 0) window.__extraPublishFileProviders.splice(idx, 1);
@@ -1380,7 +1315,8 @@
 			this.#setRadio("status", data.status);
 			this.#setRadio("gender", data.gender);
 			this.#setRadio("burial.type", data.burial.type);
-			this.#syncPhotoUi();
+			this.#syncStatusSections();
+			this.#syncPhotoState();
 
 			// If any group uses the 'between' precision, populate the secondary
 			// date input (dateTo) from the stored value which may be encoded as
@@ -1420,6 +1356,13 @@
 		#getRadio(name) {
 			const container = this.querySelector(`[data-radio="${name}"]`);
 			return container?.querySelector('input[type="radio"]:checked')?.value || "";
+		}
+
+		#syncStatusSections() {
+			const showDeath = this.#getRadio("status") === "deceased";
+			this.querySelectorAll(".pie__group--death").forEach((group) => {
+				group.hidden = !showDeath;
+			});
 		}
 
 		#updatePreviews() {
@@ -1956,6 +1899,261 @@
 			return resolveSiteUrl(`people/${this.__personId}/data/${normalized}`);
 		}
 
+		hasPhoto() {
+			if (this.__pendingPhotoFile) {
+				return true;
+			}
+
+			const src = String(this.__data?.photo?.src || this.querySelector("#pie-photo-src")?.value || "").trim();
+			if (!src || src.startsWith("blob:")) {
+				return false;
+			}
+
+			if (src === "assets/default-profile-photo.svg" || src.endsWith("/default-profile-photo.svg")) {
+				return false;
+			}
+
+			return true;
+		}
+
+		openPhotoEditor() {
+			return this.#openPhotoMediaPicker();
+		}
+
+		#photoModal() {
+			return this.__photoModalEl || null;
+		}
+
+		#portalPhotoModalIfNeeded() {
+			const modal = this.#photoModal();
+			if (!modal || modal.parentElement === document.body) return;
+
+			const panel = this.closest(".profile-edit__panel");
+			if (!panel?.hidden) return;
+
+			const home = this.__photoModalHome || this.querySelector(".pie");
+			if (!home) return;
+
+			this.__photoModalRestoreParent = home;
+			document.body.append(modal);
+
+			const fileInput = this.querySelector("#pie-photo-file");
+			const modalBody = modal.querySelector(".pie__media-modal-body");
+			if (fileInput && modalBody && !modalBody.contains(fileInput)) {
+				this.__photoFileInputHome = fileInput.parentElement;
+				modalBody.append(fileInput);
+			}
+		}
+
+		#restorePhotoModalHome() {
+			const modal = this.#photoModal();
+			const home = this.__photoModalRestoreParent;
+			if (modal && home && modal.parentElement === document.body) {
+				home.append(modal);
+			}
+			this.__photoModalRestoreParent = null;
+
+			const fileInput = this.querySelector("#pie-photo-file");
+			if (fileInput && this.__photoFileInputHome) {
+				this.__photoFileInputHome.append(fileInput);
+				this.__photoFileInputHome = null;
+			}
+		}
+
+		removePhoto() {
+			this.#clearPendingPhotoFile();
+			this.#setPhotoSrc("");
+		}
+
+		getQuickEditForLabel(label) {
+			if (!this.__formReady) return null;
+
+			const name = String(label || "").trim();
+			if (name === "Gender") {
+				return {
+					type: "select",
+					value: this.#getRadio("gender") || "unknown",
+					options: GENDERS,
+				};
+			}
+
+			const dateGroup = { Birth: "birth", Baptism: "baptism", Death: "death" }[name];
+			if (dateGroup) {
+				return {
+					type: "date",
+					value: this.#quickDateValue(dateGroup),
+				};
+			}
+
+			if (name === "Occupation") {
+				return { type: "text", value: this.querySelector('[data-field="occupation"]')?.value?.trim() || "" };
+			}
+
+			if (name === "Name") {
+				const data = this.#collect();
+				return {
+					type: "name",
+					fields: {
+						title: data.title || "",
+						firstName: data.firstName || "",
+						middleName: data.middleName || "",
+						lastName: data.lastName || "",
+						suffix: data.suffix || "",
+						birthSurname: data.birthSurname || "",
+					},
+				};
+			}
+
+			if (name === "Also known as") {
+				return { type: "text", value: this.querySelector('[data-field="alsoKnownAs"]')?.value?.trim() || "" };
+			}
+
+			if (name === "Last residence") {
+				const data = this.#collect();
+				return {
+					type: "text",
+					value: formatLocationSummary(data.lastResidenceLocation, data.lastResidence),
+				};
+			}
+
+			if (name === "Place of burial") {
+				const data = this.#collect();
+				const place = formatLocationSummary(data.burial.location, data.burial.place);
+				const date = friendlyDate(data.burial.date, data.burial);
+				return {
+					type: "text",
+					value: [place, date ? `(${date})` : ""].filter(Boolean).join(" ").trim(),
+				};
+			}
+
+			return null;
+		}
+
+		applyQuickEdit(label, value) {
+			if (!this.__formReady) return false;
+
+			const name = String(label || "").trim();
+			if (name === "Gender") {
+				this.#setRadio("gender", String(value || "unknown"));
+				this.#notifyQuickEditChange();
+				return true;
+			}
+
+			const dateGroup = { Birth: "birth", Baptism: "baptism", Death: "death" }[name];
+			if (dateGroup) {
+				this.#applyQuickDate(dateGroup, value);
+				this.#notifyQuickEditChange();
+				return true;
+			}
+
+			if (name === "Occupation") {
+				this.#setFieldValue("occupation", value);
+				this.#notifyQuickEditChange();
+				return true;
+			}
+
+			if (name === "Name") {
+				const fields = value && typeof value === "object" ? value : {};
+				for (const key of ["title", "firstName", "middleName", "lastName", "suffix", "birthSurname"]) {
+					this.#setFieldValue(key, fields[key] || "");
+				}
+				this.#setFieldValue("displayName", "");
+				this.#syncPageTitle();
+				this.#notifyQuickEditChange();
+				return true;
+			}
+
+			if (name === "Also known as") {
+				this.#setFieldValue("alsoKnownAs", value);
+				this.#notifyQuickEditChange();
+				return true;
+			}
+
+			if (name === "Last residence") {
+				this.#applyLocationValue("lastResidenceLocation", { placeName: String(value || "").trim(), label: String(value || "").trim() });
+				this.#notifyQuickEditChange();
+				return true;
+			}
+
+			if (name === "Place of burial") {
+				this.#applyLocationValue("burial.location", { placeName: String(value || "").trim(), label: String(value || "").trim() });
+				this.#notifyQuickEditChange();
+				return true;
+			}
+
+			return false;
+		}
+
+		#quickDateValue(group) {
+			const entry = getPathValue(this.#collect(), group) || {};
+			let raw = String(entry.date || "").trim();
+			if (entry.precision === "between" && raw.includes("|")) {
+				raw = raw.split("|")[0].trim();
+			}
+			return storedToDateInputValue(raw) || "";
+		}
+
+		#applyQuickDate(group, rawValue) {
+			const dateInput = this.querySelector(`[data-date="${group}.date"]`);
+			if (!dateInput) {
+				return;
+			}
+
+			const trimmed = String(rawValue || "").trim();
+			const stored = trimmed ? (normalizeStoredDate(trimmed) || trimmed) : "";
+			dateInput.value = trimmed ? (storedToDateInputValue(stored) || trimmed) : "";
+			dateInput.dispatchEvent(new Event("input", { bubbles: true }));
+			this.#updatePreviews();
+		}
+
+		#setFieldValue(field, value) {
+			const input = this.querySelector(`[data-field="${field}"]`);
+			if (!input) return;
+			input.value = field === "alsoKnownAs"
+				? String(value || "").trim()
+				: String(value || "").trim();
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		}
+
+		#notifyQuickEditChange() {
+			this.#notifyDirtyState();
+			document.dispatchEvent(new CustomEvent("profile-photo-change"));
+		}
+
+		async prepareForPublish() {
+			if (!this.__pendingPhotoFile) {
+				return;
+			}
+
+			const result = await this.#submitPhotoUpload(this.__pendingPhotoFile);
+			if (!result?.filename) {
+				throw new Error("Could not upload profile photo.");
+			}
+
+			this.#clearPendingPhotoFile();
+			this.#setPhotoSrc(`images/${result.filename}`);
+		}
+
+		#clearPendingPhotoFile() {
+			if (this.__pendingPhotoPreviewUrl) {
+				URL.revokeObjectURL(this.__pendingPhotoPreviewUrl);
+				this.__pendingPhotoPreviewUrl = "";
+			}
+			this.__pendingPhotoFile = null;
+		}
+
+		async #stagePhotoUpload(file) {
+			if (!file || !String(file.type || "").startsWith("image/")) {
+				throw new Error("Choose an image file (JPG, PNG, GIF, WebP, or SVG).");
+			}
+
+			this.#clearPendingPhotoFile();
+			this.__pendingPhotoFile = file;
+			this.__pendingPhotoPreviewUrl = URL.createObjectURL(file);
+			this.#setPhotoSrc(this.__pendingPhotoPreviewUrl);
+			this.#setStatus("Photo selected — save the profile to upload it.", "info");
+		}
+
 		#setPhotoSrc(src) {
 			const srcInput = this.querySelector("#pie-photo-src");
 			if (!srcInput) {
@@ -1963,6 +2161,9 @@
 			}
 
 			const trimmed = String(src || "").trim();
+			if (trimmed && !trimmed.startsWith("blob:")) {
+				this.#clearPendingPhotoFile();
+			}
 			if (this.__data?.photo && trimmed !== this.__data.photo.src) {
 				this.__data.photo.alt = "";
 			}
@@ -1971,75 +2172,72 @@
 			if (this.__data?.photo) {
 				this.__data.photo.src = trimmed;
 			}
-			this.#syncPhotoUi();
+			this.#syncPhotoState();
+			document.dispatchEvent(new CustomEvent("profile-photo-change"));
 		}
 
-		#syncPhotoUi() {
-			const srcInput = this.querySelector("#pie-photo-src");
-			const previewWrap = this.querySelector("#pie-photo-preview-wrap");
-			const previewImg = this.querySelector("#pie-photo-preview-img");
-			const emptyState = this.querySelector("#pie-photo-empty");
-			const removeBtn = this.querySelector("[data-photo-remove]");
-			const src = String(srcInput?.value || "").trim();
-			const hasPhoto = Boolean(src);
-
-			if (previewWrap) {
-				previewWrap.hidden = !hasPhoto;
-			}
-			if (emptyState) {
-				emptyState.hidden = hasPhoto;
-			}
+		#syncPhotoState() {
+			const modal = this.#photoModal();
+			const removeBtn = modal?.querySelector("[data-photo-remove]");
+			const toolbar = modal?.querySelector(".pie__photo-modal-toolbar");
 			if (removeBtn) {
-				removeBtn.hidden = !hasPhoto;
+				removeBtn.hidden = !this.hasPhoto();
 			}
-			if (previewImg) {
-				if (hasPhoto) {
-					const previewUrl = this.#resolvePhotoPreviewUrl(src);
-					previewImg.src = previewUrl;
-					previewImg.alt = String(this.__data?.photo?.alt || "").trim() || "Selected profile photo";
-				} else {
-					previewImg.removeAttribute("src");
-					previewImg.alt = "";
-				}
+			if (toolbar) {
+				toolbar.hidden = !removeBtn || removeBtn.hidden;
 			}
 		}
 
 		#bindPhotoFields() {
 			const fileInput = this.querySelector("#pie-photo-file");
-			const uploadBtn = this.querySelector("[data-photo-upload]");
-			const chooseBtn = this.querySelector("[data-photo-choose]");
-			const removeBtn = this.querySelector("[data-photo-remove]");
-			const modal = this.querySelector(".pie__media-modal");
+			const modal = this.#photoModal();
+			const removeBtn = modal?.querySelector("[data-photo-remove]");
+			const dropzone = modal?.querySelector("[data-photo-dropzone]");
 
-			if (uploadBtn && fileInput) {
-				uploadBtn.addEventListener("click", () => fileInput.click());
+			const pickPhotoFile = async (file) => {
+				if (!file) {
+					return;
+				}
+				try {
+					await this.#stagePhotoUpload(file);
+					this.#closePhotoMediaPicker();
+				} catch (error) {
+					console.error(error);
+					this.#setStatus(error?.message || "Could not prepare image.", "error");
+				}
+			};
+
+			if (fileInput) {
 				fileInput.addEventListener("change", async () => {
 					const file = fileInput.files?.[0];
 					fileInput.value = "";
-					if (!file) {
-						return;
-					}
-					try {
-						const result = await this.#submitPhotoUpload(file);
-						if (result?.filename) {
-							this.#setPhotoSrc(`images/${result.filename}`);
-							if (result.payload?.pull_request?.url) {
-								this.#setStatus("Image submitted for review.", "success");
-							} else {
-								this.#setStatus("Image uploaded.", "success");
-							}
-						}
-					} catch (error) {
-						console.error(error);
-						this.#setStatus(error?.message || "Could not upload image.", "error");
-					}
+					await pickPhotoFile(file);
 				});
 			}
 
-			if (chooseBtn && modal) {
-				chooseBtn.addEventListener("click", async () => {
-					await this.#openPhotoMediaPicker();
+			if (dropzone && fileInput) {
+				dropzone.addEventListener("click", () => {
+					if (!dropzone.disabled) {
+						fileInput.click();
+					}
 				});
+				["dragenter", "dragover"].forEach((eventName) => {
+					dropzone.addEventListener(eventName, (event) => {
+						event.preventDefault();
+						dropzone.classList.add("is-dragover");
+					});
+				});
+				["dragleave", "dragend", "drop"].forEach((eventName) => {
+					dropzone.addEventListener(eventName, () => dropzone.classList.remove("is-dragover"));
+				});
+				dropzone.addEventListener("drop", (event) => {
+					event.preventDefault();
+					const file = event.dataTransfer?.files?.[0];
+					void pickPhotoFile(file);
+				});
+			}
+
+			if (modal) {
 				modal.addEventListener("click", (ev) => {
 					if (ev.target.closest("[data-media-modal-close]")) {
 						this.#closePhotoMediaPicker();
@@ -2049,7 +2247,8 @@
 
 			if (removeBtn) {
 				removeBtn.addEventListener("click", () => {
-					this.#setPhotoSrc("");
+					this.removePhoto();
+					this.#closePhotoMediaPicker();
 				});
 			}
 		}
@@ -2092,15 +2291,18 @@
 		}
 
 		async #openPhotoMediaPicker() {
-			const modal = this.querySelector('.pie__media-modal');
-			const grid = modal?.querySelector('.pie__media-grid');
-			const status = modal?.querySelector('.pie__media-modal-status');
+			const modal = this.#photoModal();
+			const grid = modal?.querySelector(".pie__media-grid");
+			const status = modal?.querySelector(".pie__media-modal-status");
 			if (!modal || !grid || !status) return;
+
+			this.#portalPhotoModalIfNeeded();
+			this.#syncPhotoState();
 			modal.hidden = false;
-			modal.setAttribute('aria-hidden', 'false');
-			document.body.style.overflow = 'hidden';
-			status.textContent = 'Loading images…';
-			grid.innerHTML = '';
+			modal.setAttribute("aria-hidden", "false");
+			document.body.style.overflow = "hidden";
+			status.textContent = "Loading images…";
+			grid.innerHTML = "";
 
 			let images = [];
 			try {
@@ -2110,11 +2312,11 @@
 			}
 
 			if (!images.length) {
-				status.textContent = 'No images available for this profile.';
+				status.textContent = "No images on this profile yet — use the area above to add your Profile Picture.";
 				return;
 			}
 
-			status.textContent = '';
+			status.textContent = "";
 			for (const img of images) {
 				const btn = document.createElement('button');
 				btn.type = 'button';
@@ -2130,11 +2332,12 @@
 		}
 
 		#closePhotoMediaPicker() {
-			const modal = this.querySelector('.pie__media-modal');
+			const modal = this.#photoModal();
 			if (!modal || modal.hidden) return;
 			modal.hidden = true;
-			modal.setAttribute('aria-hidden', 'true');
-			document.body.style.overflow = '';
+			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+			this.#restorePhotoModalHome();
 		}
 
 		async #submitPhotoUpload(file) {
@@ -2368,7 +2571,7 @@
 				}
 			});
 
-			data.status = this.#getRadio("status") || "deceased";
+			data.status = this.#getRadio("status") || "unknown";
 			data.gender = this.#getRadio("gender") || "unknown";
 			data.burial.type = this.#getRadio("burial.type") || "burial";
 			this.#collectLocationFields(data);
@@ -2386,7 +2589,17 @@
 
 			const data = this.#collect();
 			this.__data = data;
-			const publishFiles = this.#buildInfoboxPublishFiles(data);
+
+			try {
+				await this.prepareForPublish();
+			} catch (error) {
+				console.error(error);
+				this.#setStatus(error?.message || "Could not upload profile photo.", "error");
+				if (save) save.disabled = false;
+				return;
+			}
+
+			const publishFiles = this.#buildInfoboxPublishFiles(this.#collect());
 			const primary = publishFiles[0];
 			const path = primary.path;
 			const name = displayNameFrom(data) || `profile ${this.__personId}`;

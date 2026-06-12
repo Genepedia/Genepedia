@@ -5,7 +5,7 @@
  * two-tab experience:
  *   • Identity — the structured <profile-infobox-editor> for the identity table
  *     (saved to profile-table.html + family-tree.ged).
- *   • Article — a WYSIWYG <profile-page-editor> that edits the prose of
+ *   • Page — a WYSIWYG <profile-page-editor> that edits the prose of
  *     people/<id>/data/profile.html with the identity infobox floated in place,
  *     exactly as it looks live, so text wraps around it while you type.
  *
@@ -249,12 +249,11 @@
 				</ol>
 			</nav>
 			<div class="profile-edit__tabs" role="tablist" aria-label="Profile editor sections">
-				<button type="button" class="profile-edit__tab is-active" data-edit-tab="infobox" role="tab" aria-selected="true">Identity</button>
-				<button type="button" class="profile-edit__tab" data-edit-tab="profile" role="tab" aria-selected="false">Article</button>
+				<button type="button" class="profile-edit__tab is-active" data-edit-tab="profile" role="tab" aria-selected="true">Page</button>
+				<button type="button" class="profile-edit__tab" data-edit-tab="infobox" role="tab" aria-selected="false">Identity</button>
 			</div>
 			<div class="profile-edit__actions">
 				<span class="profile-edit__status" role="status" aria-live="polite" hidden></span>
-				<input type="text" class="profile-edit__summary" maxlength="120" placeholder="Summary of changes (optional)" aria-label="Summary of changes">
 				<button type="button" class="profile-edit__save page-editor__button page-editor__button--save" data-action="publish" disabled>
 					<i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
 					<span>Save</span>
@@ -262,8 +261,8 @@
 			</div>
 		</div>
 		<div class="profile-edit__panels">
-			<div class="profile-edit__panel" data-edit-panel="infobox"></div>
-			<div class="profile-edit__panel" data-edit-panel="profile" hidden></div>
+			<div class="profile-edit__panel" data-edit-panel="profile"></div>
+			<div class="profile-edit__panel" data-edit-panel="infobox" hidden></div>
 		</div>
 	`;
 
@@ -271,7 +270,8 @@
 		connectedCallback() {
 			if (this.__rendered) return;
 			this.__rendered = true;
-			this.__activeTab = "infobox";
+			this.__activeTab = "profile";
+			this.__isDraftProfile = SELF_PROFILE_MODE || params.get("new") === "1";
 
 			this.innerHTML = TEMPLATE;
 			this.classList.toggle("profile-edit--self", SELF_PROFILE_MODE);
@@ -283,16 +283,14 @@
 			}
 
 			if (SELF_PROFILE_MODE) {
-				const summary = this.querySelector(".profile-edit__summary");
-				if (summary) summary.hidden = true;
 				const saveLabel = this.querySelector(".profile-edit__save span");
 				if (saveLabel) saveLabel.textContent = "Save profile";
-				const current = this.querySelector(".profile-edit__breadcrumb-current");
-				if (current) current.textContent = "Your profile";
+			} else if (params.get("new") === "1") {
+				this.#setBreadcrumbCurrent("New Tree");
 			}
 
 			this.#mountChildren();
-			this.#wireBreadcrumb();
+			void this.#initBreadcrumb();
 			this.#bindTabs();
 			this.#bindSave();
 			this.#bindEvents();
@@ -321,11 +319,59 @@
 			this.__infobox = infobox;
 		}
 
-		#wireBreadcrumb() {
-			const home = this.querySelector(".profile-edit__breadcrumb-home");
+		#setBreadcrumbCurrent(text, { href = null } = {}) {
 			const current = this.querySelector(".profile-edit__breadcrumb-current");
+			if (!current) return;
+
+			const wantsLink = Boolean(href);
+			if (wantsLink && current.tagName !== "A") {
+				const link = document.createElement("a");
+				link.className = "profile-edit__breadcrumb-current";
+				link.href = href;
+				link.textContent = text;
+				current.replaceWith(link);
+				return;
+			}
+
+			if (!wantsLink && current.tagName === "A") {
+				const label = document.createElement("span");
+				label.className = "profile-edit__breadcrumb-current";
+				label.setAttribute("aria-current", "page");
+				label.textContent = text;
+				current.replaceWith(label);
+				return;
+			}
+
+			current.textContent = text;
+			if (wantsLink && current.tagName === "A") {
+				current.href = href;
+				current.removeAttribute("aria-current");
+			} else if (!wantsLink && current.tagName === "SPAN") {
+				current.setAttribute("aria-current", "page");
+			}
+		}
+
+		async #initBreadcrumb() {
+			const home = this.querySelector(".profile-edit__breadcrumb-home");
 			if (home) home.href = resolveSiteUrl("people/");
-			if (current) current.href = resolveSiteUrl(`people/${PERSON_ID}/profile.html`);
+
+			if (SELF_PROFILE_MODE) {
+				this.__isDraftProfile = true;
+				this.#setBreadcrumbCurrent("Your profile");
+				return;
+			}
+
+			const isDraft = params.get("new") === "1" || !(await this.#checkProfileExists());
+			this.__isDraftProfile = isDraft;
+
+			if (isDraft) {
+				this.#setBreadcrumbCurrent("New Tree");
+				return;
+			}
+
+			this.#setBreadcrumbCurrent("Profile", {
+				href: resolveSiteUrl(`people/${PERSON_ID}/profile.html`),
+			});
 		}
 
 		#bindTabs() {
@@ -344,7 +390,7 @@
 			this.querySelectorAll(".profile-edit__panel").forEach((panel) => {
 				panel.hidden = panel.dataset.editPanel !== name;
 			});
-			// Returning to the Article tab: refresh the floated infobox so any
+			// Returning to the Page tab: refresh the floated infobox so any
 			// edits made on the Identity tab are reflected immediately.
 			if (name === "profile" && typeof this.__pageEditor?.refreshInfoboxPreview === "function") {
 				this.__pageEditor.refreshInfoboxPreview();
@@ -368,7 +414,7 @@
 			document.addEventListener("profile-editor-dirty-change", () => {
 				this.#refreshDirtyState();
 				// The infobox editor fires this once it finishes loading; refresh the
-				// floated preview when the Article tab is active so the infobox shows
+				// floated preview when the Page tab is active so the infobox shows
 				// without needing to visit the Identity tab first.
 				if (this.__activeTab === "profile") {
 					this.__pageEditor?.refreshInfoboxPreview?.();
@@ -385,8 +431,10 @@
 			document.addEventListener("profile-display-name-change", (event) => {
 				const name = event.detail?.name;
 				this.__pageEditor?.setDisplayName?.(name);
-				const current = this.querySelector(".profile-edit__breadcrumb-current");
-				if (current && name) current.textContent = name;
+				if (!name) return;
+				this.#setBreadcrumbCurrent(name, this.__isDraftProfile
+					? {}
+					: { href: resolveSiteUrl(`people/${PERSON_ID}/profile.html`) });
 			});
 		}
 
@@ -887,10 +935,23 @@
 			}
 		}
 
+		async #prepareInfoboxForPublish() {
+			if (!this.__infobox?.prepareForPublish) return;
+			await this.__infobox.prepareForPublish();
+		}
+
 		async #save() {
 			if (this.__saving || !VALID_ID) return;
 			if (!this.#isDirty()) {
 				this.#setStatus("Nothing to save yet.", "info");
+				return;
+			}
+
+			try {
+				await this.#prepareInfoboxForPublish();
+			} catch (error) {
+				console.error(error);
+				this.#setStatus(error?.message || "Could not upload profile photo.", "error");
 				return;
 			}
 
@@ -954,10 +1015,7 @@
 			this.#setStatus("Saving changes…", "info");
 
 			const name = this.querySelector(".profile-edit__breadcrumb-current")?.textContent?.trim() || PERSON_ID;
-			const summary = this.querySelector(".profile-edit__summary")?.value?.trim() || "";
-			const commitMessage = summary
-				? `Update ${name}: ${summary}`
-				: `Update profile: ${name}`;
+			const commitMessage = `Update profile: ${name}`;
 
 			try {
 				const response = await fetch(endpoint, gitHubFetchInit({
@@ -967,7 +1025,7 @@
 						files,
 						commit_message: commitMessage,
 						pr_title: commitMessage,
-						pr_body: summary,
+						pr_body: "",
 					}),
 				}));
 
@@ -983,8 +1041,6 @@
 				}
 
 				// Reset baselines so the editor is clean again.
-				const summaryInput = this.querySelector(".profile-edit__summary");
-				if (summaryInput) summaryInput.value = "";
 				this.__pageEditor?.setSavedBaseline?.();
 				if (Array.isArray(window.__extraDirtyStateResetCallbacks)) {
 					window.__extraDirtyStateResetCallbacks.forEach((fn) => {
