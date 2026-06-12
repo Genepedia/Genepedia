@@ -44,6 +44,7 @@ const EXTRA_OCCUPATIONS = [
   'Retired',
   'Student',
   'Unknown',
+  'Vibe Coder',
 ];
 
 function parseCsvLine(line) {

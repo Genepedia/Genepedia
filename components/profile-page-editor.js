@@ -1371,14 +1371,41 @@
 			panel.hidden = false;
 			toggle.setAttribute("aria-expanded", "true");
 			menu.classList.add("is-open");
+			this.#positionMenuPanel(menu, panel, toggle);
+		}
+
+		#positionMenuPanel(menu, panel, toggle) {
+			menu.classList.remove("ppe__menu--align-end", "ppe__menu--drop-up");
+			panel.style.maxHeight = "";
+
+			const padding = 12;
+			const toggleRect = toggle.getBoundingClientRect();
+			const panelRect = panel.getBoundingClientRect();
+			const spaceBelow = window.innerHeight - toggleRect.bottom - padding;
+			const spaceAbove = toggleRect.top - padding;
+
+			if (panelRect.right > window.innerWidth - padding) {
+				menu.classList.add("ppe__menu--align-end");
+			}
+
+			const preferDropUp = panelRect.height > spaceBelow && spaceAbove > spaceBelow;
+			if (preferDropUp) {
+				menu.classList.add("ppe__menu--drop-up");
+			}
+
+			const available = preferDropUp ? spaceAbove : spaceBelow;
+			panel.style.maxHeight = `${Math.max(180, available - 8)}px`;
 		}
 
 		#closeMenus() {
 			this.querySelectorAll(".ppe__menu").forEach((menu) => {
-				menu.classList.remove("is-open");
+				menu.classList.remove("is-open", "ppe__menu--align-end", "ppe__menu--drop-up");
 				const panel = menu.querySelector(".ppe__menu-panel");
 				const toggle = menu.querySelector("[data-menu-toggle]");
-				if (panel) panel.hidden = true;
+				if (panel) {
+					panel.hidden = true;
+					panel.style.maxHeight = "";
+				}
 				if (toggle) toggle.setAttribute("aria-expanded", "false");
 			});
 		}

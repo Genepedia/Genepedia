@@ -1033,7 +1033,7 @@
 
 				if (!response.ok || !payload?.ok) {
 					if (response.status === 401 || payload?.error === "authentication_required") {
-						this.#setStatus("Sign in with GitHub (site header) to save your changes.", "error");
+						this.#setStatus("You must be signed in to save changes.", "error");
 					} else {
 						this.#setStatus(payload?.message || `Save failed (${response.status}).`, "error");
 					}

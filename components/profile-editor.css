@@ -369,10 +369,6 @@ body.theme-dark .profile-edit__tab.is-active {
   cursor: pointer;
 }
 
-.profile-edit__save:hover:not(:disabled) {
-  /* color & background handled by page-editor__button--save */
-}
-
 .profile-edit__save:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -605,14 +601,8 @@ body.theme-dark .ppe__toolbar-sep {
 }
 
 .ppe__menu[data-menu-group="special-chars"] .ppe__menu-toggle {
-  min-width: 2.85rem;
-}
-
-.ppe__menu-toggle-mark--omega {
-  min-width: 1rem;
-  font-size: 1.05rem;
-  font-weight: 700;
-  line-height: 1;
+  min-width: 3.15rem;
+  padding-right: 0.4rem;
 }
 
 .ppe__menu-toggle-label {
@@ -640,6 +630,11 @@ body.theme-dark .ppe__toolbar-sep {
   line-height: 1;
 }
 
+.ppe__menu-toggle-mark.ppe__menu-toggle-mark--omega {
+  min-width: 1.25rem;
+  font-size: 1.4rem;
+}
+
 .ppe__menu-panel {
   position: absolute;
   top: calc(100% + 0.35rem);
@@ -655,6 +650,16 @@ body.theme-dark .ppe__toolbar-sep {
   border-radius: 0.4rem;
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.ppe__menu--align-end .ppe__menu-panel {
+  left: auto;
+  right: 0;
+}
+
+.ppe__menu--drop-up .ppe__menu-panel {
+  top: auto;
+  bottom: calc(100% + 0.35rem);
 }
 
 body.theme-dark .ppe__menu-panel {
@@ -894,10 +899,11 @@ body.theme-dark .ppe__menu.is-open .ppe__menu-toggle {
 }
 
 .ppe__special-chars-panel {
-  min-width: 15rem;
-  max-width: 18rem;
+  min-width: 20rem;
+  width: min(32rem, calc(100vw - 2rem));
+  max-width: min(34rem, calc(100vw - 2rem));
   padding: 0.45rem;
-  max-height: calc(100vh - 6rem);
+  max-height: min(70vh, calc(100vh - 6rem));
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -917,14 +923,14 @@ body.theme-dark .ppe__menu.is-open .ppe__menu-toggle {
 
 .ppe__special-chars-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
   gap: 0.2rem;
 }
 
 .ppe__special-char {
   display: grid;
   place-items: center;
-  min-height: 2rem;
+  min-height: 1.85rem;
   margin: 0;
   padding: 0.15rem;
   border: 1px solid transparent;
@@ -1099,7 +1105,9 @@ body.theme-dark .people-page__content aside {
   position: relative;
   z-index: 2;
   width: min(50%, 20rem);
-  padding-top: 0;
+  max-width: 100%;
+  padding-top: 0.85rem;
+  overflow: hidden;
 }
 
 .ppe__canvas aside table {
@@ -1111,6 +1119,20 @@ body.theme-dark .people-page__content aside {
 
 .ppe__canvas aside.ppe__infobox table {
   width: 100%;
+  table-layout: fixed;
+}
+
+.ppe__canvas aside.ppe__infobox th {
+  width: 1%;
+  padding-right: 0.75rem;
+  white-space: nowrap;
+  vertical-align: top;
+  font-weight: 600;
+}
+
+.ppe__canvas aside.ppe__infobox td {
+  vertical-align: top;
+  word-break: break-word;
 }
 
 
@@ -1135,26 +1157,19 @@ body.theme-dark .ppe__infobox-photo--example {
   position: relative;
   z-index: 1;
   display: block;
-  width: calc(100% + 1.7rem);
-  margin: 0 -0.85rem 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 0.5rem;
   cursor: pointer;
-}
-
-.ppe__infobox-photo-frame:has(.ppe__infobox-photo--example) {
-  aspect-ratio: 1 / 1;
   overflow: hidden;
 }
 
 .ppe__infobox-photo-frame img {
   display: block;
   width: 100%;
+  max-width: 100%;
   height: auto;
   border-radius: 0;
-}
-
-.ppe__infobox-photo-frame:has(.ppe__infobox-photo--example) img {
-  height: 100%;
-  object-fit: cover;
 }
 
 .ppe__infobox-photo-actions {
@@ -1337,12 +1352,27 @@ body.theme-dark .ppe__brand {
   display: flex;
   align-items: flex-start;
   gap: 0.35rem;
+  max-width: 100%;
   padding-right: 0 !important;
+  box-sizing: border-box;
+}
+
+.ppe__infobox-field.is-editing {
+  flex-wrap: wrap;
 }
 
 .ppe__infobox-field-main {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
+}
+
+.ppe__infobox-field.is-editing .ppe__infobox-field-main {
+  flex: 1 1 calc(100% - 3.5rem);
+}
+
+.ppe__infobox-field-editor {
+  max-width: 100%;
 }
 
 .ppe__infobox-value {
@@ -1356,8 +1386,10 @@ body.theme-dark .ppe__brand {
 
 .ppe__infobox-field-controls {
   display: inline-flex;
+  flex: 0 0 auto;
   flex-shrink: 0;
   gap: 0.2rem;
+  margin-left: auto;
 }
 
 .ppe__infobox-field-edit,
@@ -1441,14 +1473,21 @@ body.theme-dark .ppe__infobox-field-input {
   background: #101418;
 }
 
-.ppe__infobox-field-editor .pie__date-input-wrap {
+.ppe__infobox-field-editor .pie__date-input-wrap,
+.ppe__infobox-field-editor .ppe__infobox-date-wrap {
+  display: flex;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  height: auto;
+  min-height: 2rem;
+  box-sizing: border-box;
 }
 
 .ppe__infobox-field-editor .pie__date-input {
   min-width: 0;
   width: 100%;
+  max-width: 100%;
   padding: 0.2rem 2.35rem 0.2rem 0.35rem;
   color-scheme: light;
 }
@@ -3237,4 +3276,24 @@ body.theme-dark .pie__date-preview {
   .pie__location-detail-label {
     text-align: left;
   }
+}
+
+/* Keep quick-edit controls and date pickers inside the floated infobox card. */
+.ppe__canvas aside.ppe__infobox .ppe__infobox-field-editor .pie__date-input-wrap,
+.ppe__canvas aside.ppe__infobox .ppe__infobox-field-editor .ppe__infobox-date-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 2rem;
+}
+
+.ppe__canvas aside.ppe__infobox .ppe__infobox-field-editor .pie__date-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ppe__infobox-photo-row td[colspan] {
+  width: 100%;
 }

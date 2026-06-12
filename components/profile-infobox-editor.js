@@ -72,6 +72,9 @@
 	let deathCausesListPromise = null;
 
 	const OCCUPATIONS_DATA_PATH = "data/occupations-onet-usa.json";
+	const EXTRA_OCCUPATIONS = [
+		"Vibe Coder",
+	];
 	const OCCUPATIONS_FALLBACK = [
 		"Farmer",
 		"Teacher",
@@ -103,8 +106,21 @@
 		"Writer",
 		"Publisher",
 		"Business owner",
+		...EXTRA_OCCUPATIONS,
 	];
 	let occupationsListPromise = null;
+
+	function mergeExtraOccupations(occupations) {
+		const merged = Array.isArray(occupations) ? [...occupations] : [];
+		const seen = new Set(merged.map((occupation) => String(occupation).toLocaleLowerCase("en-US")));
+		for (const occupation of EXTRA_OCCUPATIONS) {
+			const key = String(occupation).toLocaleLowerCase("en-US");
+			if (seen.has(key)) continue;
+			seen.add(key);
+			merged.push(occupation);
+		}
+		return merged;
+	}
 
 	function resolveOccupationsUrl() {
 		return resolveSiteUrl(OCCUPATIONS_DATA_PATH);
@@ -124,11 +140,11 @@
 					if (occupations.length < 1000) {
 						throw new Error(`Occupations list is too small (${occupations.length}).`);
 					}
-					return occupations;
+					return mergeExtraOccupations(occupations);
 				})
 				.catch((error) => {
 					console.warn("Using fallback occupations list", error);
-					return OCCUPATIONS_FALLBACK;
+					return mergeExtraOccupations(OCCUPATIONS_FALLBACK);
 				});
 		}
 
