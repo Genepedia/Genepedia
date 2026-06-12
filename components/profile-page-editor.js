@@ -5,7 +5,7 @@
  * It renders the page exactly as it appears live — the identity infobox floated
  * to the right with the article text wrapping around it — so editors see the
  * real layout while they type. Only the prose is editable here; the infobox is
- * read-only context (it is edited on the Infobox tab) and the page title is the
+ * read-only context (it is edited on the Identity tab) and the page title is the
  * display name (also owned by the infobox).
  *
  * On save it reconstructs the fragment as:
@@ -36,19 +36,65 @@
 		}[char]));
 	}
 
-	const FORMAT_BUTTONS = [
+	function isAbsoluteUrl(value) {
+		return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(String(value || ""));
+	}
+
+	async function isDraftProfile(personId) {
+		if (new URLSearchParams(window.location.search).get("new") === "1") return true;
+		if (!window.PeopleRegistry?.loadPeopleRegistry) return false;
+		try {
+			const people = await window.PeopleRegistry.loadPeopleRegistry();
+			const id = String(personId || "").trim();
+			return !people.some((person) => String(person?.id || "").trim() === id);
+		} catch (error) {
+			return false;
+		}
+	}
+
+	async function fetchSiteResource(url) {
+		try {
+			const response = await fetch(url, { cache: "no-store" });
+			return response.ok ? response : null;
+		} catch (error) {
+			return null;
+		}
+	}
+
+	const INLINE_TOOLS = [
 		{ command: "bold", icon: "bi-type-bold", label: "Bold (Ctrl+B)", state: "bold" },
 		{ command: "italic", icon: "bi-type-italic", label: "Italic (Ctrl+I)", state: "italic" },
 		{ command: "underline", icon: "bi-type-underline", label: "Underline (Ctrl+U)", state: "underline" },
 		{ command: "strikeThrough", icon: "bi-type-strikethrough", label: "Strikethrough", state: "strikeThrough" },
-		{ separator: true },
+	];
+
+	const HEADING_OPTIONS = [
+		{ block: "p", icon: "bi-paragraph", label: "Paragraph" },
+		{ block: "h1", icon: "bi-type-h1", label: "Heading 1" },
 		{ block: "h2", icon: "bi-type-h2", label: "Heading 2" },
 		{ block: "h3", icon: "bi-type-h3", label: "Heading 3" },
-		{ block: "p", icon: "bi-paragraph", label: "Paragraph" },
+		{ block: "h4", text: "H4", label: "Heading 4" },
+		{ block: "h5", text: "H5", label: "Heading 5" },
+		{ block: "h6", text: "H6", label: "Heading 6" },
+	];
+
+	const LIST_OPTIONS = [
+		{ listType: "bullet", icon: "bi-list-ul", label: "Bulleted list" },
+		{ listType: "decimal", icon: "bi-list-ol", label: "Numbered list (1, 2, 3)" },
+		{ listType: "lower-alpha", icon: "bi-list-ol", label: "Letter list (a, b, c)", olType: "a" },
+		{ listType: "upper-alpha", icon: "bi-list-ol", label: "Letter list (A, B, C)", olType: "A" },
+		{ listType: "lower-roman", icon: "bi-list-ol", label: "Roman list (i, ii, iii)", olType: "i" },
+		{ listType: "upper-roman", icon: "bi-list-ol", label: "Roman list (I, II, III)", olType: "I" },
 		{ separator: true },
-		{ command: "insertUnorderedList", icon: "bi-list-ul", label: "Bulleted list", state: "insertUnorderedList" },
-		{ command: "insertOrderedList", icon: "bi-list-ol", label: "Numbered list", state: "insertOrderedList" },
+		{ listType: "definition", icon: "bi-card-list", label: "Definition list" },
 		{ separator: true },
+		{ listType: "indent", icon: "bi-text-indent-right", label: "Increase indent" },
+		{ listType: "outdent", icon: "bi-text-indent-left", label: "Decrease indent" },
+	];
+
+	const BLOCK_LABELS = Object.fromEntries(HEADING_OPTIONS.map((item) => [item.block, item.label]));
+
+	const TRAILING_TOOLS = [
 		{ action: "link", icon: "bi-link-45deg", label: "Link" },
 		{ command: "unlink", icon: "bi-link", label: "Remove link" },
 		{ action: "image", icon: "bi-image", label: "Insert image" },
@@ -56,10 +102,78 @@
 		{ command: "removeFormat", icon: "bi-eraser", label: "Clear formatting" },
 	];
 
+	function renderToolButton(btn) {
+		const attrs = [
+			`data-command="${btn.command || ""}"`,
+			`data-block="${btn.block || ""}"`,
+			`data-action="${btn.action || ""}"`,
+			`data-state="${btn.state || ""}"`,
+			`aria-label="${btn.label}"`,
+			`title="${btn.label}"`,
+		].join(" ");
+		if (btn.text) {
+			return `<button type="button" class="ppe__tool ppe__tool--text" ${attrs}><span class="ppe__tool-text" aria-hidden="true">${btn.text}</span></button>`;
+		}
+		return `<button type="button" class="ppe__tool" ${attrs}><i class="bi ${btn.icon}" aria-hidden="true"></i></button>`;
+	}
+
+	function renderMenuIcon(item) {
+		if (item.text) {
+			return `<span class="ppe__menu-item-mark" aria-hidden="true">${item.text}</span>`;
+		}
+		return `<i class="bi ${item.icon}" aria-hidden="true"></i>`;
+	}
+
+	function renderMenuItems(items, itemClass) {
+		return items.map((item) => {
+			if (item.separator) return '<div class="ppe__menu-sep" role="separator"></div>';
+			const attrs = [
+				item.block ? `data-block="${item.block}"` : "",
+				item.listType ? `data-list-type="${item.listType}"` : "",
+				item.olType ? `data-ol-type="${item.olType}"` : "",
+				`title="${item.label}"`,
+			].filter(Boolean).join(" ");
+			return `<button type="button" class="${itemClass}" role="menuitem" ${attrs}>${renderMenuIcon(item)}<span>${escapeHtml(item.label)}</span></button>`;
+		}).join("");
+	}
+
+	function renderToolbarMenu(menuId, toggleIcon, toggleLabel, items) {
+		return `
+			<div class="ppe__menu" data-menu-group="${menuId}">
+				<button type="button" class="ppe__tool ppe__menu-toggle" data-menu-toggle="${menuId}" aria-haspopup="menu" aria-expanded="false" title="${toggleLabel}">
+					<i class="bi ${toggleIcon} ppe__menu-toggle-icon" aria-hidden="true"></i>
+					<span class="ppe__menu-toggle-label">${toggleLabel}</span>
+					<i class="bi bi-chevron-down ppe__menu-caret" aria-hidden="true"></i>
+				</button>
+				<div class="ppe__menu-panel" role="menu" hidden>
+					${renderMenuItems(items, "ppe__menu-item")}
+				</div>
+			</div>`;
+	}
+
+	function renderToolbarHtml() {
+		const parts = INLINE_TOOLS.map((btn) => renderToolButton(btn));
+		parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
+		parts.push(renderToolbarMenu("heading", "bi-type-h2", "Paragraph", HEADING_OPTIONS));
+		parts.push(renderToolbarMenu("list", "bi-list-ul", "List", LIST_OPTIONS));
+		parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
+		for (const btn of TRAILING_TOOLS) {
+			if (btn.separator) {
+				parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
+				continue;
+			}
+			parts.push(renderToolButton(btn));
+		}
+		return parts.join("");
+	}
+
 	// Tags kept when cleaning pasted HTML; everything else is unwrapped (its text
 	// is preserved) and all attributes except a couple are stripped.
-	const PASTE_ALLOWED_TAGS = new Set(["P", "BR", "H2", "H3", "UL", "OL", "LI", "A", "B", "STRONG", "I", "EM", "U", "S", "BLOCKQUOTE"]);
-	const PASTE_ALLOWED_ATTRS = { A: ["href"] };
+	const PASTE_ALLOWED_TAGS = new Set(["P", "BR", "H1", "H2", "H3", "H4", "H5", "H6", "UL", "OL", "LI", "DL", "DT", "DD", "A", "B", "STRONG", "I", "EM", "U", "S", "BLOCKQUOTE"]);
+	const PASTE_ALLOWED_ATTRS = { A: ["href"], OL: ["type"] };
+
+	// Shown in the profile-page preview only when the infobox has no portrait yet.
+	const DEFAULT_PROFILE_PHOTO = "assets/default-profile-photo.svg";
 
 	// Split the profile fragment into the leading comment, the <h1> title, the
 	// infobox node (inline <profile-identity> or an <include>), and the prose.
@@ -126,6 +240,60 @@
 		if (!aside) return null;
 		if (!aside.querySelector("tbody")?.children.length) return null;
 		return document.importNode(aside, true);
+	}
+
+	function identityHtmlHasPhoto(identityHtml) {
+		const match = String(identityHtml || "").match(/<table-photo\b[\s\S]*?<img\b[^>]*\bsrc=["']([^"']*)["']/i);
+		return Boolean(match?.[1]?.trim());
+	}
+
+	function identityHtmlHasBirth(identityHtml) {
+		const match = String(identityHtml || "").match(/<table-birth\b[^>]*>([\s\S]*?)<\/table-birth>/i);
+		if (!match) return false;
+		return Boolean(match[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim());
+	}
+
+	function asideHasBirthRow(aside) {
+		return [...aside.querySelectorAll("tbody th")].some((th) => th.textContent.trim() === "Birth");
+	}
+
+	// Preview-only placeholder birth; never written to profile-table.html.
+	function ensurePreviewBirth(aside) {
+		if (!aside || asideHasBirthRow(aside)) return;
+		const tbody = aside.querySelector("tbody");
+		if (!tbody) return;
+
+		const tr = document.createElement("tr");
+		const th = document.createElement("th");
+		th.textContent = "Birth";
+		const td = document.createElement("td");
+		td.textContent = "Unknown";
+		tr.append(th, td);
+
+		const genderRow = [...tbody.querySelectorAll("tr")].find((row) => row.querySelector("th")?.textContent.trim() === "Gender");
+		if (genderRow) genderRow.after(tr);
+		else tbody.append(tr);
+	}
+
+	// Preview-only placeholder portrait; never written to profile-table.html.
+	function ensurePreviewPhoto(aside, photoUrl) {
+		if (!aside || aside.querySelector("tbody img[src]")) return;
+		const tbody = aside.querySelector("tbody");
+		if (!tbody) return;
+
+		const tr = document.createElement("tr");
+		const td = document.createElement("td");
+		td.colSpan = 2;
+
+		const img = document.createElement("img");
+		img.src = photoUrl;
+		img.alt = "Example profile photo";
+		img.className = "ppe__infobox-photo--example";
+		img.title = "Example profile photo — add one on the Identity tab";
+
+		td.append(img);
+		tr.append(td);
+		tbody.prepend(tr);
 	}
 
 	// Reduce arbitrary pasted HTML to the small set of tags profiles use, keeping
@@ -216,6 +384,80 @@
 		return base.replace(/\b\w/g, (char) => char.toUpperCase());
 	}
 
+	const MEDIA_MAX_BYTES = 8_000_000;
+
+	function resolveGitHubApiUrl(fileName) {
+		const apiBase = String(window.App?.getGitHubApiBase?.() || window.App?.GitHubApiBase || "").trim().replace(/\/+$/, "");
+		if (!apiBase) return "";
+		return new URL(fileName, `${apiBase}/`).href;
+	}
+
+	function gitHubFetchInit(init) {
+		return window.App?.getGitHubFetchInit?.(init) || { credentials: "include", ...(init || {}) };
+	}
+
+	function readFileAsDataUrl(file) {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(String(reader.result || ""));
+			reader.onerror = () => reject(new Error("Could not read the image file."));
+			reader.readAsDataURL(file);
+		});
+	}
+
+	async function prepareImageForUpload(file) {
+		const MAX_DIMENSION = 1800;
+		const TARGET_BYTES = 900_000;
+
+		const passThrough = async () => {
+			if (file.size > MEDIA_MAX_BYTES) {
+				throw new Error("Images must be smaller than 8 MB.");
+			}
+			return { dataUrl: await readFileAsDataUrl(file), filename: file.name };
+		};
+
+		if (!/^image\/(jpeg|png|webp|bmp|avif)$/i.test(file.type)) {
+			return passThrough();
+		}
+
+		let bitmap = null;
+		try {
+			bitmap = await createImageBitmap(file);
+		} catch (error) {
+			bitmap = null;
+		}
+
+		if (!bitmap) {
+			return passThrough();
+		}
+
+		const largestSide = Math.max(bitmap.width, bitmap.height);
+		if (largestSide <= MAX_DIMENSION && file.size <= TARGET_BYTES) {
+			bitmap.close?.();
+			return passThrough();
+		}
+
+		const scale = Math.min(1, MAX_DIMENSION / largestSide);
+		const canvas = document.createElement("canvas");
+		canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+		canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+		const context = canvas.getContext("2d");
+		context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+		bitmap.close?.();
+
+		let quality = 0.88;
+		let dataUrl = canvas.toDataURL("image/jpeg", quality);
+		while ((dataUrl.length * 3) / 4 > TARGET_BYTES && quality > 0.5) {
+			quality -= 0.08;
+			dataUrl = canvas.toDataURL("image/jpeg", quality);
+		}
+
+		return {
+			dataUrl,
+			filename: `${file.name.replace(/\.[^.]+$/, "")}.jpg`,
+		};
+	}
+
 	class ProfilePageEditor extends HTMLElement {
 		connectedCallback() {
 			if (this.__rendered) return;
@@ -234,16 +476,13 @@
 			this.innerHTML = `
 				<div class="ppe">
 					<div class="ppe__toolbar" role="toolbar" aria-label="Text formatting">
-						${FORMAT_BUTTONS.map((btn) => btn.separator
-							? '<span class="ppe__toolbar-sep" aria-hidden="true"></span>'
-							: `<button type="button" class="ppe__tool" data-command="${btn.command || ""}" data-block="${btn.block || ""}" data-action="${btn.action || ""}" data-state="${btn.state || ""}" aria-label="${btn.label}" title="${btn.label}"><i class="bi ${btn.icon}" aria-hidden="true"></i></button>`
-						).join("")}
+						${renderToolbarHtml()}
 					</div>
 					<div class="ppe__status" role="status" hidden></div>
 					<div class="ppe__canvas-scroll">
 						<article class="people-page__content ppe__canvas">
 							<h1 class="ppe__title"></h1>
-							<div class="ppe__prose" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Profile text"></div>
+							<div class="ppe__prose ppe__prose--empty" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Profile text" data-placeholder="Write this profile…"></div>
 						</article>
 					</div>
 
@@ -264,20 +503,34 @@
 
 					<div class="ppe__media-modal" hidden aria-hidden="true">
 						<div class="ppe__media-backdrop" data-media-close></div>
-						<div class="ppe__media-panel" role="dialog" aria-label="Insert image">
+						<div class="ppe__media-panel" role="dialog" aria-label="Insert image" aria-modal="true">
 							<header class="ppe__media-header">
 								<h2>Insert image</h2>
 								<button type="button" class="ppe__media-x" aria-label="Close" data-media-close>✕</button>
 							</header>
 							<div class="ppe__media-body">
-								<p class="ppe__media-status">Loading images…</p>
-								<div class="ppe__media-grid"></div>
-								<label class="ppe__popover-label ppe__media-url-row">Or paste an image URL
-									<input type="url" class="ppe__media-url" placeholder="https://…">
-								</label>
-								<div class="ppe__popover-actions">
-									<button type="button" class="ppe__btn ppe__btn--primary ppe__media-url-insert">Insert URL</button>
-								</div>
+								<p class="ppe__media-status" role="status" hidden></p>
+								<section class="ppe__media-upload">
+									<input type="file" class="ppe__media-file" accept="image/*" hidden>
+									<button type="button" class="ppe__media-dropzone" data-media-upload>
+										<i class="bi bi-cloud-arrow-up ppe__media-dropzone-icon" aria-hidden="true"></i>
+										<span class="ppe__media-dropzone-title">Upload an image</span>
+										<span class="ppe__media-dropzone-hint">Drag and drop here, or click to choose · JPG, PNG, GIF, WebP, SVG</span>
+									</button>
+								</section>
+								<section class="ppe__media-gallery" hidden>
+									<h3 class="ppe__media-section-title">Profile images</h3>
+									<div class="ppe__media-grid"></div>
+								</section>
+								<div class="ppe__media-divider" aria-hidden="true"><span>or</span></div>
+								<section class="ppe__media-url">
+									<label class="ppe__popover-label">Paste an image URL
+										<div class="ppe__media-url-row">
+											<input type="url" class="ppe__media-url" placeholder="https://…">
+											<button type="button" class="ppe__btn ppe__btn--primary ppe__media-url-insert">Insert</button>
+										</div>
+									</label>
+								</section>
 							</div>
 						</div>
 					</div>
@@ -294,6 +547,9 @@
 		disconnectedCallback() {
 			if (this.__onSelectionChange) {
 				document.removeEventListener("selectionchange", this.__onSelectionChange);
+			}
+			if (this.__onOutsideMenu) {
+				document.removeEventListener("mousedown", this.__onOutsideMenu);
 			}
 		}
 
@@ -322,10 +578,117 @@
 				event.preventDefault();
 			});
 			toolbar?.addEventListener("click", (event) => {
-				const button = event.target.closest(".ppe__tool");
+				const toggle = event.target.closest("[data-menu-toggle]");
+				if (toggle) {
+					this.#toggleMenu(toggle.dataset.menuToggle);
+					return;
+				}
+				const menuItem = event.target.closest(".ppe__menu-item");
+				if (menuItem) {
+					this.#runMenuItem(menuItem);
+					this.#closeMenus();
+					return;
+				}
+				const button = event.target.closest(".ppe__tool:not(.ppe__menu-toggle)");
 				if (!button) return;
 				this.#runCommand(button);
 			});
+			this.__onOutsideMenu = (event) => {
+				if (!event.target.closest(".ppe__menu")) this.#closeMenus();
+			};
+			document.addEventListener("mousedown", this.__onOutsideMenu);
+		}
+
+		#toggleMenu(menuId) {
+			const menu = this.querySelector(`[data-menu-group="${menuId}"]`);
+			if (!menu) return;
+			const panel = menu.querySelector(".ppe__menu-panel");
+			const toggle = menu.querySelector("[data-menu-toggle]");
+			const willOpen = panel?.hidden;
+			this.#closeMenus();
+			if (!willOpen || !panel || !toggle) return;
+			panel.hidden = false;
+			toggle.setAttribute("aria-expanded", "true");
+			menu.classList.add("is-open");
+		}
+
+		#closeMenus() {
+			this.querySelectorAll(".ppe__menu").forEach((menu) => {
+				menu.classList.remove("is-open");
+				const panel = menu.querySelector(".ppe__menu-panel");
+				const toggle = menu.querySelector("[data-menu-toggle]");
+				if (panel) panel.hidden = true;
+				if (toggle) toggle.setAttribute("aria-expanded", "false");
+			});
+		}
+
+		#runMenuItem(item) {
+			if (item.dataset.block) {
+				this.#runCommand({ dataset: { block: item.dataset.block } });
+				return;
+			}
+			if (item.dataset.listType) {
+				this.#applyListType(item.dataset.listType, item.dataset.olType || "");
+			}
+		}
+
+		#selectionListContext() {
+			const { prose } = this.#els();
+			const selection = window.getSelection();
+			if (!selection?.rangeCount || !prose) return null;
+			let node = selection.getRangeAt(0).commonAncestorContainer;
+			if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+			if (!node || !prose.contains(node)) return null;
+			const ul = node.closest("ul");
+			if (ul && prose.contains(ul)) return { kind: "bullet", list: ul };
+			const ol = node.closest("ol");
+			if (ol && prose.contains(ol)) {
+				const type = ol.getAttribute("type") || "";
+				const kindMap = { "": "decimal", 1: "decimal", a: "lower-alpha", A: "upper-alpha", i: "lower-roman", I: "upper-roman" };
+				return { kind: kindMap[type] || "decimal", list: ol, olType: type };
+			}
+			const dl = node.closest("dl");
+			if (dl && prose.contains(dl)) return { kind: "definition", list: dl };
+			return null;
+		}
+
+		#applyListType(listType, olType = "") {
+			const { prose } = this.#els();
+			if (!prose) return;
+			prose.focus();
+
+			if (listType === "definition") {
+				document.execCommand("insertHTML", false, "<dl><dt>Term</dt><dd>Definition</dd></dl>");
+				this.#afterCommand();
+				return;
+			}
+
+			if (listType === "indent") {
+				document.execCommand("indent", false, null);
+				this.#afterCommand();
+				return;
+			}
+
+			if (listType === "outdent") {
+				document.execCommand("outdent", false, null);
+				this.#afterCommand();
+				return;
+			}
+
+			if (listType === "bullet") {
+				document.execCommand("insertUnorderedList", false, null);
+				this.#afterCommand();
+				return;
+			}
+
+			document.execCommand("insertOrderedList", false, null);
+			const context = this.#selectionListContext();
+			const ol = context?.list?.tagName?.toLowerCase() === "ol" ? context.list : null;
+			if (ol) {
+				if (olType) ol.setAttribute("type", olType);
+				else ol.removeAttribute("type");
+			}
+			this.#afterCommand();
 		}
 
 		#runCommand(button) {
@@ -348,7 +711,7 @@
 				// Toggle a heading back to a paragraph when it is already applied.
 				let current = "";
 				try {
-					current = (document.queryCommandValue("formatBlock") || "").toLowerCase();
+					current = (document.queryCommandValue("formatBlock") || "").toLowerCase().replace(/^<|>$/g, "");
 				} catch (error) {
 					/* ignore */
 				}
@@ -374,6 +737,7 @@
 			if (!prose) return;
 			prose.addEventListener("input", () => this.#onProseChanged());
 			prose.addEventListener("paste", (event) => this.#handlePaste(event));
+			prose.addEventListener("blur", () => this.#syncProsePlaceholder());
 
 			// Reflect the caret's formatting in the toolbar.
 			this.__onSelectionChange = () => {
@@ -411,19 +775,59 @@
 
 			let block = "";
 			try {
-				block = (document.queryCommandValue("formatBlock") || "").toLowerCase();
+				block = (document.queryCommandValue("formatBlock") || "").toLowerCase().replace(/^<|>$/g, "");
 			} catch (error) {
 				/* ignore */
 			}
-			this.querySelectorAll(".ppe__tool[data-block]").forEach((btn) => {
-				const b = btn.dataset.block;
-				if (!b) return;
-				btn.classList.toggle("is-active", b === block || (b === "p" && (block === "" || block === "div")));
+			if (!block || block === "div") block = "p";
+
+			const headingToggle = this.querySelector('[data-menu-toggle="heading"]');
+			const headingLabel = headingToggle?.querySelector(".ppe__menu-toggle-label");
+			const headingIcon = headingToggle?.querySelector(".ppe__menu-toggle-icon");
+			if (headingLabel) headingLabel.textContent = BLOCK_LABELS[block] || "Paragraph";
+			const activeHeading = HEADING_OPTIONS.find((item) => item.block === block) || HEADING_OPTIONS[0];
+			if (headingIcon) {
+				if (activeHeading?.icon) {
+					headingIcon.className = `bi ${activeHeading.icon} ppe__menu-toggle-icon`;
+					headingIcon.textContent = "";
+				} else if (activeHeading?.text) {
+					headingIcon.className = "ppe__menu-toggle-icon ppe__menu-toggle-mark";
+					headingIcon.textContent = activeHeading.text;
+				}
+			}
+			if (headingToggle) headingToggle.classList.toggle("is-active", block !== "p");
+			this.querySelectorAll('.ppe__menu-item[data-block]').forEach((item) => {
+				item.classList.toggle("is-active", item.dataset.block === block);
+			});
+
+			const listContext = this.#selectionListContext();
+			const listToggle = this.querySelector('[data-menu-toggle="list"]');
+			const listLabel = listToggle?.querySelector(".ppe__menu-toggle-label");
+			const listIcon = listToggle?.querySelector(".ppe__menu-toggle-icon");
+			const activeList = listContext
+				? (LIST_OPTIONS.find((item) => item.listType === listContext.kind) || LIST_OPTIONS[0])
+				: null;
+			if (listLabel) listLabel.textContent = activeList?.label || "List";
+			if (listIcon) listIcon.className = `bi ${activeList?.icon || "bi-list-ul"} ppe__menu-toggle-icon`;
+			if (listToggle) listToggle.classList.toggle("is-active", Boolean(activeList));
+			this.querySelectorAll(".ppe__menu-item[data-list-type]").forEach((item) => {
+				item.classList.toggle("is-active", Boolean(activeList && item.dataset.listType === activeList.listType));
 			});
 		}
 
 		#onProseChanged() {
+			this.#syncProsePlaceholder();
 			this.dispatchEvent(new CustomEvent("profile-page-dirty-change", { bubbles: true }));
+		}
+
+		#proseIsEmpty(prose) {
+			return !String(prose?.textContent || "").replace(/\u00a0/g, " ").trim();
+		}
+
+		#syncProsePlaceholder() {
+			const { prose } = this.#els();
+			if (!prose) return;
+			prose.classList.toggle("ppe__prose--empty", this.#proseIsEmpty(prose));
 		}
 
 		// ---- Paste cleanup -------------------------------------------------
@@ -606,37 +1010,98 @@
 				if (url) this.#insertImage(url, "");
 				this.#closeMediaModal();
 			});
+			modal.querySelector(".ppe__media-url")?.addEventListener("keydown", (event) => {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					modal.querySelector(".ppe__media-url-insert")?.click();
+				}
+			});
+
+			const fileInput = modal.querySelector(".ppe__media-file");
+			const dropzone = modal.querySelector("[data-media-upload]");
+			if (fileInput && dropzone) {
+				dropzone.addEventListener("click", () => {
+					if (!dropzone.disabled) fileInput.click();
+				});
+				fileInput.addEventListener("change", () => {
+					const file = fileInput.files?.[0];
+					fileInput.value = "";
+					if (file) void this.#handleMediaUpload(file);
+				});
+				["dragenter", "dragover"].forEach((eventName) => {
+					dropzone.addEventListener(eventName, (event) => {
+						event.preventDefault();
+						dropzone.classList.add("is-dragover");
+					});
+				});
+				["dragleave", "dragend", "drop"].forEach((eventName) => {
+					dropzone.addEventListener(eventName, () => dropzone.classList.remove("is-dragover"));
+				});
+				dropzone.addEventListener("drop", (event) => {
+					event.preventDefault();
+					const file = event.dataTransfer?.files?.[0];
+					if (file) void this.#handleMediaUpload(file);
+				});
+			}
+		}
+
+		#setMediaModalStatus(message, type = "info") {
+			const status = this.querySelector(".ppe__media-status");
+			if (!status) return;
+			status.textContent = message || "";
+			status.dataset.type = type;
+			status.hidden = !message;
+		}
+
+		#setMediaModalBusy(busy) {
+			const modal = this.querySelector(".ppe__media-modal");
+			if (!modal) return;
+			modal.classList.toggle("is-busy", busy);
+			const dropzone = modal.querySelector("[data-media-upload]");
+			const urlInsert = modal.querySelector(".ppe__media-url-insert");
+			if (dropzone) dropzone.disabled = busy;
+			if (urlInsert) urlInsert.disabled = busy;
 		}
 
 		#openMediaModal() {
 			this.#saveSelection();
 			const modal = this.querySelector(".ppe__media-modal");
 			modal.querySelector(".ppe__media-url").value = "";
+			this.#setMediaModalStatus("");
+			this.#setMediaModalBusy(false);
 			modal.hidden = false;
 			modal.setAttribute("aria-hidden", "false");
-			this.#loadMediaGrid();
+			document.body.style.overflow = "hidden";
+			void this.#loadMediaGrid();
 		}
 
 		#closeMediaModal() {
 			const modal = this.querySelector(".ppe__media-modal");
 			modal.hidden = true;
 			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+			this.#setMediaModalStatus("");
+			this.#setMediaModalBusy(false);
 		}
 
 		async #loadMediaGrid() {
 			const modal = this.querySelector(".ppe__media-modal");
+			const gallery = modal.querySelector(".ppe__media-gallery");
 			const grid = modal.querySelector(".ppe__media-grid");
-			const status = modal.querySelector(".ppe__media-status");
+			if (!gallery || !grid) return;
+
 			grid.innerHTML = "";
-			status.hidden = false;
-			status.textContent = "Loading images…";
+			gallery.hidden = true;
+			this.#setMediaModalStatus("Loading profile images…");
 
 			const images = await this.#fetchProfileImages();
 			if (!images.length) {
-				status.textContent = "No images for this profile yet. Add some on the Media tab, or paste a URL below.";
+				this.#setMediaModalStatus("");
 				return;
 			}
-			status.hidden = true;
+
+			this.#setMediaModalStatus("");
+			gallery.hidden = false;
 			grid.innerHTML = images.map((img) =>
 				`<button type="button" class="ppe__media-thumb" data-name="${escapeHtml(img.name)}"><img src="${escapeHtml(img.url)}" alt="" loading="lazy"><span>${escapeHtml(captionFromFileName(img.name))}</span></button>`,
 			).join("");
@@ -649,27 +1114,91 @@
 		}
 
 		async #fetchProfileImages() {
+			const apiUrl = resolveGitHubApiUrl("github-media.php");
+			if (!apiUrl) return [];
 			try {
-				const base = String(window.App?.getGitHubApiBase?.() || window.App?.GitHubApiBase || "").trim();
-				if (base) {
-					const url = new URL("github-media.php", base.replace(/\/+$/, "") + "/");
-					url.searchParams.set("person", this.__personId);
-					const init = window.App?.getGitHubFetchInit?.({ cache: "no-store" }) || { credentials: "include", cache: "no-store" };
-					const res = await fetch(url.href, init);
-					const payload = await res.json().catch(() => null);
-					if (res.ok && payload?.ok) {
-						return (payload.images || [])
-							.map((img) => ({
-								name: String(img?.name || ""),
-								url: String(img?.download_url || "") || this.#resolveImageUrl(`images/${img?.name || ""}`),
-							}))
-							.filter((img) => img.name);
-					}
+				const url = new URL(apiUrl);
+				url.searchParams.set("person", this.__personId);
+				const res = await fetch(url.href, gitHubFetchInit({ cache: "no-store" }));
+				const payload = await res.json().catch(() => null);
+				if (res.ok && payload?.ok) {
+					return (payload.images || [])
+						.map((img) => ({
+							name: String(img?.name || ""),
+							url: String(img?.download_url || "") || this.#resolveImageUrl(`images/${img?.name || ""}`),
+						}))
+						.filter((img) => img.name);
 				}
 			} catch (error) {
 				/* fall through to empty */
 			}
 			return [];
+		}
+
+		async #handleMediaUpload(file) {
+			if (!file || !String(file.type || "").startsWith("image/")) {
+				this.#setMediaModalStatus("Choose an image file (JPG, PNG, GIF, WebP, or SVG).", "error");
+				return;
+			}
+
+			this.#setMediaModalBusy(true);
+			try {
+				const result = await this.#submitImageUpload(file);
+				if (!result?.filename) {
+					throw new Error("Upload did not return a filename.");
+				}
+				const caption = captionFromFileName(result.filename);
+				this.#insertImage(`images/${result.filename}`, caption);
+				if (result.payload?.pull_request?.url) {
+					this.#setStatus("Image submitted for review and inserted into the article.", "success");
+				} else {
+					this.#setStatus("Image uploaded and inserted into the article.", "success");
+				}
+				this.#closeMediaModal();
+			} catch (error) {
+				console.warn("Could not upload image", error);
+				this.#setMediaModalStatus(error?.message || "Could not upload image.", "error");
+				this.#setMediaModalBusy(false);
+			}
+		}
+
+		async #submitImageUpload(file) {
+			const apiUrl = resolveGitHubApiUrl("github-media.php");
+			if (!apiUrl) throw new Error("Sign in with GitHub from the site header to upload images.");
+
+			this.#setMediaModalStatus("Preparing image…");
+			const prepared = await prepareImageForUpload(file);
+			const base64 = String(prepared.dataUrl || "").replace(/^data:[^;]+;base64,/, "");
+			const filename = String(prepared.filename || file.name).replace(/\s+/g, "-");
+
+			this.#setMediaModalStatus("Uploading image…");
+			const response = await fetch(apiUrl, gitHubFetchInit({
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					action: "upload",
+					filename,
+					caption: "",
+					content_base64: base64,
+					person_id: this.__personId,
+				}),
+			}));
+
+			let payload = null;
+			try {
+				payload = await response.json();
+			} catch (error) {
+				payload = null;
+			}
+
+			if (!response.ok || !payload?.ok) {
+				if (payload?.error === "authentication_required") {
+					throw new Error("Sign in with GitHub from the site header first.");
+				}
+				throw new Error(payload?.message || `Upload failed (${response.status}).`);
+			}
+
+			return { filename: payload.filename || filename, payload };
 		}
 
 		#insertImage(src, caption) {
@@ -688,14 +1217,11 @@
 		async #loadExisting() {
 			this.#setStatus("Loading…");
 			let parsed = null;
-			try {
-				const url = resolveSiteUrl(`people/${this.__personId}/data/profile.html`);
-				const response = await fetch(url, { cache: "no-store" });
-				if (response.ok) {
+			if (!(await isDraftProfile(this.__personId))) {
+				const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/profile.html`));
+				if (response) {
 					parsed = parseProfileFragment(await response.text());
 				}
-			} catch (error) {
-				console.warn("Could not load profile.html", error);
 			}
 
 			if (!parsed) {
@@ -724,6 +1250,7 @@
 				this.#rewriteImagesForDisplay(prose, { track: true });
 				// Show {{APP_NAME}} as the brand name (preserved on save).
 				applyBrandTokensForDisplay(prose);
+				this.#syncProsePlaceholder();
 			}
 			this.__savedProse = this.#getProseHtml();
 
@@ -732,14 +1259,16 @@
 		}
 
 		#resolveImageUrl(src) {
-			if (!src || /^(https?:)?\/\//i.test(src) || src.startsWith("data:")) return src;
-			return resolveSiteUrl(`people/${this.__personId}/data/${src.replace(/^\.?\//, "")}`);
+			if (!src || isAbsoluteUrl(src) || src.startsWith("data:")) return src;
+			const normalized = src.replace(/^\.?\//, "");
+			if (normalized.startsWith("assets/")) return resolveSiteUrl(normalized);
+			return resolveSiteUrl(`people/${this.__personId}/data/${normalized}`);
 		}
 
 		#rewriteImagesForDisplay(root, { track = false } = {}) {
 			root.querySelectorAll("img[src]").forEach((img) => {
 				const src = img.getAttribute("src");
-				if (!src || /^(https?:)?\/\//i.test(src) || src.startsWith("data:")) return;
+				if (!src || isAbsoluteUrl(src) || src.startsWith("data:")) return;
 				if (track) img.setAttribute("data-ppe-src", src);
 				img.setAttribute("src", this.#resolveImageUrl(src));
 			});
@@ -754,44 +1283,54 @@
 			if (!canvas || !prose) return;
 
 			let aside = null;
+			let identityHtml = "";
 
 			const infoboxEl = document.querySelector("profile-infobox-editor");
-			if (infoboxEl && typeof infoboxEl.getIdentityFragmentHtml === "function") {
+			const infoboxPreviewReady = typeof infoboxEl?.isPreviewReady === "function"
+				? infoboxEl.isPreviewReady()
+				: true;
+			if (infoboxPreviewReady && infoboxEl && typeof infoboxEl.getIdentityFragmentHtml === "function") {
 				try {
-					aside = renderIdentityAside(infoboxEl.getIdentityFragmentHtml());
+					identityHtml = infoboxEl.getIdentityFragmentHtml();
+					aside = renderIdentityAside(identityHtml);
 				} catch (error) {
 					aside = null;
 				}
 			}
 
-			if (!aside) {
+			if (!aside && !(await isDraftProfile(this.__personId))) {
 				if (this.__infoboxIsInclude) {
 					const src = this.#includeSrc();
 					if (src) {
-						try {
-							const url = resolveSiteUrl(`people/${this.__personId}/data/${src}`);
-							const response = await fetch(url, { cache: "no-store" });
-							if (response.ok) aside = renderIdentityAside(await response.text());
-						} catch (error) {
-							// fall through
+						const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/${src}`));
+						if (response) {
+							identityHtml = await response.text();
+							aside = renderIdentityAside(identityHtml);
 						}
 					}
 				} else if (this.__infoboxMarkup) {
-					aside = renderIdentityAside(this.__infoboxMarkup);
+					identityHtml = this.__infoboxMarkup;
+					aside = renderIdentityAside(identityHtml);
 				}
 			}
 
 			canvas.querySelector("aside.ppe__infobox")?.remove();
 			if (aside) {
+				if (!identityHtmlHasPhoto(identityHtml)) {
+					ensurePreviewPhoto(aside, resolveSiteUrl(DEFAULT_PROFILE_PHOTO));
+				}
+				if (!identityHtmlHasBirth(identityHtml)) {
+					ensurePreviewBirth(aside);
+				}
 				this.#rewriteImagesForDisplay(aside);
 				aside.classList.add("ppe__infobox");
 				aside.setAttribute("contenteditable", "false");
 				aside.setAttribute("role", "button");
 				aside.setAttribute("tabindex", "0");
-				aside.title = "Edit on the Infobox tab";
+				aside.title = "Edit on the Identity tab";
 				const note = document.createElement("p");
 				note.className = "ppe__infobox-note";
-				note.innerHTML = '<i class="bi bi-pencil" aria-hidden="true"></i> Edit on the Infobox tab';
+				note.innerHTML = '<i class="bi bi-pencil" aria-hidden="true"></i> Edit on the Identity tab';
 				aside.append(note);
 				const goToInfobox = () => document.dispatchEvent(
 					new CustomEvent("profile-editor-activate-tab", { detail: { tab: "infobox" } }),
@@ -815,7 +1354,7 @@
 		}
 
 		// Public: refresh the floated infobox + title from the infobox editor.
-		// Called when the Profile page tab becomes active.
+		// Called when the Article tab becomes active.
 		refreshInfoboxPreview() {
 			void this.#renderInfobox();
 		}
@@ -874,7 +1413,7 @@
 
 		// True when profile.html must be (re)written to adopt the canonical
 		// <include> — either a legacy inline identity is being converted, or a
-		// profile that had no infobox just gained one on the Infobox tab.
+		// profile that had no infobox just gained one on the Identity tab.
 		hasPendingInfoboxStructureChange() {
 			return this.#hasInfobox() && !this.__infoboxCanonical;
 		}

@@ -213,6 +213,27 @@
 		return new URL(`../${String(path || "").replace(/^\/+/, "")}`, window.location.href).href;
 	}
 
+	async function isDraftProfile(personId) {
+		if (new URLSearchParams(window.location.search).get("new") === "1") return true;
+		if (!window.PeopleRegistry?.loadPeopleRegistry) return false;
+		try {
+			const people = await window.PeopleRegistry.loadPeopleRegistry();
+			const id = String(personId || "").trim();
+			return !people.some((person) => String(person?.id || "").trim() === id);
+		} catch (error) {
+			return false;
+		}
+	}
+
+	async function fetchSiteResource(url) {
+		try {
+			const response = await fetch(url, { cache: "no-store" });
+			return response.ok ? response : null;
+		} catch (error) {
+			return null;
+		}
+	}
+
 	function parseDateParts(value) {
 		const match = String(value || "").trim().match(/^(\d{4})(?:[\/\-.\s]+(\d{1,2}))?(?:[\/\-.\s]+(\d{1,2}))?$/);
 		if (!match) return null;
@@ -951,6 +972,7 @@
 				|| "").trim();
 			this.__familyHtml = "";
 			this.__data = emptyData();
+			this.__formReady = false;
 			this.__locationFields = new Map();
 			this.__savedSnapshot = "";
 			this.__establishingBaseline = false;
@@ -1218,11 +1240,17 @@
 			document.dispatchEvent(new CustomEvent("profile-editor-dirty-change"));
 		}
 
+		// True once #fillForm has run so the profile-page preview can read live values.
+		isPreviewReady() {
+			return Boolean(this.__formReady);
+		}
+
 		// Current identity table as a <profile-identity> fragment, used by the
 		// WYSIWYG profile editor to render the floated infobox preview live.
 		getIdentityFragmentHtml() {
 			try {
-				return buildFragment(this.#collect(), this.__familyHtml);
+				const data = this.__formReady ? this.#collect() : normalizeData(this.__data);
+				return buildFragment(data, this.__familyHtml);
 			} catch (error) {
 				return "";
 			}
@@ -1266,22 +1294,20 @@
 		}
 
 		async #checkGedcomExists() {
-			try {
-				const url = resolveSiteUrl(`people/${this.__personId}/data/family-tree.ged`);
-				const response = await fetch(url, { cache: "no-store" });
-				this.__gedcomExists = response.ok;
-			} catch (error) {
+			if (await isDraftProfile(this.__personId)) {
 				this.__gedcomExists = false;
+				return;
 			}
+			const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/family-tree.ged`));
+			this.__gedcomExists = Boolean(response);
 		}
 
 		async #loadExisting() {
 			this.#setStatus("Loading…");
 			await this.#checkGedcomExists();
-			try {
-				const url = resolveSiteUrl(`people/${this.__personId}/data/profile-table.html`);
-				const response = await fetch(url, { cache: "no-store" });
-				if (response.ok) {
+			if (!(await isDraftProfile(this.__personId))) {
+				const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/profile-table.html`));
+				if (response) {
 					const html = await response.text();
 					const doc = new DOMParser().parseFromString(html, "text/html");
 					const identity = doc.querySelector("profile-identity");
@@ -1301,8 +1327,6 @@
 						}
 					}
 				}
-			} catch (error) {
-				console.warn("Could not load existing infobox", error);
 			}
 
 			this.#fillForm();
@@ -1382,6 +1406,7 @@
 
 			this.#updateDateVisibility();
 			this.#updatePreviews();
+			this.__formReady = true;
 		}
 
 		#setRadio(name, value) {

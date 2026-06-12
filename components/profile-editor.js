@@ -3,11 +3,11 @@
  *
  * Replaces the generic block-based <page-editor> for profiles with a focused,
  * two-tab experience:
- *   • Profile page — a WYSIWYG <profile-page-editor> that edits the prose of
+ *   • Identity — the structured <profile-infobox-editor> for the identity table
+ *     (saved to profile-table.html + family-tree.ged).
+ *   • Article — a WYSIWYG <profile-page-editor> that edits the prose of
  *     people/<id>/data/profile.html with the identity infobox floated in place,
  *     exactly as it looks live, so text wraps around it while you type.
- *   • Infobox — the structured <profile-infobox-editor> for the identity table
- *     (saved to profile-table.html + family-tree.ged).
  *
  * It owns the toolbar (breadcrumb, tabs, Save) and the publish flow: one Save
  * collects the profile fragment plus any extra files (the infobox). Existing
@@ -249,8 +249,8 @@
 				</ol>
 			</nav>
 			<div class="profile-edit__tabs" role="tablist" aria-label="Profile editor sections">
-				<button type="button" class="profile-edit__tab is-active" data-edit-tab="profile" role="tab" aria-selected="true">Profile page</button>
-				<button type="button" class="profile-edit__tab" data-edit-tab="infobox" role="tab" aria-selected="false">Infobox</button>
+				<button type="button" class="profile-edit__tab is-active" data-edit-tab="infobox" role="tab" aria-selected="true">Identity</button>
+				<button type="button" class="profile-edit__tab" data-edit-tab="profile" role="tab" aria-selected="false">Article</button>
 			</div>
 			<div class="profile-edit__actions">
 				<span class="profile-edit__status" role="status" aria-live="polite" hidden></span>
@@ -262,8 +262,8 @@
 			</div>
 		</div>
 		<div class="profile-edit__panels">
-			<div class="profile-edit__panel" data-edit-panel="profile"></div>
-			<div class="profile-edit__panel" data-edit-panel="infobox" hidden></div>
+			<div class="profile-edit__panel" data-edit-panel="infobox"></div>
+			<div class="profile-edit__panel" data-edit-panel="profile" hidden></div>
 		</div>
 	`;
 
@@ -271,7 +271,7 @@
 		connectedCallback() {
 			if (this.__rendered) return;
 			this.__rendered = true;
-			this.__activeTab = "profile";
+			this.__activeTab = "infobox";
 
 			this.innerHTML = TEMPLATE;
 			this.classList.toggle("profile-edit--self", SELF_PROFILE_MODE);
@@ -344,8 +344,8 @@
 			this.querySelectorAll(".profile-edit__panel").forEach((panel) => {
 				panel.hidden = panel.dataset.editPanel !== name;
 			});
-			// Returning to the live preview: refresh the floated infobox so any
-			// edits made on the Infobox tab are reflected immediately.
+			// Returning to the Article tab: refresh the floated infobox so any
+			// edits made on the Identity tab are reflected immediately.
 			if (name === "profile" && typeof this.__pageEditor?.refreshInfoboxPreview === "function") {
 				this.__pageEditor.refreshInfoboxPreview();
 			}
@@ -368,15 +368,15 @@
 			document.addEventListener("profile-editor-dirty-change", () => {
 				this.#refreshDirtyState();
 				// The infobox editor fires this once it finishes loading; refresh the
-				// floated preview so the infobox shows on first paint of the Profile
-				// tab without needing to visit the Infobox tab first.
+				// floated preview when the Article tab is active so the infobox shows
+				// without needing to visit the Identity tab first.
 				if (this.__activeTab === "profile") {
 					this.__pageEditor?.refreshInfoboxPreview?.();
 				}
 			});
 			// The infobox form's own submit/Enter asks us to save.
 			document.addEventListener("profile-editor-save-request", () => this.#save());
-			// Clicking the floated infobox in the WYSIWYG jumps to the Infobox tab.
+			// Clicking the floated infobox in the WYSIWYG jumps to the Identity tab.
 			document.addEventListener("profile-editor-activate-tab", (event) => {
 				const tab = event.detail?.tab;
 				if (tab) this.#activate(tab);

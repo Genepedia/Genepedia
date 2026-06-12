@@ -137,7 +137,7 @@
             .map((person) => Number.parseInt(String(person?.id || ''), 10))
             .filter((id) => Number.isFinite(id));
         const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
-        window.location.assign(resolveSiteUrl(`people/edit.html?person=${nextId}`));
+        window.location.assign(resolveSiteUrl(`people/edit.html?person=${nextId}&new=1`));
     }
 
     function normalizeGitHubLogin(userOrLogin) {
@@ -300,6 +300,7 @@
         const nextId = await getNextPersonId();
         const url = new URL(resolveSiteUrl('people/edit.html'), window.location.href);
         url.searchParams.set('person', nextId);
+        url.searchParams.set('new', '1');
         url.searchParams.set('self', '1');
         const returnView = String(view || '').trim().toLowerCase();
         if (returnView) {
