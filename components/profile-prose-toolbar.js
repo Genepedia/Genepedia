@@ -1,21 +1,9 @@
 /**
- * <profile-page-editor person="<id>">
+ * Shared rich-text toolbar for profile and page editors.
  *
- * A WYSIWYG editor for a person's profile prose (people/<id>/data/profile.html).
- * It renders the page exactly as it appears live — the identity infobox floated
- * to the right with the article text wrapping around it — so editors see the
- * real layout while they type. Only the prose is editable here; the infobox is
- * read-only context (identity details are edited on the Identity tab; the
- * portrait can be changed from the Page tab) and the page title is the
- * display name (also owned by the infobox).
+ * <profile-prose-toolbar add-block person="123"></profile-prose-toolbar>
  *
- * On save it reconstructs the fragment as:
- *   <!-- header comment -->  (preserved verbatim if present)
- *   <h1>Display name</h1>
- *   <profile-identity>…</profile-identity>  OR  <include src="profile-table.html">
- *   …edited prose…
- * keeping the infobox node exactly as it was found (inline identity or include),
- * so this editor never rewrites how the infobox is stored.
+ * Set commandRootProvider on the element to return the active contenteditable root.
  */
 (function () {
 	"use strict";
@@ -97,7 +85,23 @@
 		{ block: "h4", text: "H4", label: "Heading 4" },
 		{ block: "h5", text: "H5", label: "Heading 5" },
 		{ block: "h6", text: "H6", label: "Heading 6" },
+		{ separator: true },
+		{ block: "blockquote", icon: "bi-quote", label: "Quote" },
 	];
+
+	const HEADING_LABEL_BY_BLOCK = Object.fromEntries(
+		HEADING_OPTIONS.filter((item) => item.block).map((item) => [item.block, item.label]),
+	);
+
+	const INLINE_FORMAT_TAGS = {
+		bold: ["B", "STRONG"],
+		italic: ["I", "EM"],
+		strikeThrough: ["S", "STRIKE", "DEL"],
+		subscript: ["SUB"],
+		superscript: ["SUP"],
+	};
+
+	const INLINE_FORMAT_COMMANDS = Object.keys(INLINE_FORMAT_TAGS);
 
 	const LIST_OPTIONS = [
 		{ listType: "bullet", icon: "bi-list-ul", label: "Bulleted list" },
@@ -115,9 +119,15 @@
 		{ listType: "indent", icon: "bi-text-indent-right", label: "Increase indent" },
 	];
 
+	const TEXT_ALIGN_TOOLS = [
+		{ textAlign: "left", icon: "bi-text-left", label: "Align left" },
+		{ textAlign: "center", icon: "bi-text-center", label: "Align center" },
+		{ textAlign: "right", icon: "bi-text-right", label: "Align right" },
+		{ textAlign: "justify", icon: "bi-justify", label: "Justify" },
+	];
+
 	const TRAILING_TOOLS = [
 		{ action: "link", icon: "bi-link-45deg", label: "Link" },
-		{ command: "unlink", icon: "bi-link", label: "Remove link" },
 		{ action: "image", icon: "bi-image", label: "Insert image" },
 		{ action: "table", icon: "bi-table", label: "Insert Table" },
 		{ action: "chart", icon: "bi-bar-chart", label: "Insert Chart" },
@@ -198,6 +208,7 @@
 			`data-action="${btn.action || ""}"`,
 			`data-list-type="${btn.listType || ""}"`,
 			`data-ol-type="${btn.olType || ""}"`,
+			`data-text-align="${btn.textAlign || ""}"`,
 			`data-state="${btn.state || ""}"`,
 			`aria-label="${btn.label}"`,
 			`title="${btn.label}"`,
@@ -604,8 +615,23 @@
 		)).join("");
 	}
 
-	function renderToolbarHtml() {
-		const parts = PRIMARY_INLINE_TOOLS.map((btn) => renderToolButton(btn));
+
+	function renderAddBlockMenu() {
+		return `
+			<div class="ppe__menu ppe__menu--align-end" data-menu-group="add-block">
+				<button type="button" class="ppe__tool ppe__menu-toggle" data-menu-toggle="add-block" aria-haspopup="menu" aria-expanded="false" title="Add block">
+					<span class="ppe__menu-toggle-label">Add block</span>
+					<i class="bi bi-chevron-down ppe__menu-caret" aria-hidden="true"></i>
+				</button>
+				<div class="ppe__menu-panel ppe__add-block-panel" role="menu" hidden>
+					<div class="ppe__add-block-body" data-add-block-panel></div>
+				</div>
+			</div>`;
+	}
+
+	function renderToolbarHtml(options = {}) {
+		const parts = [];
+		parts.push(...PRIMARY_INLINE_TOOLS.map((btn) => renderToolButton(btn)));
 		parts.push(renderUnderlineMenu());
 		parts.push(...SECONDARY_INLINE_TOOLS.map((btn) => renderToolButton(btn)));
 		parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
@@ -613,7 +639,12 @@
 		parts.push(renderToolbarMenu("list", "bi-list-ul", "List", LIST_OPTIONS));
 		parts.push(...LIST_INDENT_TOOLS.map((btn) => renderToolButton(btn)));
 		parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
-		for (const btn of TRAILING_TOOLS) {
+		parts.push(...TEXT_ALIGN_TOOLS.map((btn) => renderToolButton(btn)));
+		parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
+		const trailing = options.showAddBlock
+			? TRAILING_TOOLS.filter((btn) => !btn.separator && btn.command !== "removeFormat")
+			: TRAILING_TOOLS;
+		for (const btn of trailing) {
 			if (btn.separator) {
 				parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
 				continue;
@@ -622,6 +653,10 @@
 			if (btn.action === "image") {
 				parts.push(renderSpecialCharsMenu());
 			}
+		}
+		if (options.showAddBlock) {
+			parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
+			parts.push(renderAddBlockMenu());
 		}
 		return parts.join("");
 	}
@@ -633,32 +668,6 @@
 	const MAX_BLOCK_INDENT = 8;
 	const BLOCK_INDENT_SELECTOR = "p, h1, h2, h3, h4, h5, h6, blockquote, dt, dd";
 	const ATOMIC_BLOCK_SELECTOR = "figure.ppe-profile-chart";
-
-	function prepareAtomicChartElement(figure) {
-		if (!figure) return;
-		const caption = figure.querySelector("figcaption")?.textContent?.trim() || "Chart";
-		figure.setAttribute("contenteditable", "false");
-		figure.setAttribute("tabindex", "0");
-		figure.setAttribute("role", "group");
-		figure.setAttribute("aria-label", caption);
-		figure.setAttribute("title", "Click to select or deselect. Right-click for options. Double-click to edit.");
-	}
-
-	function placeCaretIn(node, atEnd = true) {
-		if (!node) return;
-		const range = document.createRange();
-		const selection = window.getSelection();
-		if (!selection) return;
-		if (atEnd) {
-			range.selectNodeContents(node);
-			range.collapse(false);
-		} else {
-			range.setStart(node, 0);
-			range.collapse(true);
-		}
-		selection.removeAllRanges();
-		selection.addRange(range);
-	}
 
 	function indentBlockElement(block) {
 		const level = Number(block.getAttribute("data-indent") || 0);
@@ -718,247 +727,30 @@
 		return true;
 	}
 
-	// Shown in the profile-page preview only when the infobox has no portrait yet.
-	const DEFAULT_PROFILE_PHOTO = "assets/default-profile-photo.svg";
+	function prepareAtomicChartElement(figure) {
+		if (!figure) return;
+		const caption = figure.querySelector("figcaption")?.textContent?.trim() || "Chart";
+		figure.setAttribute("contenteditable", "false");
+		figure.setAttribute("tabindex", "0");
+		figure.setAttribute("role", "group");
+		figure.setAttribute("aria-label", caption);
+		figure.setAttribute("title", "Click to select or deselect. Right-click for options. Double-click to edit.");
+	}
 
-	// Split the profile fragment into the leading comment, the <h1> title, the
-	// infobox node (inline <profile-identity> or an <include>), and the prose.
-	function parseProfileFragment(html) {
-		// Preserve a leading template comment from the raw string — the HTML
-		// parser hoists it out of <body>, so it can't be recovered from the DOM.
-		const headerMatch = html.match(/^\s*(<!--[\s\S]*?-->)/);
-		const headerComment = headerMatch ? headerMatch[1] : "";
-
-		const doc = new DOMParser().parseFromString(html, "text/html");
-		const body = doc.body;
-
-		let title = "";
-		let infoboxNode = null;
-		const proseNodes = [];
-
-		for (const node of [...body.childNodes]) {
-			if (node.nodeType === Node.COMMENT_NODE) {
-				continue;
-			}
-			if (node.nodeType === Node.ELEMENT_NODE) {
-				const tag = node.tagName.toLowerCase();
-				if (tag === "h1" && !title) {
-					title = node.textContent.trim();
-					continue;
-				}
-				if (!infoboxNode && (tag === "profile-identity" || tag === "include" || node.hasAttribute("data-include"))) {
-					infoboxNode = node;
-					continue;
-				}
-			}
-			// Keep meaningful prose (skip empty whitespace-only text nodes).
-			if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) continue;
-			proseNodes.push(node);
+	function placeCaretIn(node, atEnd = true) {
+		if (!node) return;
+		const range = document.createRange();
+		const selection = window.getSelection();
+		if (!selection) return;
+		if (atEnd) {
+			range.selectNodeContents(node);
+			range.collapse(false);
+		} else {
+			range.setStart(node, 0);
+			range.collapse(true);
 		}
-
-		const proseContainer = doc.createElement("div");
-		proseNodes.forEach((node) => proseContainer.append(node));
-
-		const isInclude = Boolean(infoboxNode && infoboxNode.tagName.toLowerCase() !== "profile-identity");
-		const includeSrc = isInclude ? (infoboxNode.getAttribute("src") || infoboxNode.getAttribute("data-include") || "").replace(/^\.?\//, "") : "";
-
-		return {
-			headerComment,
-			title,
-			infoboxMarkup: infoboxNode ? infoboxNode.outerHTML.trim() : "",
-			infoboxIsInclude: isInclude,
-			// Canonical = already the standard <include src="profile-table.html">.
-			infoboxCanonical: includeSrc === "profile-table.html",
-			proseHtml: proseContainer.innerHTML.trim() || "<p></p>",
-		};
-	}
-
-	// Turn a <profile-identity> fragment into the floated identity <aside> the
-	// live page renders, importing it into the current document. Returns null
-	// when there are no rows to show.
-	function renderIdentityAside(identityHtml) {
-		if (!identityHtml || !identityHtml.includes("profile-identity")) return null;
-		const doc = new DOMParser().parseFromString(`<body>${identityHtml}</body>`, "text/html");
-		if (typeof window.upgradeProfileIdentityInDocument === "function") {
-			window.upgradeProfileIdentityInDocument(doc);
-		}
-		const aside = doc.querySelector('aside[aria-label="Identity"]') || doc.querySelector("aside");
-		if (!aside) return null;
-		if (!aside.querySelector("tbody")?.children.length) return null;
-		return document.importNode(aside, true);
-	}
-
-	function identityHtmlHasPhoto(identityHtml) {
-		const match = String(identityHtml || "").match(/<table-photo\b[\s\S]*?<img\b[^>]*\bsrc=["']([^"']*)["']/i);
-		return Boolean(match?.[1]?.trim());
-	}
-
-	function identityHtmlHasName(identityHtml) {
-		return /<table-name\b/i.test(String(identityHtml || ""));
-	}
-
-	function identityHtmlHasBirth(identityHtml) {
-		const match = String(identityHtml || "").match(/<table-birth\b[^>]*>([\s\S]*?)<\/table-birth>/i);
-		if (!match) return false;
-		return Boolean(match[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim());
-	}
-
-	function asideHasNameRow(aside) {
-		return [...aside.querySelectorAll("tbody th")].some((th) => th.textContent.trim() === "Name");
-	}
-
-	function asideHasBirthRow(aside) {
-		return [...aside.querySelectorAll("tbody th")].some((th) => th.textContent.trim() === "Birth");
-	}
-
-	// Preview-only placeholder name; never written to profile-table.html.
-	function ensurePreviewName(aside) {
-		if (!aside || asideHasNameRow(aside)) return;
-		const tbody = aside.querySelector("tbody");
-		if (!tbody) return;
-
-		const tr = document.createElement("tr");
-		const th = document.createElement("th");
-		th.textContent = "Name";
-		const td = document.createElement("td");
-		tr.append(th, td);
-
-		const genderRow = [...tbody.querySelectorAll("tr")].find((row) => row.querySelector("th")?.textContent.trim() === "Gender");
-		if (genderRow) {
-			tbody.insertBefore(tr, genderRow);
-			return;
-		}
-
-		const photoRow = tbody.querySelector(".ppe__infobox-photo-row");
-		if (photoRow) {
-			photoRow.after(tr);
-			return;
-		}
-
-		tbody.prepend(tr);
-	}
-
-	// Preview-only placeholder birth; never written to profile-table.html.
-	function ensurePreviewBirth(aside) {
-		if (!aside || asideHasBirthRow(aside)) return;
-		const tbody = aside.querySelector("tbody");
-		if (!tbody) return;
-
-		const tr = document.createElement("tr");
-		const th = document.createElement("th");
-		th.textContent = "Birth";
-		const td = document.createElement("td");
-		td.textContent = "Unknown";
-		tr.append(th, td);
-
-		const genderRow = [...tbody.querySelectorAll("tr")].find((row) => row.querySelector("th")?.textContent.trim() === "Gender");
-		if (genderRow) genderRow.after(tr);
-		else tbody.append(tr);
-	}
-
-	// Preview-only placeholder portrait; never written to profile-table.html.
-	function ensurePreviewPhoto(aside, photoUrl) {
-		if (!aside || aside.querySelector("tbody img[src]")) return;
-		const tbody = aside.querySelector("tbody");
-		if (!tbody) return;
-
-		const tr = document.createElement("tr");
-		tr.className = "ppe__infobox-photo-row";
-		const td = document.createElement("td");
-		td.colSpan = 2;
-
-		const img = document.createElement("img");
-		img.src = photoUrl;
-		img.alt = "Example profile photo";
-		img.className = "ppe__infobox-photo--example";
-		img.title = "Change profile photo";
-
-		td.append(img);
-		tr.append(td);
-		tbody.prepend(tr);
-	}
-
-	// Reduce arbitrary pasted HTML to the small set of tags profiles use, keeping
-	// the text but dropping styles, classes, spans, fonts, scripts, etc.
-	function sanitizePastedHtml(html) {
-		const doc = new DOMParser().parseFromString(html, "text/html");
-		const body = doc.body;
-		body.querySelectorAll("script, style, meta, link, title, head, noscript").forEach((el) => el.remove());
-		cleanPastedNode(body);
-		return body.innerHTML.replace(/\s+/g, " ").trim();
-	}
-
-	function cleanPastedNode(node) {
-		[...node.childNodes].forEach((child) => {
-			if (child.nodeType === Node.COMMENT_NODE) {
-				child.remove();
-				return;
-			}
-			if (child.nodeType !== Node.ELEMENT_NODE) return;
-
-			cleanPastedNode(child);
-			const tag = child.tagName.toUpperCase();
-			if (!PASTE_ALLOWED_TAGS.has(tag)) {
-				const parent = child.parentNode;
-				while (child.firstChild) parent.insertBefore(child.firstChild, child);
-				parent.removeChild(child);
-				return;
-			}
-
-			const allowed = PASTE_ALLOWED_ATTRS[tag] || [];
-			[...child.attributes].forEach((attr) => {
-				if (!allowed.includes(attr.name.toLowerCase())) child.removeAttribute(attr.name);
-			});
-			if (tag === "A") {
-				const href = child.getAttribute("href") || "";
-				if (/^\s*javascript:/i.test(href)) child.removeAttribute("href");
-			}
-		});
-	}
-
-	function brandName() {
-		return window.App?.getName?.() || window.App?.Name || "";
-	}
-
-	// Render {{APP_NAME}} as the brand name in a non-editable chip, so editors see
-	// the real word while the token is preserved on save (see restoreBrandTokens).
-	function applyBrandTokensForDisplay(root) {
-		const name = brandName();
-		if (!name || !root) return;
-		const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
-		const targets = [];
-		while (walker.nextNode()) {
-			if (/\{\{\s*[A-Z0-9_]+\s*\}\}/.test(walker.currentNode.nodeValue || "")) targets.push(walker.currentNode);
-		}
-		targets.forEach((textNode) => {
-			const text = textNode.nodeValue;
-			const frag = document.createDocumentFragment();
-			const re = /\{\{\s*([A-Z0-9_]+)\s*\}\}/g;
-			let last = 0;
-			let match;
-			while ((match = re.exec(text))) {
-				if (match.index > last) frag.append(document.createTextNode(text.slice(last, match.index)));
-				if (match[1] === "APP_NAME") {
-					const span = document.createElement("span");
-					span.className = "ppe__brand";
-					span.setAttribute("contenteditable", "false");
-					span.setAttribute("data-brand", match[1]);
-					span.textContent = name;
-					frag.append(span);
-				} else {
-					frag.append(document.createTextNode(match[0]));
-				}
-				last = re.lastIndex;
-			}
-			if (last < text.length) frag.append(document.createTextNode(text.slice(last)));
-			textNode.replaceWith(frag);
-		});
-	}
-
-	function restoreBrandTokens(root) {
-		root.querySelectorAll("span[data-brand]").forEach((span) => {
-			span.replaceWith(document.createTextNode(`{{${span.getAttribute("data-brand")}}}`));
-		});
+		selection.removeAllRanges();
+		selection.addRange(range);
 	}
 
 	function captionFromFileName(name) {
@@ -1040,142 +832,303 @@
 		};
 	}
 
-	class ProfilePageEditor extends HTMLElement {
-		connectedCallback() {
-			if (this.__rendered) return;
-			this.__rendered = true;
+	function renderModalsHtml() {
+		return `
+			<div class="ppe__popover ppe__link-popover" hidden>
+				<label class="ppe__popover-label">Link address
+					<input type="url" class="ppe__link-url" placeholder="https://… or ../2/profile.html">
+				</label>
+				<label class="ppe__popover-label">Link to a person
+					<input type="search" class="ppe__link-person" placeholder="Search profiles by name" autocomplete="off">
+				</label>
+				<ul class="ppe__link-results" hidden></ul>
+				<div class="ppe__popover-actions">
+					<button type="button" class="ppe__btn ppe__btn--primary ppe__link-apply">Apply</button>
+					<button type="button" class="ppe__btn ppe__link-remove">Remove</button>
+					<button type="button" class="ppe__btn ppe__link-cancel">Cancel</button>
+				</div>
+			</div>
 
-			this.__personId = (this.getAttribute("person")
-				|| new URLSearchParams(window.location.search).get("person")
-				|| "").trim();
-
-			this.__headerComment = "";
-			this.__infoboxMarkup = "";
-			this.__infoboxIsInclude = false;
-			this.__displayName = "";
-			this.__savedProse = "";
-
-			this.innerHTML = `
-				<div class="ppe">
-					<profile-prose-toolbar add-block class="ppe__toolbar-host"></profile-prose-toolbar>
-					<div class="ppe__status" role="status" hidden></div>
-					<div class="ppe__canvas-scroll">
-						<article class="people-page__content ppe__canvas">
-							<h1 class="ppe__title"></h1>
-							<div class="ppe__prose ppe__prose--empty" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Profile text" data-placeholder="Write this profile…"></div>
-						</article>
-					</div>
-
-					<div class="ppe__chart-context-menu" role="menu" aria-label="Chart actions" hidden>
-						<button type="button" class="ppe__chart-context-item" role="menuitem" data-chart-action="edit">
-							<i class="bi bi-pencil" aria-hidden="true"></i>
-							<span>Edit</span>
-						</button>
-						<button type="button" class="ppe__chart-context-item" role="menuitem" data-chart-action="duplicate">
-							<i class="bi bi-files" aria-hidden="true"></i>
-							<span>Duplicate</span>
-						</button>
-						<button type="button" class="ppe__chart-context-item" role="menuitem" data-chart-action="copy">
-							<i class="bi bi-clipboard" aria-hidden="true"></i>
-							<span>Copy</span>
-						</button>
-						<div class="ppe__menu-sep" role="separator"></div>
-						<button type="button" class="ppe__chart-context-item ppe__chart-context-item--danger" role="menuitem" data-chart-action="delete">
-							<i class="bi bi-trash" aria-hidden="true"></i>
-							<span>Delete</span>
-						</button>
+			<div class="ppe__media-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-media-close></div>
+				<div class="ppe__media-panel" role="dialog" aria-label="Insert image" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert image</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-media-close>✕</button>
+					</header>
+					<div class="ppe__media-body">
+						<p class="ppe__media-status" role="status" hidden></p>
+						<section class="ppe__media-upload">
+							<input type="file" class="ppe__media-file" accept="image/*" hidden>
+							<button type="button" class="ppe__media-dropzone" data-media-upload>
+								<i class="bi bi-cloud-arrow-up ppe__media-dropzone-icon" aria-hidden="true"></i>
+								<span class="ppe__media-dropzone-title">Upload an image</span>
+								<span class="ppe__media-dropzone-hint">Drag and drop here, or click to choose · JPG, PNG, GIF, WebP, SVG</span>
+							</button>
+						</section>
+						<section class="ppe__media-gallery" hidden>
+							<h3 class="ppe__media-section-title">Profile images</h3>
+							<div class="ppe__media-grid"></div>
+						</section>
+						<div class="ppe__media-divider" aria-hidden="true"><span>or</span></div>
+						<section class="ppe__media-url">
+							<label class="ppe__popover-label">Paste an image URL
+								<div class="ppe__media-url-row">
+									<input type="url" class="ppe__media-url" placeholder="https://…">
+									<button type="button" class="ppe__btn ppe__btn--primary ppe__media-url-insert">Insert</button>
+								</div>
+							</label>
+						</section>
 					</div>
 				</div>
-			`;
+			</div>
 
-			this.#wireProseToolbar();
-			this.#bindProse();
-			this.#bindChartContextMenu();
-			this.__onProfilePhotoChange = () => this.refreshInfoboxPreview();
-			document.addEventListener("profile-photo-change", this.__onProfilePhotoChange);
-			this.#loadExisting();
+			<div class="ppe__table-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-table-close></div>
+				<div class="ppe__table-panel" role="dialog" aria-label="Insert Table" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert Table</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-table-close>✕</button>
+					</header>
+					<div class="ppe__table-body">
+						<div class="ppe__table-form">
+							<label class="ppe__table-field">
+								<span>Rows</span>
+								<input type="number" class="ppe__table-rows" min="1" max="20" value="3" inputmode="numeric">
+							</label>
+							<label class="ppe__table-field">
+								<span>Columns</span>
+								<input type="number" class="ppe__table-cols" min="1" max="12" value="3" inputmode="numeric">
+							</label>
+							<label class="ppe__table-check">
+								<input type="checkbox" class="ppe__table-header-row" checked>
+								<span>Header Row</span>
+							</label>
+							<label class="ppe__table-check">
+								<input type="checkbox" class="ppe__table-header-col">
+								<span>Header Column</span>
+							</label>
+							<label class="ppe__table-field ppe__table-field--wide">
+								<span>Caption</span>
+								<input type="text" class="ppe__table-caption" placeholder="Optional Table Caption">
+							</label>
+						</div>
+						<div class="ppe__table-preview-wrap">
+							<div class="ppe__table-preview-label">Preview</div>
+							<div class="ppe__table-preview" aria-hidden="true"></div>
+						</div>
+						<div class="ppe__popover-actions">
+							<button type="button" class="ppe__btn ppe__btn--primary ppe__table-insert">Insert Table</button>
+							<button type="button" class="ppe__btn" data-table-close>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="ppe__chart-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-chart-close></div>
+				<div class="ppe__chart-panel" role="dialog" aria-label="Insert Chart" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert Chart</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-chart-close>✕</button>
+					</header>
+					<div class="ppe__chart-body">
+						<div class="ppe__chart-form">
+							<label class="ppe__chart-field">
+								<span>Chart type</span>
+								<select class="ppe__chart-type">${renderChartTypeOptions()}</select>
+							</label>
+							<label class="ppe__chart-field">
+								<span>Data points</span>
+								<input type="number" class="ppe__chart-points" min="2" max="12" value="4" inputmode="numeric">
+							</label>
+							<label class="ppe__chart-field ppe__chart-field--wide">
+								<span>Caption</span>
+								<input type="text" class="ppe__chart-title" placeholder="Optional chart caption">
+							</label>
+						</div>
+						<div class="ppe__chart-data-wrap">
+							<div class="ppe__chart-data-label">Data</div>
+							<table class="ppe__chart-data">
+								<thead>
+									<tr>
+										<th scope="col">Label</th>
+										<th scope="col">Value</th>
+									</tr>
+								</thead>
+								<tbody></tbody>
+							</table>
+						</div>
+						<div class="ppe__chart-preview-wrap">
+							<div class="ppe__chart-preview-label">Preview</div>
+							<div class="ppe__chart-preview" aria-hidden="true"></div>
+						</div>
+						<div class="ppe__popover-actions">
+							<button type="button" class="ppe__btn ppe__btn--primary ppe__chart-insert">Insert Chart</button>
+							<button type="button" class="ppe__btn" data-chart-close>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
+	}
+
+	function prepareAtomicChartElement(figure) {
+		if (!figure) return;
+		const caption = figure.querySelector("figcaption")?.textContent?.trim() || "Chart";
+		figure.setAttribute("contenteditable", "false");
+		figure.setAttribute("tabindex", "0");
+		figure.setAttribute("role", "group");
+		figure.setAttribute("aria-label", caption);
+		figure.setAttribute("title", "Click to select or deselect. Right-click for options. Double-click to edit.");
+	}
+
+	class ProfileProseToolbar extends HTMLElement {
+		static get observedAttributes() {
+			return ["person"];
+		}
+
+		connectedCallback() {
+			if (this.__ready) return;
+			this.__ready = true;
+			const showAddBlock = this.hasAttribute("add-block");
+			this.innerHTML = `
+				<div class="ppe__toolbar" role="toolbar" aria-label="Text formatting">
+					${renderToolbarHtml({ showAddBlock })}
+				</div>
+				${renderModalsHtml()}
+			`;
+			this._toolbarEl = this.querySelector(".ppe__toolbar");
+			this.#bindToolbar();
+			this.#bindLinkPopover();
+			this.#bindMediaModal();
+			this.#bindTableModal();
+			this.#bindChartModal();
+			this.__onToolbarSelectionChange = () => {
+				if (!this.#selectionTouchesProse()) return;
+				this.#scheduleToolbarStateUpdate();
+			};
+			document.addEventListener("selectionchange", this.__onToolbarSelectionChange);
+			this.#updateToolbarState();
 		}
 
 		disconnectedCallback() {
-			if (this.__onSelectionChange) {
-				document.removeEventListener("selectionchange", this.__onSelectionChange);
-			}
+			this.#closeMenus();
 			if (this.__onOutsideMenu) {
 				document.removeEventListener("mousedown", this.__onOutsideMenu);
 			}
-			if (this.__onOutsideChartMenu) {
-				document.removeEventListener("mousedown", this.__onOutsideChartMenu);
+			if (this.__onPortaledPanelClick) {
+				document.removeEventListener("click", this.__onPortaledPanelClick);
 			}
-			if (this.__hideChartContextMenuOnScroll) {
-				document.removeEventListener("scroll", this.__hideChartContextMenuOnScroll, true);
+			if (this.__onToolbarSelectionChange) {
+				document.removeEventListener("selectionchange", this.__onToolbarSelectionChange);
 			}
-			if (this.__onChartContextMenuKeydown) {
-				document.removeEventListener("keydown", this.__onChartContextMenuKeydown);
+			this.#unbindProseStateSync();
+			if (this.__toolbarStateRaf) {
+				cancelAnimationFrame(this.__toolbarStateRaf);
+				this.__toolbarStateRaf = null;
 			}
-			if (this.__onProfilePhotoChange) {
-				document.removeEventListener("profile-photo-change", this.__onProfilePhotoChange);
-			}
+			this.#unbindMenuReposition();
 		}
 
-		#els() {
-			return {
-				canvas: this.querySelector(".ppe__canvas"),
-				title: this.querySelector(".ppe__title"),
-				prose: this.querySelector(".ppe__prose"),
-				status: this.querySelector(".ppe__status"),
-				toolbar: this.querySelector("profile-prose-toolbar"),
-			};
+		updateToolbarState() {
+			this.#updateToolbarState();
 		}
 
-		#wireProseToolbar() {
-			const toolbar = this.#els().toolbar;
-			if (!toolbar) return;
-
-			toolbar.setAttribute("person", this.__personId);
-			toolbar.setAttribute("block-context", "profile");
-			toolbar.commandRootProvider = () => this.#els().prose;
-			toolbar.insertionHooks = {
-				adjustInsertionRange: (range) => {
-					const collapsed = this.#collapseRangeFromAtomicBlock(range);
-					return this.#ensureEditableCaret(collapsed);
-				},
-			};
-
-			toolbar.getBlockCatalog = () => window.EditorBlocks?.getCatalog("profile")
-				|| { definitions: [], categories: [] };
-
-			toolbar.addEventListener("ppe-toolbar-change", () => this.#onProseChanged());
-			toolbar.addEventListener("ppe-block-inserted", () => {
-				const { prose } = this.#els();
-				if (!prose) return;
-				applyBrandTokensForDisplay(prose);
-				this.#wireAtomicBlocks(prose);
-				this.#syncProsePlaceholder();
-			});
-			toolbar.addEventListener("ppe-chart-selected", (event) => {
-				const figure = event.detail?.figure;
-				if (figure) this.#selectAtomicBlock(figure);
-			});
-			toolbar.addEventListener("ppe-chart-replaced", (event) => {
-				const figure = event.detail?.figure;
-				if (figure) this.#attachAtomicChartHandlers(figure);
-			});
-			toolbar.addEventListener("ppe-charts-wired", (event) => {
-				const root = event.detail?.root;
-				if (root) this.#wireAtomicBlocks(root);
-			});
+		openChartEditor(figure) {
+			this.#openChartEditor(figure);
 		}
 
-		#setStatus(message, type = "info") {
-			const { status } = this.#els();
-			if (!status) return;
-			status.textContent = message || "";
-			status.dataset.type = type;
-			status.hidden = !message;
+		insertHtml(html) {
+			this.#insertHtmlIntoRoot(html);
+			this.#afterCommand();
+		}
+
+		set getBlockCatalog(fn) {
+			this._getBlockCatalog = typeof fn === "function" ? fn : null;
+		}
+
+		set commandRootProvider(fn) {
+			this._commandRootProvider = typeof fn === "function" ? fn : null;
+			this.#bindProseStateSync();
+		}
+
+		get commandRootProvider() {
+			return this._commandRootProvider || null;
+		}
+
+		set insertionHooks(hooks) {
+			this._insertionHooks = hooks && typeof hooks === "object" ? hooks : null;
+		}
+
+		#getRoot() {
+			const root = this.commandRootProvider?.();
+			return root && root.isConnected ? root : null;
+		}
+
+		#getPersonId() {
+			return String(this.getAttribute("person") || "").trim();
+		}
+
+		#resolveImageUrl(src) {
+			if (!src || isAbsoluteUrl(src) || src.startsWith("data:")) return src;
+			const normalized = src.replace(/^\.?\//, "");
+			const personId = this.#getPersonId();
+			if (normalized.startsWith("assets/")) return resolveSiteUrl(normalized);
+			if (personId) return resolveSiteUrl(`people/${personId}/data/${normalized}`);
+			return resolveSiteUrl(normalized);
+		}
+
+		#getInsertionRange() {
+			const prose = this.#getRoot();
+			if (!prose) return null;
+
+			let range = null;
+			if (this.__savedRange) {
+				const host = this.__savedRange.commonAncestorContainer;
+				const element = host.nodeType === Node.ELEMENT_NODE ? host : host.parentNode;
+				if (element && prose.contains(element)) {
+					range = this.__savedRange.cloneRange();
+				}
+			}
+			if (!range) {
+				const selection = window.getSelection();
+				if (selection?.rangeCount) {
+					const current = selection.getRangeAt(0);
+					const host = current.commonAncestorContainer;
+					const element = host.nodeType === Node.ELEMENT_NODE ? host : host.parentNode;
+					if (element && prose.contains(element)) {
+						range = current.cloneRange();
+					}
+				}
+			}
+			if (!range) {
+				range = document.createRange();
+				range.selectNodeContents(prose);
+				range.collapse(false);
+			}
+
+			const hooks = this._insertionHooks;
+			if (hooks?.adjustInsertionRange) {
+				range = hooks.adjustInsertionRange(range, prose) || range;
+			}
+			return range;
+		}
+
+		#insertHtmlIntoRoot(html) {
+			const prose = this.#getRoot();
+			if (!prose) return;
+			prose.focus();
+			const range = this.#getInsertionRange();
+			if (!range) return;
+			const selection = window.getSelection();
+			selection?.removeAllRanges();
+			selection?.addRange(range);
+			document.execCommand("insertHTML", false, html);
 		}
 
 		#bindToolbar() {
-			const { toolbar } = this.#els();
+			const toolbar = this._toolbarEl;
 			toolbar?.addEventListener("mousedown", (event) => {
 				// Keep the prose selection while clicking a tool.
 				event.preventDefault();
@@ -1198,19 +1151,54 @@
 					this.#closeMenus();
 					return;
 				}
+				const blockChoice = event.target.closest(".ppe__add-block-panel [data-block-id]");
+				if (blockChoice && !blockChoice.disabled) {
+					event.preventDefault();
+					this.#insertEditorBlock(blockChoice.dataset.blockId);
+					this.#closeMenus();
+					return;
+				}
 				const button = event.target.closest(".ppe__tool:not(.ppe__menu-toggle)");
 				if (!button) return;
 				this.#runCommand(button);
 			});
 			this.__onOutsideMenu = (event) => {
-				if (!event.target.closest(".ppe__menu")) this.#closeMenus();
+				if (event.target.closest(".ppe__menu")) return;
+				if (event.target.closest(".ppe__menu-panel--portaled")) return;
+				this.#closeMenus();
 			};
 			document.addEventListener("mousedown", this.__onOutsideMenu);
+			this.__onPortaledPanelClick = (event) => {
+				const panel = event.target.closest(".ppe__menu-panel--portaled");
+				if (!panel || panel.hidden || panel.__ppeToolbar !== this) return;
+
+				const specialChar = event.target.closest("[data-special-char]");
+				if (specialChar) {
+					this.#insertSpecialCharacter(specialChar.dataset.specialChar);
+					this.#closeMenus();
+					return;
+				}
+
+				const menuItem = event.target.closest(".ppe__menu-item");
+				if (menuItem) {
+					this.#runMenuItem(menuItem);
+					this.#closeMenus();
+					return;
+				}
+
+				const blockChoice = event.target.closest("[data-block-id]");
+				if (blockChoice && panel.classList.contains("ppe__add-block-panel") && !blockChoice.disabled) {
+					event.preventDefault();
+					this.#insertEditorBlock(blockChoice.dataset.blockId);
+					this.#closeMenus();
+				}
+			};
+			document.addEventListener("click", this.__onPortaledPanelClick);
 			this.#updateToolbarState();
 		}
 
 		#insertSpecialCharacter(value) {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			const text = String(value || "");
 			if (!prose || !text) return;
 
@@ -1232,7 +1220,7 @@
 		}
 
 		#currentBlockTag() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			let block = "";
 			try {
 				block = (document.queryCommandValue("formatBlock") || "").toLowerCase().replace(/^<|>$/g, "");
@@ -1240,14 +1228,20 @@
 				/* ignore */
 			}
 
-			if ((!block || block === "div") && prose) {
+			if (prose) {
 				const selection = window.getSelection();
 				let node = selection?.anchorNode;
 				if (node && prose.contains(node)) {
 					if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-					const blockEl = node?.closest?.("p, h1, h2, h3, h4, h5, h6");
-					if (blockEl && prose.contains(blockEl)) {
-						block = blockEl.tagName.toLowerCase();
+					const blockquote = node?.closest?.("blockquote");
+					if (blockquote && prose.contains(blockquote)) {
+						return "blockquote";
+					}
+					if (!block || block === "div") {
+						const blockEl = node?.closest?.("p, h1, h2, h3, h4, h5, h6");
+						if (blockEl && prose.contains(blockEl)) {
+							block = blockEl.tagName.toLowerCase();
+						}
 					}
 				}
 			}
@@ -1259,50 +1253,205 @@
 		#toggleMenu(menuId) {
 			const menu = this.querySelector(`[data-menu-group="${menuId}"]`);
 			if (!menu) return;
-			const panel = menu.querySelector(".ppe__menu-panel");
+			const panel = this.#getMenuPanel(menu);
 			const toggle = menu.querySelector("[data-menu-toggle]");
 			const willOpen = panel?.hidden;
 			this.#closeMenus();
 			if (!willOpen || !panel || !toggle) return;
+			if (menuId === "add-block") {
+				this.#populateAddBlockMenu();
+			}
 			panel.hidden = false;
 			toggle.setAttribute("aria-expanded", "true");
 			menu.classList.add("is-open");
+			this.#portalMenuPanel(menu, panel);
 			this.#positionMenuPanel(menu, panel, toggle);
+			this.#bindMenuReposition();
+		}
+
+		#getMenuPanel(menu) {
+			if (menu.__ppeOpenPanel) return menu.__ppeOpenPanel;
+			return menu.querySelector(".ppe__menu-panel");
+		}
+
+		#portalMenuPanel(menu, panel) {
+			if (!panel.__ppePortalHome) {
+				panel.__ppePortalHome = {
+					parent: panel.parentElement,
+					next: panel.nextSibling,
+				};
+			}
+			panel.__ppeToolbar = this;
+			menu.__ppeOpenPanel = panel;
+			document.body.appendChild(panel);
+		}
+
+		#restoreMenuPanel(panel) {
+			const home = panel.__ppePortalHome;
+			if (!home?.parent) return;
+			if (home.parent.__ppeOpenPanel === panel) {
+				delete home.parent.__ppeOpenPanel;
+			}
+			home.parent.insertBefore(panel, home.next);
+			delete panel.__ppeToolbar;
+		}
+
+		#getBlockContext() {
+			return this.getAttribute("block-context") === "page" ? "page" : "profile";
+		}
+
+		#populateAddBlockMenu() {
+			const menu = this.querySelector('[data-menu-group="add-block"]');
+			const shell = menu ? this.#getMenuPanel(menu) : null;
+			const body = shell?.querySelector("[data-add-block-panel]");
+			if (!body || !window.EditorBlockInserter || !window.EditorBlocks) return;
+
+			const context = this.#getBlockContext();
+			const catalog = this._getBlockCatalog
+				? this._getBlockCatalog()
+				: window.EditorBlocks.getCatalog(context);
+			window.EditorBlockInserter.renderPanel(body, {
+				context,
+				definitions: catalog?.definitions || [],
+				categories: catalog?.categories || [],
+				query: "",
+				compact: true,
+			});
+		}
+
+		#insertEditorBlock(blockId) {
+			if (!window.EditorBlocks) return;
+			const context = this.#getBlockContext();
+			const block = window.EditorBlocks.getById(blockId);
+			const ui = window.EditorBlocks.getBlockUiState(context, block);
+			if (!block || !ui.enabled) return;
+
+			if (context === "page") {
+				this.dispatchEvent(new CustomEvent("ppe-block-selected", {
+					bubbles: true,
+					detail: { blockId, block },
+				}));
+				return;
+			}
+
+			this.insertHtml(`${block.html}<p><br></p>`);
+			this.dispatchEvent(new CustomEvent("ppe-block-inserted", { bubbles: true, detail: { blockId, block } }));
 		}
 
 		#positionMenuPanel(menu, panel, toggle) {
 			menu.classList.remove("ppe__menu--align-end", "ppe__menu--drop-up");
-			panel.style.maxHeight = "";
+			panel.classList.add("ppe__menu-panel--fixed", "ppe__menu-panel--portaled");
 
 			const padding = 12;
+			const gap = 4;
 			const toggleRect = toggle.getBoundingClientRect();
-			const panelRect = panel.getBoundingClientRect();
-			const spaceBelow = window.innerHeight - toggleRect.bottom - padding;
-			const spaceAbove = toggleRect.top - padding;
+			const isAddBlock = menu.dataset.menuGroup === "add-block";
+			const minLeft = this.#minMenuLeft(padding);
+			const maxRight = window.innerWidth - padding;
+			const availableWidth = maxRight - minLeft;
 
-			if (panelRect.right > window.innerWidth - padding) {
-				menu.classList.add("ppe__menu--align-end");
+			if (isAddBlock) {
+				const targetWidth = Math.min(416, availableWidth);
+				panel.style.width = `${Math.max(220, targetWidth)}px`;
+				panel.style.maxWidth = `${Math.max(220, targetWidth)}px`;
+			} else {
+				panel.style.width = "";
+				panel.style.maxWidth = "";
 			}
 
-			const preferDropUp = panelRect.height > spaceBelow && spaceAbove > spaceBelow;
+			const spaceBelow = window.innerHeight - toggleRect.bottom - padding;
+			const spaceAbove = toggleRect.top - padding;
+			const naturalHeight = panel.scrollHeight;
+			const preferDropUp = naturalHeight > spaceBelow && spaceAbove > spaceBelow;
+
 			if (preferDropUp) {
 				menu.classList.add("ppe__menu--drop-up");
 			}
 
 			const available = preferDropUp ? spaceAbove : spaceBelow;
-			panel.style.maxHeight = `${Math.max(180, available - 8)}px`;
+			panel.style.maxHeight = `${Math.max(180, available - gap)}px`;
+
+			const panelWidth = panel.offsetWidth;
+			const panelHeight = Math.min(panel.scrollHeight, Math.max(180, available - gap));
+			let top = preferDropUp ? toggleRect.top - panelHeight - gap : toggleRect.bottom + gap;
+			let left = isAddBlock ? toggleRect.right - panelWidth : toggleRect.left;
+
+			if (isAddBlock && left < minLeft) {
+				left = Math.min(toggleRect.left, maxRight - panelWidth);
+			} else if (!isAddBlock && left + panelWidth > maxRight) {
+				left = maxRight - panelWidth;
+			}
+
+			left = Math.max(minLeft, Math.min(left, maxRight - panelWidth));
+			top = Math.max(padding, Math.min(top, window.innerHeight - panelHeight - padding));
+
+			panel.style.top = `${top}px`;
+			panel.style.left = `${left}px`;
+		}
+
+		#minMenuLeft(padding = 12) {
+			const header = document.querySelector("full-header");
+			const sidebarOpen = header
+				&& !header.classList.contains("sidebar-disabled")
+				&& header.classList.contains("sidebar-open");
+			if (!sidebarOpen || !window.matchMedia("(min-width: 992px)").matches) {
+				return padding;
+			}
+
+			const raw = getComputedStyle(document.documentElement).getPropertyValue("--header-chrome-sidebar-width").trim();
+			const sidebarWidth = Number.parseFloat(raw) || 280;
+			return sidebarWidth + padding;
+		}
+
+		#resetMenuPanelPosition(panel) {
+			panel.classList.remove("ppe__menu-panel--fixed", "ppe__menu-panel--portaled");
+			panel.style.position = "";
+			panel.style.top = "";
+			panel.style.left = "";
+			panel.style.right = "";
+			panel.style.bottom = "";
+			panel.style.zIndex = "";
+			panel.style.width = "";
+			panel.style.maxWidth = "";
+		}
+
+		#bindMenuReposition() {
+			if (this.__repositionOpenMenu) return;
+			this.__repositionOpenMenu = () => {
+				const openMenu = this.querySelector(".ppe__menu.is-open");
+				if (!openMenu) return;
+				const panel = this.#getMenuPanel(openMenu);
+				const toggle = openMenu.querySelector("[data-menu-toggle]");
+				if (panel && toggle) {
+					this.#positionMenuPanel(openMenu, panel, toggle);
+				}
+			};
+			window.addEventListener("resize", this.__repositionOpenMenu);
+			window.addEventListener("scroll", this.__repositionOpenMenu, true);
+		}
+
+		#unbindMenuReposition() {
+			if (!this.__repositionOpenMenu) return;
+			window.removeEventListener("resize", this.__repositionOpenMenu);
+			window.removeEventListener("scroll", this.__repositionOpenMenu, true);
+			this.__repositionOpenMenu = null;
 		}
 
 		#closeMenus() {
+			this.#unbindMenuReposition();
 			this.querySelectorAll(".ppe__menu").forEach((menu) => {
 				menu.classList.remove("is-open", "ppe__menu--align-end", "ppe__menu--drop-up");
-				const panel = menu.querySelector(".ppe__menu-panel");
 				const toggle = menu.querySelector("[data-menu-toggle]");
-				if (panel) {
-					panel.hidden = true;
-					panel.style.maxHeight = "";
-				}
 				if (toggle) toggle.setAttribute("aria-expanded", "false");
+				delete menu.__ppeOpenPanel;
+			});
+
+			document.querySelectorAll(".ppe__menu-panel--portaled").forEach((panel) => {
+				if (panel.__ppeToolbar !== this) return;
+				panel.hidden = true;
+				panel.style.maxHeight = "";
+				this.#resetMenuPanelPosition(panel);
+				this.#restoreMenuPanel(panel);
 			});
 		}
 
@@ -1321,7 +1470,7 @@
 		}
 
 		#getSelectionUnderlineStyle() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			const selection = window.getSelection();
 			if (!selection?.rangeCount || !prose) return null;
 
@@ -1343,7 +1492,7 @@
 		}
 
 		#applyUnderlineStyle(style) {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			if (!prose) return;
 			prose.focus();
 
@@ -1383,7 +1532,7 @@
 		}
 
 		#selectionListContext() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			const selection = window.getSelection();
 			if (!selection?.rangeCount || !prose) return null;
 			let node = selection.getRangeAt(0).commonAncestorContainer;
@@ -1402,8 +1551,44 @@
 			return null;
 		}
 
+		#getAlignTarget() {
+			const prose = this.#getRoot();
+			const selection = window.getSelection();
+			if (!selection?.rangeCount || !prose) return null;
+
+			let node = selection.getRangeAt(0).commonAncestorContainer;
+			if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+			if (!node || !prose.contains(node)) return null;
+
+			const li = node.closest("li");
+			if (li && prose.contains(li)) return li;
+
+			const block = node.closest(BLOCK_INDENT_SELECTOR);
+			if (block && prose.contains(block)) return block;
+
+			return null;
+		}
+
+		#applyTextAlign(align) {
+			const prose = this.#getRoot();
+			if (!prose) return;
+			prose.focus();
+
+			const target = this.#getAlignTarget();
+			if (!target) return;
+
+			if (!align || align === "left") {
+				target.removeAttribute("data-align");
+			} else {
+				target.setAttribute("data-align", align);
+			}
+
+			placeCaretIn(target);
+			this.#afterCommand();
+		}
+
 		#getIndentContext() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			const selection = window.getSelection();
 			if (!selection?.rangeCount || !prose) return null;
 
@@ -1425,7 +1610,7 @@
 		}
 
 		#applyIndent() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			if (!prose) return;
 			prose.focus();
 
@@ -1446,7 +1631,7 @@
 		}
 
 		#applyOutdent() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			if (!prose) return;
 			prose.focus();
 
@@ -1467,7 +1652,7 @@
 		}
 
 		#applyListType(listType, olType = "") {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			if (!prose) return;
 			prose.focus();
 
@@ -1504,7 +1689,7 @@
 		}
 
 		#runCommand(button) {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			if (!prose) return;
 			prose.focus();
 
@@ -1542,542 +1727,235 @@
 				return;
 			}
 
+			const textAlign = button.dataset.textAlign;
+			if (textAlign) {
+				this.#applyTextAlign(textAlign);
+				return;
+			}
+
 			const command = button.dataset.command;
 			if (!command) return;
 			document.execCommand(command, false, null);
 			this.#afterCommand();
 		}
 
+		#emitChange() {
+			this.dispatchEvent(new CustomEvent("ppe-toolbar-change", { bubbles: true }));
+		}
+
+		#emitChartSelected(figure) {
+			this.dispatchEvent(new CustomEvent("ppe-chart-selected", { bubbles: true, detail: { figure } }));
+		}
+
+		#wireCharts(root) {
+			if (!root) return;
+			root.querySelectorAll(ATOMIC_BLOCK_SELECTOR).forEach((figure) => prepareAtomicChartElement(figure));
+			this.dispatchEvent(new CustomEvent("ppe-charts-wired", { bubbles: true, detail: { root } }));
+		}
+
 		#afterCommand() {
-			this.#onProseChanged();
+			this.#emitChange();
 			this.#updateToolbarState();
 		}
 
-		#bindProse() {
-			const { prose } = this.#els();
+		#bindProseStateSync() {
+			this.#unbindProseStateSync();
+			const prose = this.#getRoot();
 			if (!prose) return;
-			prose.addEventListener("input", () => this.#onProseChanged());
-			prose.addEventListener("paste", (event) => this.#handlePaste(event));
-			prose.addEventListener("blur", () => this.#syncProsePlaceholder());
-			prose.addEventListener("mousedown", (event) => this.#handleProsePointerDown(event));
-			prose.addEventListener("keydown", (event) => {
-				if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "u") {
-					event.preventDefault();
-					this.#applyUnderlineStyle("solid");
-					return;
-				}
-				if (event.key === "Backspace" || event.key === "Delete") {
-					if (this.#tryDeleteAtomicBlock(event)) return;
-				}
-				if (this.#nudgeAtomicBlockSelection(event)) return;
-				if (this.#nudgeCaretToAdjacentAtomicBlock(event)) return;
-				if (event.key === "Escape") {
-					this.#clearAtomicBlockSelection();
-				}
-			}, true);
 
-			// Reflect the caret's formatting in the toolbar.
-			this.__onSelectionChange = () => {
-				const selection = window.getSelection();
-				const { prose } = this.#els();
-				if (!selection?.rangeCount || !prose) return;
-				if (!prose.contains(selection.getRangeAt(0).commonAncestorContainer)) return;
-				this.#syncAtomicBlockSelectionFromRange();
+			this.__stateSyncProse = prose;
+			this.__onProseStateSync = () => this.#scheduleToolbarStateUpdate();
+			prose.addEventListener("mouseup", this.__onProseStateSync);
+			prose.addEventListener("keyup", this.__onProseStateSync);
+			prose.addEventListener("click", this.__onProseStateSync);
+		}
+
+		#unbindProseStateSync() {
+			if (!this.__stateSyncProse) return;
+			this.__stateSyncProse.removeEventListener("mouseup", this.__onProseStateSync);
+			this.__stateSyncProse.removeEventListener("keyup", this.__onProseStateSync);
+			this.__stateSyncProse.removeEventListener("click", this.__onProseStateSync);
+			this.__stateSyncProse = null;
+			this.__onProseStateSync = null;
+		}
+
+		#scheduleToolbarStateUpdate() {
+			if (this.__toolbarStateRaf) return;
+			this.__toolbarStateRaf = requestAnimationFrame(() => {
+				this.__toolbarStateRaf = null;
 				this.#updateToolbarState();
-			};
-			document.addEventListener("selectionchange", this.__onSelectionChange);
-			["keyup", "mouseup", "focus"].forEach((evt) => prose.addEventListener(evt, () => this.#updateToolbarState()));
-
-			// Prefer real tags over inline styles, and <p> between paragraphs.
-			prose.addEventListener("focus", () => {
-				try {
-					document.execCommand("styleWithCSS", false, false);
-					document.execCommand("defaultParagraphSeparator", false, "p");
-				} catch (error) {
-					// Older engines: ignore.
-				}
-			}, { once: true });
-			this.#wireAtomicBlocks(prose);
-		}
-
-		#wireAtomicBlocks(root = this.#els().prose) {
-			if (!root) return;
-			root.querySelectorAll(ATOMIC_BLOCK_SELECTOR).forEach((figure) => {
-				prepareAtomicChartElement(figure);
-				this.#attachAtomicChartHandlers(figure);
 			});
 		}
 
-		#attachAtomicChartHandlers(figure) {
-			if (!figure || figure.dataset.ppeAtomicWired === "true") return;
-			figure.dataset.ppeAtomicWired = "true";
-			figure.addEventListener("focus", () => this.#selectAtomicBlock(figure));
-			figure.addEventListener("contextmenu", (event) => {
-				event.preventDefault();
-				event.stopPropagation();
-				this.#showChartContextMenu(event, figure);
-			});
-			figure.addEventListener("keydown", (event) => {
-				if (this.#nudgeAtomicBlockSelection(event)) return;
-				if (event.key === "Backspace" || event.key === "Delete") {
-					event.preventDefault();
-					this.#removeAtomicBlock(figure);
-				}
-			});
-			figure.addEventListener("dblclick", (event) => {
-				event.preventDefault();
-				event.stopPropagation();
-				this.#openChartEditor(figure);
-			});
-		}
-
-		#handleProsePointerDown(event) {
-			const { prose } = this.#els();
-			if (!prose) return;
-
-			const block = event.target.closest(ATOMIC_BLOCK_SELECTOR);
-			if (block && prose.contains(block)) {
-				this.#hideChartContextMenu();
-				event.preventDefault();
-				if (block.classList.contains("is-selected")) {
-					this.#deselectAtomicBlock(block);
-					return;
-				}
-				prose.focus({ preventScroll: true });
-				this.#selectAtomicBlock(block);
-				return;
-			}
-
-			this.#clearAtomicBlockSelection();
-		}
-
-		#closestAtomicBlock(node) {
-			const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
-			return element?.closest?.(ATOMIC_BLOCK_SELECTOR) || null;
-		}
-
-		#findAtomicBlockInRange(range) {
-			if (!range) return null;
-			if (!range.collapsed) {
-				const ancestor = range.commonAncestorContainer;
-				if (ancestor?.nodeType === Node.ELEMENT_NODE && ancestor.matches?.(ATOMIC_BLOCK_SELECTOR)) {
-					return ancestor;
-				}
-				const startBlock = this.#closestAtomicBlock(range.startContainer);
-				const endBlock = this.#closestAtomicBlock(range.endContainer);
-				if (startBlock && startBlock === endBlock) return startBlock;
-				if (startBlock) return startBlock;
-			}
-			return this.#closestAtomicBlock(range.startContainer);
-		}
-
-		#isCaretImmediatelyBefore(range, block) {
-			if (!range?.collapsed || !block?.parentNode) return false;
-			if (range.startContainer !== block.parentNode) return false;
-			return range.startOffset === [...block.parentNode.children].indexOf(block);
-		}
-
-		#isCaretImmediatelyAfter(range, block) {
-			if (!range?.collapsed || !block?.parentNode) return false;
-			if (range.startContainer !== block.parentNode) return false;
-			return range.startOffset === [...block.parentNode.children].indexOf(block) + 1;
-		}
-
-		#collapseRangeFromAtomicBlock(range) {
-			const block = this.#findAtomicBlockInRange(range);
-			if (!block) {
-				if (!range.collapsed) range.collapse(false);
-				return range;
-			}
-
-			this.#clearAtomicBlockSelection();
-			if (this.#isCaretImmediatelyBefore(range, block) || this.#isCaretImmediatelyAfter(range, block)) {
-				return range;
-			}
-
-			const next = document.createRange();
-			next.setStartAfter(block);
-			next.collapse(true);
-			return next;
-		}
-
-		#ensureEditableCaret(range) {
-			const { prose } = this.#els();
-			if (!prose || !range) return range;
-
-			const textContainer = range.startContainer.nodeType === Node.TEXT_NODE
-				? range.startContainer.parentElement
-				: range.startContainer;
-			if (textContainer?.closest?.("p, h1, h2, h3, h4, h5, h6, li, td, th, blockquote")) {
-				return range;
-			}
-
-			if (range.startContainer === prose) {
-				const offset = range.startOffset;
-				const child = prose.childNodes[offset];
-				const prev = offset > 0 ? prose.childNodes[offset - 1] : null;
-
-				if (child?.nodeType === Node.ELEMENT_NODE && child.matches("p, h1, h2, h3, h4, h5, h6, blockquote")) {
-					const next = document.createRange();
-					next.selectNodeContents(child);
-					next.collapse(true);
-					return next;
-				}
-				if (prev?.nodeType === Node.ELEMENT_NODE && prev.matches("p, h1, h2, h3, h4, h5, h6, blockquote")) {
-					const next = document.createRange();
-					next.selectNodeContents(prev);
-					next.collapse(false);
-					return next;
-				}
-
-				const needsParagraph = (node) => node?.nodeType === Node.ELEMENT_NODE
-					&& (node.matches(ATOMIC_BLOCK_SELECTOR) || node.matches("table.ppe-profile-table, figure.profile-figure"));
-				if (needsParagraph(child) || needsParagraph(prev)) {
-					const paragraph = document.createElement("p");
-					paragraph.innerHTML = "<br>";
-					if (child) prose.insertBefore(paragraph, child);
-					else prose.appendChild(paragraph);
-					const next = document.createRange();
-					next.selectNodeContents(paragraph);
-					next.collapse(Boolean(child && needsParagraph(child)));
-					return next;
-				}
-			}
-
-			const block = this.#closestAtomicBlock(range.startContainer);
-			if (block) {
-				const next = document.createRange();
-				next.setStartAfter(block);
-				next.collapse(true);
-				return this.#ensureEditableCaret(next);
-			}
-
-			return range;
-		}
-
-		#getInsertionRange() {
-			const { prose } = this.#els();
-			if (!prose) return null;
-
-			let range = null;
-			if (this.__savedRange) {
-				const host = this.__savedRange.commonAncestorContainer;
-				const element = host.nodeType === Node.ELEMENT_NODE ? host : host.parentNode;
-				if (element && prose.contains(element)) {
-					range = this.__savedRange.cloneRange();
-				}
-			}
-			if (!range) {
-				const selection = window.getSelection();
-				if (selection?.rangeCount) {
-					const current = selection.getRangeAt(0);
-					const host = current.commonAncestorContainer;
-					const element = host.nodeType === Node.ELEMENT_NODE ? host : host.parentNode;
-					if (element && prose.contains(element)) {
-						range = current.cloneRange();
-					}
-				}
-			}
-			if (!range) {
-				range = document.createRange();
-				range.selectNodeContents(prose);
-				range.collapse(false);
-			}
-
-			range = this.#collapseRangeFromAtomicBlock(range);
-			return this.#ensureEditableCaret(range);
-		}
-
-		#insertHtmlIntoProse(html) {
-			const { prose } = this.#els();
-			if (!prose) return;
-			prose.focus();
-			const range = this.#getInsertionRange();
-			if (!range) return;
+		#selectionTouchesProse() {
+			const prose = this.#getRoot();
 			const selection = window.getSelection();
-			selection?.removeAllRanges();
-			selection?.addRange(range);
-			document.execCommand("insertHTML", false, html);
+			if (!prose || !selection?.rangeCount) return false;
+			return prose.contains(selection.getRangeAt(0).commonAncestorContainer);
 		}
 
-		#placeCaretBesideAtomicBlock(block, side) {
-			if (!block) return;
-			this.#clearAtomicBlockSelection();
-			const { prose } = this.#els();
-			prose?.focus({ preventScroll: true });
-			const range = document.createRange();
-			if (side === "before") range.setStartBefore(block);
-			else range.setStartAfter(block);
-			range.collapse(true);
-			const caret = this.#ensureEditableCaret(range);
-			const selection = window.getSelection();
-			selection?.removeAllRanges();
-			selection?.addRange(caret);
-			this.__savedRange = caret.cloneRange();
-		}
+		#elementHasInlineFormat(element, command) {
+			if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
 
-		#nudgeAtomicBlockSelection(event) {
-			const block = this.__selectedAtomicBlock?.classList?.contains("is-selected")
-				? this.__selectedAtomicBlock
-				: this.#findAtomicBlockInSelection();
-			if (!block) return false;
-			if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-				event.preventDefault();
-				this.#placeCaretBesideAtomicBlock(block, "before");
-				return true;
+			const tags = INLINE_FORMAT_TAGS[command];
+			if (tags?.includes(element.tagName)) return true;
+
+			const inlineTags = new Set(["SPAN", "B", "STRONG", "I", "EM", "U", "S", "STRIKE", "DEL", "SUB", "SUP", "A", "FONT"]);
+			if (!inlineTags.has(element.tagName)) return false;
+
+			const style = window.getComputedStyle(element);
+			if (command === "bold") {
+				const weight = style.fontWeight;
+				if (weight === "bold" || weight === "bolder" || Number.parseInt(weight, 10) >= 600) {
+					return true;
+				}
 			}
-			if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-				event.preventDefault();
-				this.#placeCaretBesideAtomicBlock(block, "after");
-				return true;
+			if (command === "italic" && style.fontStyle === "italic") return true;
+			if (command === "strikeThrough") {
+				const decoration = `${style.textDecorationLine} ${style.textDecoration}`;
+				if (decoration.includes("line-through")) return true;
 			}
+
 			return false;
 		}
 
-		#getEditableBlockForRange(range) {
-			let node = range?.startContainer;
-			if (!node) return null;
-			if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-			return node?.closest?.("p, h1, h2, h3, h4, h5, h6, li, blockquote, td, th") || null;
-		}
-
-		#isCaretAtBlockStart(range) {
-			if (!range?.collapsed) return false;
-			const block = this.#getEditableBlockForRange(range);
-			if (!block) return false;
-			const start = document.createRange();
-			start.selectNodeContents(block);
-			start.collapse(true);
-			return range.compareBoundaryPoints(Range.START_TO_START, start) === 0;
-		}
-
-		#isCaretAtBlockEnd(range) {
-			if (!range?.collapsed) return false;
-			const block = this.#getEditableBlockForRange(range);
-			if (!block) return false;
-			const end = document.createRange();
-			end.selectNodeContents(block);
-			end.collapse(false);
-			return range.compareBoundaryPoints(Range.END_TO_END, end) === 0;
-		}
-
-		#isEffectivelyEmptyBlock(element) {
-			if (!element?.matches?.("p, h1, h2, h3, h4, h5, h6, blockquote")) return false;
-			return !String(element.textContent || "").replace(/\u200b/g, "").trim();
-		}
-
-		#findAtomicBlockForArrowNavigation(event) {
-			const key = event.key;
-			if (key !== "ArrowUp" && key !== "ArrowDown" && key !== "ArrowLeft" && key !== "ArrowRight") {
-				return null;
-			}
-			if (this.__selectedAtomicBlock?.classList?.contains("is-selected")) {
-				return null;
-			}
-
-			const { prose } = this.#els();
+		#selectionHasInlineFormat(command) {
+			const prose = this.#getRoot();
 			const selection = window.getSelection();
-			if (!prose || !selection?.rangeCount || !selection.isCollapsed) return null;
+			if (!INLINE_FORMAT_TAGS[command] || !prose || !selection?.rangeCount) return false;
 
 			const range = selection.getRangeAt(0);
-			if (!prose.contains(range.commonAncestorContainer)) return null;
+			if (!prose.contains(range.commonAncestorContainer)) return false;
 
-			const isUpOrLeft = key === "ArrowUp" || key === "ArrowLeft";
-			const isDownOrRight = key === "ArrowDown" || key === "ArrowRight";
-
-			if (isUpOrLeft) {
-				for (const block of prose.querySelectorAll(ATOMIC_BLOCK_SELECTOR)) {
-					if (this.#isCaretImmediatelyAfter(range, block)) return block;
-				}
-			}
-			if (isDownOrRight) {
-				for (const block of prose.querySelectorAll(ATOMIC_BLOCK_SELECTOR)) {
-					if (this.#isCaretImmediatelyBefore(range, block)) return block;
+			const boundaryNodes = [range.startContainer, range.endContainer, range.commonAncestorContainer];
+			for (const boundary of boundaryNodes) {
+				let node = boundary.nodeType === Node.TEXT_NODE ? boundary.parentElement : boundary;
+				while (node && prose.contains(node)) {
+					if (this.#elementHasInlineFormat(node, command)) return true;
+					node = node.parentElement;
 				}
 			}
 
-			const editableBlock = this.#getEditableBlockForRange(range);
-			if (!editableBlock) return null;
-
-			if (isUpOrLeft) {
-				const previous = editableBlock.previousElementSibling;
-				if (!previous?.matches(ATOMIC_BLOCK_SELECTOR)) return null;
-				if (this.#isCaretAtBlockStart(range) || this.#isEffectivelyEmptyBlock(editableBlock)) {
-					return previous;
+			const walker = document.createTreeWalker(prose, NodeFilter.SHOW_ELEMENT);
+			let element = walker.nextNode();
+			while (element) {
+				try {
+					if (range.intersectsNode(element) && this.#elementHasInlineFormat(element, command)) {
+						return true;
+					}
+				} catch (error) {
+					/* ignore */
 				}
-			}
-			if (isDownOrRight) {
-				const next = editableBlock.nextElementSibling;
-				if (!next?.matches(ATOMIC_BLOCK_SELECTOR)) return null;
-				if (this.#isCaretAtBlockEnd(range) || this.#isEffectivelyEmptyBlock(editableBlock)) {
-					return next;
-				}
+				element = walker.nextNode();
 			}
 
-			return null;
+			return false;
 		}
 
-		#nudgeCaretToAdjacentAtomicBlock(event) {
-			const block = this.#findAtomicBlockForArrowNavigation(event);
-			if (!block) return false;
-			event.preventDefault();
-			this.#selectAtomicBlock(block);
-			return true;
-		}
+		#getInlineFormatState(command) {
+			if (this.#selectionHasInlineFormat(command)) return true;
 
-		#selectAtomicBlock(block) {
-			if (!block) return;
-			this.#clearAtomicBlockSelection();
-			block.classList.add("is-selected");
-			this.__selectedAtomicBlock = block;
-
-			const range = document.createRange();
-			range.selectNode(block);
+			const prose = this.#getRoot();
 			const selection = window.getSelection();
-			selection?.removeAllRanges();
-			selection?.addRange(range);
-			block.focus({ preventScroll: true });
-		}
-
-		#deselectAtomicBlock(block) {
-			if (!block) return;
-			this.#clearAtomicBlockSelection();
-			block.blur();
-			this.#placeCaretBesideAtomicBlock(block, "after");
-		}
-
-		#clearAtomicBlockSelection() {
-			const { prose } = this.#els();
-			prose?.querySelectorAll(`${ATOMIC_BLOCK_SELECTOR}.is-selected`).forEach((block) => {
-				block.classList.remove("is-selected");
-			});
-			this.__selectedAtomicBlock = null;
-		}
-
-		#findAtomicBlockInSelection() {
-			const selection = window.getSelection();
-			if (!selection?.rangeCount) return null;
-			return this.#findAtomicBlockInRange(selection.getRangeAt(0));
-		}
-
-		#syncAtomicBlockSelectionFromRange() {
-			const block = this.#findAtomicBlockInSelection()
-				|| (this.__selectedAtomicBlock?.isConnected ? this.__selectedAtomicBlock : null);
-			const { prose } = this.#els();
-			prose?.querySelectorAll(`${ATOMIC_BLOCK_SELECTOR}.is-selected`).forEach((figure) => {
-				if (figure !== block) figure.classList.remove("is-selected");
-			});
-			if (block) {
-				block.classList.add("is-selected");
-				this.__selectedAtomicBlock = block;
-			} else {
-				this.__selectedAtomicBlock = null;
-			}
-		}
-
-		#getAdjacentAtomicBlock(key) {
-			const { prose } = this.#els();
-			const selection = window.getSelection();
-			if (!prose || !selection?.rangeCount || !selection.isCollapsed) return null;
-
+			if (!prose || !selection?.rangeCount) return false;
 			const range = selection.getRangeAt(0);
-			if (!prose.contains(range.commonAncestorContainer)) return null;
+			if (!prose.contains(range.commonAncestorContainer)) return false;
 
-			let node = range.startContainer;
-			if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-			if (!node) return null;
-
-			const block = node.closest?.("p, h1, h2, h3, h4, h5, h6, li, div") || node;
-			if (key === "Backspace" && range.startOffset === 0) {
-				const previous = block.previousElementSibling;
-				if (previous?.matches(ATOMIC_BLOCK_SELECTOR)) return previous;
-			}
-			if (key === "Delete") {
-				const atEnd = range.startContainer.nodeType === Node.TEXT_NODE
-					? range.startOffset === range.startContainer.length
-					: range.startOffset === (range.startContainer.childNodes?.length || 0);
-				if (atEnd) {
-					const next = block.nextElementSibling;
-					if (next?.matches(ATOMIC_BLOCK_SELECTOR)) return next;
-				}
-			}
-			return null;
-		}
-
-		#tryDeleteAtomicBlock(event) {
-			let block = this.__selectedAtomicBlock?.isConnected
-				? this.__selectedAtomicBlock
-				: null;
-			if (!block) block = this.#findAtomicBlockInSelection();
-			if (!block) block = this.#getAdjacentAtomicBlock(event.key);
-			if (!block) return false;
-
-			event.preventDefault();
-			this.#removeAtomicBlock(block);
-			return true;
-		}
-
-		#removeAtomicBlock(block) {
-			const { prose } = this.#els();
-			if (!block || !prose?.contains(block)) return;
-
-			this.#hideChartContextMenu();
-			const parent = block.parentNode;
-			const after = block.nextElementSibling;
-			const before = block.previousElementSibling;
-			block.remove();
-			this.#clearAtomicBlockSelection();
-
-			if (after && prose.contains(after)) {
-				placeCaretIn(after, false);
-			} else if (before && prose.contains(before)) {
-				placeCaretIn(before, true);
-			} else if (parent) {
-				const paragraph = document.createElement("p");
-				paragraph.innerHTML = "<br>";
-				parent.appendChild(paragraph);
-				placeCaretIn(paragraph, false);
+			const savedRange = range.cloneRange();
+			if (document.activeElement !== prose) {
+				prose.focus({ preventScroll: true });
 			}
 
-			prose.focus({ preventScroll: true });
-			this.#afterCommand();
+			let active = false;
+			try {
+				active = document.queryCommandState(command);
+			} catch (error) {
+				/* ignore */
+			}
+
+			selection.removeAllRanges();
+			selection.addRange(savedRange);
+			return active;
 		}
 
 		#updateToolbarState() {
-			this.#els().toolbar?.updateToolbarState();
-		}
-
-		#onProseChanged() {
-			this.#syncProsePlaceholder();
-			this.dispatchEvent(new CustomEvent("profile-page-dirty-change", { bubbles: true }));
-		}
-
-		#proseIsEmpty(prose) {
-			if (prose?.querySelector(`${ATOMIC_BLOCK_SELECTOR}, table.ppe-profile-table, figure.profile-figure`)) {
-				return false;
+			if (!this.#selectionTouchesProse()) {
+				for (const command of INLINE_FORMAT_COMMANDS) {
+					const button = this.querySelector(`[data-command="${command}"]`);
+					button?.classList.remove("is-active");
+				}
+				this.querySelector('[data-menu-toggle="underline"]')?.classList.remove("is-active");
 			}
-			return !String(prose?.textContent || "").replace(/\u00a0/g, " ").trim();
-		}
 
-		#syncProsePlaceholder() {
-			const { prose } = this.#els();
-			if (!prose) return;
-			prose.classList.toggle("ppe__prose--empty", this.#proseIsEmpty(prose));
-		}
-
-		// ---- Paste cleanup -------------------------------------------------
-		#handlePaste(event) {
-			const data = event.clipboardData;
-			if (!data) return;
-			event.preventDefault();
-			const html = data.getData("text/html");
-			if (html) {
-				document.execCommand("insertHTML", false, sanitizePastedHtml(html));
-			} else {
-				const text = data.getData("text/plain");
-				if (text) document.execCommand("insertText", false, text);
+			for (const command of INLINE_FORMAT_COMMANDS) {
+				const button = this.querySelector(`[data-command="${command}"]`);
+				if (!button) continue;
+				button.classList.toggle("is-active", this.#getInlineFormatState(command));
 			}
-			this.#afterCommand();
+
+			const underlineToggle = this.querySelector('[data-menu-toggle="underline"]');
+			if (underlineToggle) {
+				let underlineActive = this.#getInlineFormatState("underline");
+				if (!underlineActive) {
+					underlineActive = Boolean(this.#getSelectionUnderlineStyle());
+				}
+				underlineToggle.classList.toggle("is-active", underlineActive);
+			}
+
+			this.querySelectorAll(".ppe__tool[data-state]").forEach((btn) => {
+				const state = btn.dataset.state;
+				if (!state || INLINE_FORMAT_TAGS[state] || state === "underline") return;
+				let active = false;
+				try {
+					active = document.queryCommandState(state);
+				} catch (error) {
+					/* ignore */
+				}
+				btn.classList.toggle("is-active", active);
+			});
+
+			const block = this.#currentBlockTag();
+
+			this.querySelectorAll('[data-block]').forEach((item) => {
+				item.classList.toggle("is-active", item.dataset.block === block);
+			});
+
+			const headingToggle = this.querySelector('[data-menu-toggle="heading"]');
+			if (headingToggle) {
+				const blockLabel = HEADING_LABEL_BY_BLOCK[block] || HEADING_LABEL_BY_BLOCK.p;
+				const labelEl = headingToggle.querySelector(".ppe__menu-toggle-label");
+				if (labelEl) labelEl.textContent = blockLabel;
+				headingToggle.title = blockLabel;
+			}
+
+			const alignTarget = this.#getAlignTarget();
+			const activeAlign = alignTarget?.getAttribute("data-align") || "left";
+			this.querySelectorAll("[data-text-align]").forEach((btn) => {
+				btn.classList.toggle("is-active", btn.dataset.textAlign === activeAlign);
+			});
+
+			const linkButton = this.querySelector('[data-action="link"]');
+			if (linkButton) {
+				linkButton.classList.toggle("is-active", Boolean(this.#anchorAtSelection()));
+			}
+
+			const listContext = this.#selectionListContext();
+			const activeList = listContext
+				? (LIST_OPTIONS.find((item) => item.listType === listContext.kind) || LIST_OPTIONS[0])
+				: null;
+			this.querySelectorAll(".ppe__menu-item[data-list-type]").forEach((item) => {
+				item.classList.toggle("is-active", Boolean(activeList && item.dataset.listType === activeList.listType));
+			});
+
+			const activeUnderline = this.#getSelectionUnderlineStyle();
+			this.querySelectorAll("[data-underline-style]").forEach((item) => {
+				const style = item.dataset.underlineStyle;
+				if (style === "none") {
+					item.classList.toggle("is-active", !activeUnderline);
+					return;
+				}
+				item.classList.toggle("is-active", activeUnderline === style);
+			});
 		}
 
 		// ---- Link popover --------------------------------------------------
@@ -2162,7 +2040,7 @@
 				this.#closeLinkPopover();
 				return;
 			}
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			prose.focus();
 			this.#restoreSelection();
 			const selection = window.getSelection();
@@ -2180,7 +2058,7 @@
 		}
 
 		#removeLink() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			prose.focus();
 			this.#restoreSelection();
 			document.execCommand("unlink", false, null);
@@ -2382,115 +2260,13 @@
 		}
 
 		#insertTable() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			if (!prose) return;
 
 			const html = buildProfileTableHtml(this.#readTableModalOptions());
-			this.#insertHtmlIntoProse(`${html}<p><br></p>`);
+			this.#insertHtmlIntoRoot(`${html}<p><br></p>`);
 			this.#afterCommand();
 			this.#closeTableModal();
-		}
-
-		#bindChartContextMenu() {
-			const menu = this.querySelector(".ppe__chart-context-menu");
-			if (!menu) return;
-
-			menu.addEventListener("click", (event) => {
-				const item = event.target.closest("[data-chart-action]");
-				if (!item) return;
-				event.preventDefault();
-				const block = this.__chartContextTarget;
-				if (!block?.isConnected) {
-					this.#hideChartContextMenu();
-					return;
-				}
-				const action = item.dataset.chartAction;
-				this.#hideChartContextMenu();
-				if (action === "edit") this.#openChartEditor(block);
-				else if (action === "duplicate") this.#duplicateAtomicChart(block);
-				else if (action === "copy") void this.#copyAtomicChart(block);
-				else if (action === "delete") this.#removeAtomicBlock(block);
-			});
-
-			this.__onOutsideChartMenu = (event) => {
-				const menuEl = this.querySelector(".ppe__chart-context-menu");
-				if (menuEl?.hidden) return;
-				if (event.target.closest(".ppe__chart-context-menu")) return;
-				this.#hideChartContextMenu();
-			};
-			this.__hideChartContextMenuOnScroll = () => this.#hideChartContextMenu();
-			this.__onChartContextMenuKeydown = (event) => {
-				if (event.key === "Escape") this.#hideChartContextMenu();
-			};
-
-			document.addEventListener("mousedown", this.__onOutsideChartMenu);
-			document.addEventListener("scroll", this.__hideChartContextMenuOnScroll, true);
-			document.addEventListener("keydown", this.__onChartContextMenuKeydown);
-		}
-
-		#hideChartContextMenu() {
-			const menu = this.querySelector(".ppe__chart-context-menu");
-			if (!menu) return;
-			menu.hidden = true;
-			menu.setAttribute("aria-hidden", "true");
-			this.__chartContextTarget = null;
-		}
-
-		#showChartContextMenu(event, figure) {
-			const menu = this.querySelector(".ppe__chart-context-menu");
-			if (!menu || !figure) return;
-
-			this.#closeMenus();
-			this.#selectAtomicBlock(figure);
-			this.__chartContextTarget = figure;
-
-			menu.hidden = false;
-			menu.setAttribute("aria-hidden", "false");
-			menu.style.visibility = "hidden";
-			menu.style.left = "0px";
-			menu.style.top = "0px";
-
-			const padding = 8;
-			const rect = menu.getBoundingClientRect();
-			let x = event.clientX;
-			let y = event.clientY;
-			if (x + rect.width > window.innerWidth - padding) {
-				x = window.innerWidth - rect.width - padding;
-			}
-			if (y + rect.height > window.innerHeight - padding) {
-				y = window.innerHeight - rect.height - padding;
-			}
-			menu.style.left = `${Math.max(padding, x)}px`;
-			menu.style.top = `${Math.max(padding, y)}px`;
-			menu.style.visibility = "";
-		}
-
-		#duplicateAtomicChart(block) {
-			const { prose } = this.#els();
-			if (!block || !prose?.contains(block)) return;
-
-			const options = parseChartFromFigure(block);
-			const wrapper = document.createElement("div");
-			wrapper.innerHTML = buildProfileChartHtml(options);
-			const clone = wrapper.firstElementChild;
-			if (!clone) return;
-
-			prepareAtomicChartElement(clone);
-			block.insertAdjacentElement("afterend", clone);
-			this.#attachAtomicChartHandlers(clone);
-			this.#selectAtomicBlock(clone);
-			this.#afterCommand();
-		}
-
-		async #copyAtomicChart(block) {
-			if (!block) return;
-			const options = parseChartFromFigure(block);
-			this.__chartClipboard = options;
-			try {
-				await navigator.clipboard.writeText(JSON.stringify(options));
-			} catch (error) {
-				/* clipboard may be unavailable */
-			}
 		}
 
 		#bindChartModal() {
@@ -2616,7 +2392,13 @@
 		}
 
 		#openChartEditor(figure) {
-			this.#els().toolbar?.openChartEditor(figure);
+			if (!figure?.matches?.(ATOMIC_BLOCK_SELECTOR)) return;
+			this.__editingChart = figure;
+			this.#emitChartSelected(figure);
+			this.#setChartModalMode("edit");
+			this.#populateChartModal(parseChartFromFigure(figure));
+			this.#showChartModal();
+			this.querySelector(".ppe__chart-type")?.focus();
 		}
 
 		#closeChartModal() {
@@ -2629,19 +2411,8 @@
 			this.#setChartModalMode("insert");
 		}
 
-		#replaceChartFigure(figure, options) {
-			const wrapper = document.createElement("div");
-			wrapper.innerHTML = buildProfileChartHtml(options);
-			const replacement = wrapper.firstElementChild;
-			if (!replacement) return null;
-			figure.replaceWith(replacement);
-			prepareAtomicChartElement(replacement);
-			this.#attachAtomicChartHandlers(replacement);
-			return replacement;
-		}
-
 		#insertChart() {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			if (!prose) return;
 
 			const options = this.#readChartModalOptions();
@@ -2654,18 +2425,24 @@
 
 			const editing = this.__editingChart?.isConnected ? this.__editingChart : null;
 			const html = buildProfileChartHtml(options);
-			let chart = null;
 			if (editing) {
-				chart = this.#replaceChartFigure(editing, options);
+				const wrapper = document.createElement("div");
+				wrapper.innerHTML = buildProfileChartHtml(options);
+				const replacement = wrapper.firstElementChild;
+				if (replacement) {
+					editing.replaceWith(replacement);
+					prepareAtomicChartElement(replacement);
+					this.dispatchEvent(new CustomEvent("ppe-chart-replaced", { bubbles: true, detail: { figure: replacement, previous: editing } }));
+					this.#emitChartSelected(replacement);
+				}
 				prose.focus({ preventScroll: true });
 			} else {
-				this.#insertHtmlIntoProse(`${html}<p><br></p>`);
-				this.#wireAtomicBlocks(prose);
-				chart = prose.querySelector(`${ATOMIC_BLOCK_SELECTOR}:last-of-type`)
-					|| [...prose.querySelectorAll(ATOMIC_BLOCK_SELECTOR)].at(-1);
+				this.#insertHtmlIntoRoot(`${html}<p><br></p>`);
+				this.#wireCharts(prose);
+				const chart = [...prose.querySelectorAll(ATOMIC_BLOCK_SELECTOR)].at(-1);
+				if (chart) this.#emitChartSelected(chart);
 			}
 
-			if (chart) this.#selectAtomicBlock(chart);
 			this.#afterCommand();
 			this.#closeChartModal();
 		}
@@ -2704,7 +2481,7 @@
 			if (!apiUrl) return [];
 			try {
 				const url = new URL(apiUrl);
-				url.searchParams.set("person", this.__personId);
+				url.searchParams.set("person", this.#getPersonId());
 				const res = await fetch(url.href, gitHubFetchInit({ cache: "no-store" }));
 				const payload = await res.json().catch(() => null);
 				if (res.ok && payload?.ok) {
@@ -2736,10 +2513,8 @@
 				const caption = captionFromFileName(result.filename);
 				this.#insertImage(`images/${result.filename}`, caption);
 				if (result.payload?.pull_request?.url) {
-					this.#setStatus("Image submitted for review and inserted into the article.", "success");
-				} else {
-					this.#setStatus("Image uploaded and inserted into the article.", "success");
-				}
+									} else {
+									}
 				this.#closeMediaModal();
 			} catch (error) {
 				console.warn("Could not upload image", error);
@@ -2766,7 +2541,7 @@
 					filename,
 					caption: "",
 					content_base64: base64,
-					person_id: this.__personId,
+					person_id: this.#getPersonId(),
 				}),
 			}));
 
@@ -2788,538 +2563,25 @@
 		}
 
 		#insertImage(src, caption) {
-			const { prose } = this.#els();
+			const prose = this.#getRoot();
 			if (!prose) return;
 			const isRelative = !/^(https?:)?\/\//i.test(src) && !src.startsWith("data:");
 			const displaySrc = isRelative ? this.#resolveImageUrl(src) : src;
 			const dataAttr = isRelative ? ` data-ppe-src="${escapeHtml(src)}"` : "";
 			const cap = escapeHtml(caption || "");
 			const html = `<figure class="profile-figure"><img src="${escapeHtml(displaySrc)}"${dataAttr} alt="${cap}"><figcaption>${cap || "Add a caption"}</figcaption></figure>`;
-			this.#insertHtmlIntoProse(`${html}<p><br></p>`);
+			this.#insertHtmlIntoRoot(`${html}<p><br></p>`);
 			this.#afterCommand();
 		}
-
-		async #loadExisting() {
-			this.#setStatus("Loading…");
-			let parsed = null;
-			if (!(await isDraftProfile(this.__personId))) {
-				const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/profile.html`));
-				if (response) {
-					parsed = parseProfileFragment(await response.text());
-				}
-			}
-
-			if (!parsed) {
-				parsed = { headerComment: "", title: "", infoboxMarkup: "", infoboxIsInclude: false, infoboxCanonical: false, proseHtml: "<p></p>" };
-			}
-
-			this.__headerComment = parsed.headerComment;
-			this.__infoboxMarkup = parsed.infoboxMarkup;
-			this.__infoboxIsInclude = parsed.infoboxIsInclude;
-			this.__infoboxCanonical = parsed.infoboxCanonical;
-			this.__hadInfoboxNode = Boolean(parsed.infoboxMarkup);
-			this.__displayName = parsed.title;
-			// Let the shell label the breadcrumb with the profile name. The infobox
-			// overrides this if it carries an explicit display name.
-			if (parsed.title) {
-				document.dispatchEvent(new CustomEvent("profile-display-name-change", { detail: { name: parsed.title } }));
-			}
-
-			const { title, prose } = this.#els();
-			if (title) title.textContent = parsed.title;
-			if (prose) {
-				prose.innerHTML = parsed.proseHtml;
-				// Resolve image paths (relative to data/) for display, remembering
-				// the originals so they round-trip unchanged on save. Links are left
-				// alone — like the live page, only images are rewritten.
-				this.#rewriteImagesForDisplay(prose, { track: true });
-				// Show {{APP_NAME}} as the brand name (preserved on save).
-				applyBrandTokensForDisplay(prose);
-				this.#wireAtomicBlocks(prose);
-				this.#syncProsePlaceholder();
-			}
-			this.__savedProse = this.#getProseHtml();
-
-			await this.#renderInfobox();
-			this.#updateToolbarState();
-			this.#setStatus("");
-		}
-
-		#resolveImageUrl(src) {
-			if (!src || isAbsoluteUrl(src) || src.startsWith("data:")) return src;
-			const normalized = src.replace(/^\.?\//, "");
-			if (normalized.startsWith("assets/")) return resolveSiteUrl(normalized);
-			return resolveSiteUrl(`people/${this.__personId}/data/${normalized}`);
-		}
-
-		#rewriteImagesForDisplay(root, { track = false } = {}) {
-			root.querySelectorAll("img[src]").forEach((img) => {
-				const src = img.getAttribute("src");
-				if (!src || isAbsoluteUrl(src) || src.startsWith("data:")) return;
-				if (track) img.setAttribute("data-ppe-src", src);
-				img.setAttribute("src", this.#resolveImageUrl(src));
-			});
-		}
-
-		// Render the floated identity card. Prefer the live infobox editor's
-		// current data (so edits show immediately); fall back to the stored file.
-		// The <aside> is a direct sibling of the prose so the article text wraps
-		// around it exactly like the live page.
-		async #renderInfobox() {
-			const { canvas, prose } = this.#els();
-			if (!canvas || !prose) return;
-
-			let aside = null;
-			let identityHtml = "";
-
-			const infoboxEl = document.querySelector("profile-infobox-editor");
-			const infoboxPreviewReady = typeof infoboxEl?.isPreviewReady === "function"
-				? infoboxEl.isPreviewReady()
-				: true;
-			if (infoboxPreviewReady && infoboxEl && typeof infoboxEl.getIdentityFragmentHtml === "function") {
-				try {
-					identityHtml = infoboxEl.getIdentityFragmentHtml();
-					aside = renderIdentityAside(identityHtml);
-				} catch (error) {
-					aside = null;
-				}
-			}
-
-			if (!aside && !(await isDraftProfile(this.__personId))) {
-				if (this.__infoboxIsInclude) {
-					const src = this.#includeSrc();
-					if (src) {
-						const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/${src}`));
-						if (response) {
-							identityHtml = await response.text();
-							aside = renderIdentityAside(identityHtml);
-						}
-					}
-				} else if (this.__infoboxMarkup) {
-					identityHtml = this.__infoboxMarkup;
-					aside = renderIdentityAside(identityHtml);
-				}
-			}
-
-			canvas.querySelector("aside.ppe__infobox")?.remove();
-			if (aside) {
-				if (!identityHtmlHasPhoto(identityHtml)) {
-					ensurePreviewPhoto(aside, resolveSiteUrl(DEFAULT_PROFILE_PHOTO));
-				}
-				if (!identityHtmlHasName(identityHtml)) {
-					ensurePreviewName(aside);
-				}
-				if (!identityHtmlHasBirth(identityHtml)) {
-					ensurePreviewBirth(aside);
-				}
-				this.#rewriteImagesForDisplay(aside);
-				this.#wireInfoboxPhoto(aside, infoboxEl);
-				this.#wireInfoboxQuickEdits(aside, infoboxEl);
-				aside.classList.add("ppe__infobox");
-				aside.setAttribute("contenteditable", "false");
-				const note = document.createElement("button");
-				note.type = "button";
-				note.className = "ppe__infobox-note";
-				note.innerHTML = '<i class="bi bi-pencil" aria-hidden="true"></i> Edit Identity Details';
-				note.addEventListener("click", (event) => {
-					event.stopPropagation();
-					document.dispatchEvent(
-						new CustomEvent("profile-editor-activate-tab", { detail: { tab: "infobox" } }),
-					);
-				});
-				aside.append(note);
-				// Float must share a containing block with the prose to wrap it.
-				canvas.insertBefore(aside, prose);
-			}
-		}
-
-		#buildQuickEditorHtml(config) {
-			if (config.type === "select") {
-				const options = (config.options || []).map((option) => {
-					const selected = option.value === config.value ? " selected" : "";
-					return `<option value="${escapeHtml(option.value)}"${selected}>${escapeHtml(option.label)}</option>`;
-				}).join("");
-				return `<select class="ppe__infobox-field-input">${options}</select>`;
-			}
-
-			if (config.type === "textarea") {
-				const rows = Number(config.rows) > 0 ? Number(config.rows) : 2;
-				const placeholder = config.placeholder ? ` placeholder="${escapeHtml(config.placeholder)}"` : "";
-				return `<textarea class="ppe__infobox-field-input" rows="${rows}"${placeholder}>${escapeHtml(config.value || "")}</textarea>`;
-			}
-
-			if (config.type === "date") {
-				return `<span class="pie__date-input-wrap ppe__infobox-date-wrap">
-					<input type="date" class="ppe__infobox-field-input pie__date-input" value="${escapeHtml(config.value || "")}">
-					<button type="button" class="pie__date-picker-button" aria-label="Choose date">
-						<i class="bi bi-calendar3" aria-hidden="true"></i>
-					</button>
-				</span>`;
-			}
-
-			if (config.type === "name") {
-				const fields = config.fields || {};
-				const nameInput = (key, placeholder) => `<input type="text" class="ppe__infobox-field-input" data-name-field="${key}" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(fields[key] || "")}">`;
-				return `<div class="ppe__infobox-name-fields">
-					${nameInput("title", "Title")}
-					<div class="ppe__infobox-name-split">
-						${nameInput("firstName", "First Name")}
-						${nameInput("middleName", "Middle Name")}
-					</div>
-					<div class="ppe__infobox-name-split">
-						${nameInput("lastName", "Last Name")}
-						${nameInput("suffix", "Suffix")}
-					</div>
-					${nameInput("birthSurname", "Birth Surname")}
-				</div>`;
-			}
-
-			return `<input type="text" class="ppe__infobox-field-input" value="${escapeHtml(config.value || "")}">`;
-		}
-
-		#closeQuickFieldEditor(td) {
-			if (!td) return;
-			const valueEl = td.querySelector(".ppe__infobox-value");
-			const editorEl = td.querySelector(".ppe__infobox-field-editor");
-			const editBtn = td.querySelector(".ppe__infobox-field-edit");
-			const saveBtn = td.querySelector(".ppe__infobox-field-save");
-			const cancelBtn = td.querySelector(".ppe__infobox-field-cancel");
-			if (valueEl) valueEl.hidden = false;
-			if (editorEl) {
-				editorEl.hidden = true;
-				editorEl.innerHTML = "";
-			}
-			if (editBtn) editBtn.hidden = false;
-			if (saveBtn) saveBtn.hidden = true;
-			if (cancelBtn) cancelBtn.hidden = true;
-			td.classList.remove("is-editing");
-		}
-
-		#openQuickFieldEditor(td, infoboxEl, label) {
-			const config = infoboxEl.getQuickEditForLabel?.(label);
-			if (!config) return;
-
-			td.closest("aside")?.querySelectorAll(".ppe__infobox-field.is-editing").forEach((cell) => {
-				this.#closeQuickFieldEditor(cell);
-			});
-
-			const valueEl = td.querySelector(".ppe__infobox-value");
-			const editorEl = td.querySelector(".ppe__infobox-field-editor");
-			const editBtn = td.querySelector(".ppe__infobox-field-edit");
-			const saveBtn = td.querySelector(".ppe__infobox-field-save");
-			const cancelBtn = td.querySelector(".ppe__infobox-field-cancel");
-			if (!valueEl || !editorEl || !editBtn || !saveBtn || !cancelBtn) return;
-
-			editorEl.innerHTML = this.#buildQuickEditorHtml(config);
-			valueEl.hidden = true;
-			editorEl.hidden = false;
-			editBtn.hidden = true;
-			saveBtn.hidden = false;
-			cancelBtn.hidden = false;
-			td.classList.add("is-editing");
-
-			const readEditorValue = () => {
-				if (config.type === "name") {
-					const values = {};
-					editorEl.querySelectorAll("[data-name-field]").forEach((field) => {
-						values[field.dataset.nameField] = field.value;
-					});
-					return values;
-				}
-
-				const primaryInput = editorEl.querySelector(".ppe__infobox-field-input");
-				return primaryInput?.tagName === "SELECT" ? primaryInput.value : primaryInput?.value;
-			};
-
-			const input = editorEl.querySelector(".ppe__infobox-field-input");
-			if (config.type === "date") {
-				const dateInput = editorEl.querySelector('input[type="date"]');
-				const pickerBtn = editorEl.querySelector(".pie__date-picker-button");
-				const openPicker = () => {
-					if (!dateInput || dateInput.disabled) {
-						return;
-					}
-					dateInput.focus({ preventScroll: true });
-					try {
-						if (typeof dateInput.showPicker === "function") {
-							dateInput.showPicker();
-						}
-					} catch (error) {
-						// showPicker may be blocked outside a direct user gesture.
-					}
-				};
-				dateInput?.addEventListener("click", openPicker);
-				pickerBtn?.addEventListener("click", (event) => {
-					event.preventDefault();
-					openPicker();
-				});
-				dateInput?.focus();
-			} else if (config.type === "name") {
-				editorEl.querySelector('[data-name-field="firstName"]')?.focus();
-			} else {
-				input?.focus();
-			}
-
-			const finish = (apply) => {
-				if (apply) {
-					if (infoboxEl.applyQuickEdit?.(label, readEditorValue())) {
-						this.refreshInfoboxPreview();
-						return;
-					}
-				}
-				this.#closeQuickFieldEditor(td);
-			};
-
-			saveBtn.addEventListener("click", (event) => {
-				event.stopPropagation();
-				finish(true);
-			}, { once: true });
-
-			cancelBtn.addEventListener("click", (event) => {
-				event.stopPropagation();
-				finish(false);
-			}, { once: true });
-
-			const handleEditorKeydown = (event) => {
-				if (config.type === "name" && !event.target.matches("[data-name-field]")) {
-					return;
-				}
-				if (event.key === "Escape") {
-					event.preventDefault();
-					event.stopPropagation();
-					finish(false);
-				} else if (event.key === "Enter" && event.target.tagName !== "TEXTAREA" && !event.shiftKey) {
-					event.preventDefault();
-					finish(true);
-				}
-			};
-
-			if (config.type === "name") {
-				editorEl.addEventListener("keydown", handleEditorKeydown, { once: true });
-			} else {
-				input?.addEventListener("keydown", handleEditorKeydown, { once: true });
-			}
-		}
-
-		#wireInfoboxQuickEdits(aside, infoboxEl) {
-			if (!infoboxEl?.getQuickEditForLabel) return;
-
-			aside.querySelectorAll("tbody tr").forEach((row) => {
-				if (row.classList.contains("ppe__infobox-photo-row")) return;
-
-				const th = row.querySelector("th");
-				const td = row.querySelector("td");
-				if (!th || !td || td.classList.contains("ppe__infobox-field")) return;
-
-				const label = th.textContent.trim();
-				if (!infoboxEl.getQuickEditForLabel(label)) return;
-
-				td.classList.add("ppe__infobox-field");
-				td.dataset.fieldLabel = label;
-
-				const main = document.createElement("div");
-				main.className = "ppe__infobox-field-main";
-
-				const valueEl = document.createElement("span");
-				valueEl.className = "ppe__infobox-value";
-				valueEl.innerHTML = td.innerHTML;
-
-				const editorEl = document.createElement("div");
-				editorEl.className = "ppe__infobox-field-editor";
-				editorEl.hidden = true;
-
-				main.append(valueEl, editorEl);
-
-				const controls = document.createElement("div");
-				controls.className = "ppe__infobox-field-controls";
-
-				const editBtn = document.createElement("button");
-				editBtn.type = "button";
-				editBtn.className = "ppe__infobox-field-edit";
-				editBtn.setAttribute("aria-label", `Edit ${label}`);
-				editBtn.innerHTML = '<i class="bi bi-pencil" aria-hidden="true"></i>';
-
-				const saveBtn = document.createElement("button");
-				saveBtn.type = "button";
-				saveBtn.className = "ppe__infobox-field-save";
-				saveBtn.setAttribute("aria-label", `Save ${label}`);
-				saveBtn.hidden = true;
-				saveBtn.innerHTML = '<i class="bi bi-check-lg" aria-hidden="true"></i>';
-
-				const cancelBtn = document.createElement("button");
-				cancelBtn.type = "button";
-				cancelBtn.className = "ppe__infobox-field-cancel";
-				cancelBtn.setAttribute("aria-label", `Cancel editing ${label}`);
-				cancelBtn.hidden = true;
-				cancelBtn.innerHTML = '<i class="bi bi-x-lg" aria-hidden="true"></i>';
-
-				controls.append(editBtn, saveBtn, cancelBtn);
-				td.replaceChildren(main, controls);
-
-				editBtn.addEventListener("click", (event) => {
-					event.stopPropagation();
-					this.#openQuickFieldEditor(td, infoboxEl, label);
-				});
-			});
-		}
-
-		#wireInfoboxPhoto(aside, infoboxEl) {
-			const img = aside.querySelector("tbody img");
-			if (!img || !infoboxEl || typeof infoboxEl.openPhotoEditor !== "function") return;
-
-			const row = img.closest("tr");
-			if (row) row.classList.add("ppe__infobox-photo-row");
-
-			let frame = img.closest(".ppe__infobox-photo-frame");
-			if (!frame) {
-				frame = document.createElement("div");
-				frame.className = "ppe__infobox-photo-frame";
-				img.parentNode.insertBefore(frame, img);
-				frame.append(img);
-			}
-
-			if (!frame.querySelector(".ppe__infobox-photo-actions")) {
-				const actions = document.createElement("div");
-				actions.className = "ppe__infobox-photo-actions";
-				actions.setAttribute("role", "group");
-				actions.setAttribute("aria-label", "Profile photo");
-				actions.innerHTML = `
-					<button type="button" class="ppe__infobox-photo-action ppe__infobox-photo-action--change" aria-label="Change profile photo">
-						<i class="bi bi-camera" aria-hidden="true"></i>
-						<span>Change photo</span>
-					</button>
-					<button type="button" class="ppe__infobox-photo-action ppe__infobox-photo-action--remove" aria-label="Remove profile photo" hidden>
-						<i class="bi bi-trash" aria-hidden="true"></i>
-						<span>Remove photo</span>
-					</button>
-				`;
-				frame.append(actions);
-			}
-
-			const changeBtn = frame.querySelector(".ppe__infobox-photo-action--change");
-			const removeBtn = frame.querySelector(".ppe__infobox-photo-action--remove");
-			const hasRealPhoto = !img.classList.contains("ppe__infobox-photo--example");
-			const changeLabel = changeBtn?.querySelector("span");
-			if (changeLabel) changeLabel.textContent = hasRealPhoto ? "Change photo" : "Add photo";
-			if (removeBtn) removeBtn.hidden = !hasRealPhoto;
-
-			if (!frame.dataset.photoEditorBound) {
-				frame.dataset.photoEditorBound = "1";
-				changeBtn?.addEventListener("click", (event) => {
-					event.stopPropagation();
-					event.preventDefault();
-					void infoboxEl.openPhotoEditor();
-				});
-				removeBtn?.addEventListener("click", (event) => {
-					event.stopPropagation();
-					event.preventDefault();
-					infoboxEl.removePhoto?.();
-				});
-			}
-		}
-
-		#includeSrc() {
-			const match = this.__infoboxMarkup.match(/src=["']([^"']+)["']/i);
-			const src = match ? match[1].trim() : "profile-table.html";
-			return src.replace(/^\.?\//, "");
-		}
-
-		// Public: refresh the floated infobox + title from the infobox editor.
-		// Called when the Page tab becomes active.
-		refreshInfoboxPreview() {
-			void this.#renderInfobox();
-		}
-
-		// Public: keep the rendered <h1> in step with the infobox display name.
-		setDisplayName(name) {
-			const clean = String(name || "").trim();
-			if (!clean) return;
-			this.__displayName = clean;
-			const { title } = this.#els();
-			if (title) title.textContent = clean;
-		}
-
-		#getProseHtml() {
-			const { prose } = this.#els();
-			if (!prose) return "";
-			const clone = prose.cloneNode(true);
-			// Restore original (relative) image paths so the saved file is unchanged.
-			clone.querySelectorAll("img[data-ppe-src]").forEach((img) => {
-				img.setAttribute("src", img.getAttribute("data-ppe-src"));
-				img.removeAttribute("data-ppe-src");
-			});
-			// Turn brand chips back into {{APP_NAME}} tokens.
-			restoreBrandTokens(clone);
-			// Drop any inline styles execCommand may have added (we use tag-based
-			// formatting), but otherwise leave the markup as-is so existing files
-			// keep their <b>/<i> conventions and diffs stay small.
-			clone.querySelectorAll("[style]").forEach((el) => el.removeAttribute("style"));
-			return clone.innerHTML.replace(/\s+$/g, "").trim();
-		}
-
-		isDirty() {
-			return this.#getProseHtml() !== this.__savedProse;
-		}
-
-		setSavedBaseline() {
-			this.__savedProse = this.#getProseHtml();
-			// After a save, profile.html now carries the canonical include.
-			if (this.#hasInfobox()) {
-				this.__hadInfoboxNode = true;
-				this.__infoboxCanonical = true;
-			}
-		}
-
-		#infoboxEditorHasData() {
-			const el = document.querySelector("profile-infobox-editor");
-			if (el && typeof el.getIdentityFragmentHtml === "function") {
-				return Boolean(renderIdentityAside(el.getIdentityFragmentHtml()));
-			}
-			return false;
-		}
-
-		#hasInfobox() {
-			return Boolean(this.__hadInfoboxNode) || this.#infoboxEditorHasData();
-		}
-
-		// True when profile.html must be (re)written to adopt the canonical
-		// <include> — either a legacy inline identity is being converted, or a
-		// profile that had no infobox just gained one on the Identity tab.
-		hasPendingInfoboxStructureChange() {
-			return this.#hasInfobox() && !this.__infoboxCanonical;
-		}
-
-		// When converting a legacy inline identity to the include form, also write
-		// the fragment file so the new <include> resolves. The infobox editor's
-		// richer fragment supersedes this whenever it is the file being saved.
-		getInfoboxMigrationFile() {
-			if (this.__infoboxCanonical || !this.__infoboxMarkup || !this.__infoboxMarkup.includes("profile-identity")) {
-				return null;
-			}
-			return {
-				path: `people/${this.__personId}/data/profile-table.html`,
-				content: `<!-- Profile identity table fragment -->\n${this.__infoboxMarkup}\n`,
-			};
-		}
-
-		// Reconstruct the full profile.html fragment for publishing. The infobox is
-		// always written as the canonical <include> so no profile is ever inline.
-		getPublishFile() {
-			const prose = this.#getProseHtml() || "<p></p>";
-			const parts = [];
-			if (this.__headerComment) parts.push(this.__headerComment);
-			parts.push(`<h1>${escapeHtml(this.__displayName || "")}</h1>`);
-			if (this.#hasInfobox()) parts.push('<include src="profile-table.html"></include>');
-			parts.push(prose);
-			const content = `${parts.join("\n\n")}\n`;
-			return {
-				path: `people/${this.__personId}/data/profile.html`,
-				content,
-			};
-		}
 	}
 
-	if (!customElements.get("profile-page-editor")) {
-		customElements.define("profile-page-editor", ProfilePageEditor);
-	}
+	customElements.define("profile-prose-toolbar", ProfileProseToolbar);
+
+	window.ProfileProseToolbar = {
+		buildProfileChartHtml,
+		buildProfileTableHtml,
+		prepareAtomicChartElement,
+		parseChartFromFigure,
+		ATOMIC_BLOCK_SELECTOR,
+	};
 })();

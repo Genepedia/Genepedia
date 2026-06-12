@@ -508,6 +508,130 @@ body.theme-dark .profile-edit__match-card p {
 }
 
 /* Formatting toolbar */
+.ppe__toolbar-host {
+  display: block;
+}
+
+profile-prose-toolbar.page-editor__format-toolbar {
+  display: block;
+  border-bottom: var(--border-subtle, 1px solid rgba(0, 0, 0, 0.12));
+  background: var(--background-color-neutral-subtle, #f8f9fa);
+}
+
+body.theme-dark profile-prose-toolbar.page-editor__format-toolbar {
+  background: var(--background-color-neutral-subtle, #313438);
+}
+
+profile-prose-toolbar.page-editor__format-toolbar .ppe__toolbar {
+  position: static;
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.ppe__add-block-panel {
+  width: min(26rem, calc(100vw - 1.5rem));
+  padding: 0.5rem;
+}
+
+.ppe__add-block-body {
+  max-height: inherit;
+  overflow: auto;
+}
+
+.ppe__add-block-panel .page-editor__inserter-section + .page-editor__inserter-section {
+  margin-top: 0.65rem;
+}
+
+.ppe__add-block-panel .page-editor__inserter-section-title {
+  margin-bottom: 0.4rem;
+  font-size: 0.72rem;
+}
+
+.ppe__add-block-panel .page-editor__inserter-grid--compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.75rem, 1fr));
+  gap: 0.35rem;
+}
+
+.ppe__add-block-panel .page-editor__inserter-item--compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.3rem;
+  min-height: 4.25rem;
+  padding: 0.5rem 0.35rem;
+  text-align: center;
+}
+
+.ppe__add-block-panel .page-editor__inserter-item--compact i {
+  font-size: 1.15rem;
+  color: var(--color-progressive, #3366cc);
+}
+
+.ppe__add-block-panel .page-editor__inserter-item--compact .page-editor__inserter-item-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.ppe__add-block-panel .page-editor__inserter-item--compact.is-disabled i,
+.ppe__add-block-panel .page-editor__inserter-item--compact:disabled i {
+  color: var(--color-subtle, #72777d);
+}
+
+.ppe__tool-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.page-editor__inserter-item.is-disabled,
+.page-editor__inserter-item:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.page-editor__inserter-item.is-disabled:hover,
+.page-editor__inserter-item:disabled:hover {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: var(--background-color-base, #ffffff);
+}
+
+.page-editor__inserter-item-reason {
+  margin-top: 0.15rem;
+  color: var(--color-subtle, #72777d);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+body.theme-dark .page-editor__inserter-item.is-disabled:hover,
+body.theme-dark .page-editor__inserter-item:disabled:hover {
+  background: var(--background-color-base, #202122);
+}
+
+.ppe__block-inserter .page-editor__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--border-radius-base, 0.125rem);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ppe__block-inserter .page-editor__icon-button:hover {
+  background: var(--background-color-interactive-subtle, #f1f3f5);
+}
+
 .ppe__toolbar {
   position: sticky;
   top: calc(var(--header-chrome-height, 55px) + 3rem);
@@ -521,7 +645,6 @@ body.theme-dark .profile-edit__match-card p {
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 0.5rem;
   background: rgba(248, 249, 250, 0.97);
-  backdrop-filter: blur(4px);
 }
 
 body.theme-dark .ppe__toolbar {
@@ -574,6 +697,10 @@ body.theme-dark .ppe__tool:hover {
   height: 1.4rem;
   margin: 0 0.25rem;
   background: rgba(0, 0, 0, 0.12);
+}
+
+.ppe__toolbar-sep + .ppe__toolbar-sep {
+  display: none;
 }
 
 body.theme-dark .ppe__toolbar-sep {
@@ -650,6 +777,19 @@ body.theme-dark .ppe__toolbar-sep {
   border-radius: 0.4rem;
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.ppe__menu-panel--fixed {
+  position: fixed !important;
+  z-index: 120;
+  top: auto;
+  left: auto;
+  right: auto;
+  bottom: auto;
+}
+
+.ppe__menu-panel--portaled {
+  margin: 0;
 }
 
 .ppe__menu--align-end .ppe__menu-panel {
@@ -803,80 +943,68 @@ body.theme-dark .ppe__menu.is-open .ppe__menu-toggle {
 
 .ppe__underline-preview-line.ppe-u--dotted::after {
   height: 1px;
-  background: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 2px,
-    transparent 2px,
-    transparent 5px
-  );
+  background: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 2px,
+      transparent 2px,
+      transparent 5px);
 }
 
 .ppe__underline-preview-line.ppe-u--dotted-thick::after {
   height: 3px;
-  background: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 3px,
-    transparent 3px,
-    transparent 7px
-  );
+  background: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 3px,
+      transparent 3px,
+      transparent 7px);
 }
 
 .ppe__underline-preview-line.ppe-u--dashed::after {
   height: 1px;
-  background: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 4px,
-    transparent 4px,
-    transparent 7px
-  );
+  background: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 4px,
+      transparent 4px,
+      transparent 7px);
 }
 
 .ppe__underline-preview-line.ppe-u--dashed-long::after {
   height: 1px;
-  background: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 0.7rem,
-    transparent 0.7rem,
-    transparent 1rem
-  );
+  background: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 0.7rem,
+      transparent 0.7rem,
+      transparent 1rem);
 }
 
 .ppe__underline-preview-line.ppe-u--dash-dot::after {
   height: 1px;
-  background: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 0.55rem,
-    transparent 0.55rem,
-    transparent 0.65rem,
-    currentColor 0.65rem,
-    currentColor 0.72rem,
-    transparent 0.72rem,
-    transparent 1.1rem
-  );
+  background: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 0.55rem,
+      transparent 0.55rem,
+      transparent 0.65rem,
+      currentColor 0.65rem,
+      currentColor 0.72rem,
+      transparent 0.72rem,
+      transparent 1.1rem);
 }
 
 .ppe__underline-preview-line.ppe-u--dash-dot-dot::after {
   height: 1px;
-  background: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 0.5rem,
-    transparent 0.5rem,
-    transparent 0.58rem,
-    currentColor 0.58rem,
-    currentColor 0.65rem,
-    transparent 0.65rem,
-    transparent 0.73rem,
-    currentColor 0.73rem,
-    currentColor 0.8rem,
-    transparent 0.8rem,
-    transparent 1.2rem
-  );
+  background: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 0.5rem,
+      transparent 0.5rem,
+      transparent 0.58rem,
+      currentColor 0.58rem,
+      currentColor 0.65rem,
+      transparent 0.65rem,
+      transparent 0.73rem,
+      currentColor 0.73rem,
+      currentColor 0.8rem,
+      transparent 0.8rem,
+      transparent 1.2rem);
 }
 
 .ppe__underline-preview-line.ppe-u--wavy::after {
@@ -908,7 +1036,7 @@ body.theme-dark .ppe__menu.is-open .ppe__menu-toggle {
   overflow-y: auto;
 }
 
-.ppe__special-chars-group + .ppe__special-chars-group {
+.ppe__special-chars-group+.ppe__special-chars-group {
   margin-top: 0.55rem;
 }
 
@@ -1004,47 +1132,41 @@ body.theme-dark .ppe__special-char:focus-visible {
 }
 
 .ppe__prose u.ppe-u--dashed-long {
-  background-image: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 0.7rem,
-    transparent 0.7rem,
-    transparent 1rem
-  );
+  background-image: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 0.7rem,
+      transparent 0.7rem,
+      transparent 1rem);
   background-size: 1rem 1px;
 }
 
 .ppe__prose u.ppe-u--dash-dot {
-  background-image: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 0.55rem,
-    transparent 0.55rem,
-    transparent 0.65rem,
-    currentColor 0.65rem,
-    currentColor 0.72rem,
-    transparent 0.72rem,
-    transparent 1.1rem
-  );
+  background-image: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 0.55rem,
+      transparent 0.55rem,
+      transparent 0.65rem,
+      currentColor 0.65rem,
+      currentColor 0.72rem,
+      transparent 0.72rem,
+      transparent 1.1rem);
   background-size: 1.1rem 1px;
 }
 
 .ppe__prose u.ppe-u--dash-dot-dot {
-  background-image: repeating-linear-gradient(
-    to right,
-    currentColor 0,
-    currentColor 0.5rem,
-    transparent 0.5rem,
-    transparent 0.58rem,
-    currentColor 0.58rem,
-    currentColor 0.65rem,
-    transparent 0.65rem,
-    transparent 0.73rem,
-    currentColor 0.73rem,
-    currentColor 0.8rem,
-    transparent 0.8rem,
-    transparent 1.2rem
-  );
+  background-image: repeating-linear-gradient(to right,
+      currentColor 0,
+      currentColor 0.5rem,
+      transparent 0.5rem,
+      transparent 0.58rem,
+      currentColor 0.58rem,
+      currentColor 0.65rem,
+      transparent 0.65rem,
+      transparent 0.73rem,
+      currentColor 0.73rem,
+      currentColor 0.8rem,
+      transparent 0.8rem,
+      transparent 1.2rem);
   background-size: 1.2rem 1px;
 }
 
@@ -1305,6 +1427,21 @@ body.theme-dark .ppe__canvas aside th {
 .ppe__prose [data-indent="8"],
 .people-page__content [data-indent="8"] {
   margin-left: 16em;
+}
+
+.ppe__prose [data-align="center"],
+.people-page__content [data-align="center"] {
+  text-align: center;
+}
+
+.ppe__prose [data-align="right"],
+.people-page__content [data-align="right"] {
+  text-align: right;
+}
+
+.ppe__prose [data-align="justify"],
+.people-page__content [data-align="justify"] {
+  text-align: justify;
 }
 
 .ppe__prose:focus-visible {
@@ -2146,7 +2283,7 @@ body.theme-dark .ppe__chart-context-item--danger:focus-visible {
   color: #f87171;
 }
 
-.people-page__content:has(> aside) > figure.ppe-profile-chart {
+.people-page__content:has(> aside)>figure.ppe-profile-chart {
   max-width: calc(100% - min(50%, 20rem) - 1.25rem);
 }
 
