@@ -598,6 +598,23 @@ body.theme-dark .ppe__toolbar-sep {
   padding: 0 0.45rem 0 0.35rem;
 }
 
+.ppe__menu-toggle-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.ppe__menu[data-menu-group="special-chars"] .ppe__menu-toggle {
+  min-width: 2.85rem;
+}
+
+.ppe__menu-toggle-mark--omega {
+  min-width: 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .ppe__menu-toggle-label {
   max-width: 9rem;
   overflow: hidden;
@@ -933,52 +950,6 @@ body.theme-dark .ppe__special-char:focus-visible {
   border-color: rgba(107, 158, 255, 0.4);
   background: rgba(107, 158, 255, 0.16);
   color: #6b9eff;
-}
-
-.ppe__special-chars-custom {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.45rem;
-  align-items: end;
-  margin-top: 0.65rem;
-  padding-top: 0.55rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-body.theme-dark .ppe__special-chars-custom {
-  border-top-color: rgba(255, 255, 255, 0.12);
-}
-
-.ppe__special-chars-custom-label {
-  display: grid;
-  gap: 0.25rem;
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-subtle, #72777d);
-}
-
-.ppe__special-chars-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0.3rem 0.45rem;
-  border: 1px solid rgba(51, 102, 204, 0.35);
-  border-radius: 0.125rem;
-  background: #ffffff;
-  color: inherit;
-  font: inherit;
-  font-size: 0.9rem;
-}
-
-body.theme-dark .ppe__special-chars-input {
-  border-color: rgba(107, 158, 255, 0.35);
-  background: #101418;
-}
-
-.ppe__special-chars-insert {
-  min-height: 2rem;
-  padding: 0.3rem 0.65rem;
-  white-space: nowrap;
 }
 
 .ppe__prose u,

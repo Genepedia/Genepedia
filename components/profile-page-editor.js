@@ -148,16 +148,46 @@
 				"í", "ì", "î", "ï",
 				"ó", "ò", "ô", "ö", "õ", "ø", "œ",
 				"ú", "ù", "û", "ü",
-				"ñ", "ç", "ý", "ÿ", "ß", "ł", "đ",
+				"ý", "ÿ", "ñ", "ç", "ß", "ł", "đ", "ð", "þ",
+			],
+		},
+		{
+			label: "Accents (caps)",
+			characters: [
+				"Á", "À", "Â", "Ä", "Ã", "Å", "Æ",
+				"É", "È", "Ê", "Ë",
+				"Í", "Ì", "Î", "Ï",
+				"Ó", "Ò", "Ô", "Ö", "Õ", "Ø", "Œ",
+				"Ú", "Ù", "Û", "Ü",
+				"Ý", "Ñ", "Ç", "Ł", "Đ", "Þ", "Ð",
 			],
 		},
 		{
 			label: "Punctuation",
-			characters: ["–", "—", "…", "·", "°", "′", "″", "§", "¶", "†", "‡", "©", "®"],
+			characters: [
+				"–", "—", "…", "·", "•", "°", "′", "″",
+				"§", "¶", "†", "‡", "©", "®", "™", "№",
+				"¿", "¡", "‰", "‱", "※", "⁂",
+			],
 		},
 		{
 			label: "Quotes",
-			characters: ["‘", "’", "“", "”", "«", "»"],
+			characters: ["‘", "’", "‚", "“", "”", "„", "«", "»", "‹", "›"],
+		},
+		{
+			label: "Math",
+			characters: [
+				"×", "÷", "±", "∓", "≈", "≠", "≤", "≥",
+				"∞", "√", "∑", "∂", "µ", "π",
+			],
+		},
+		{
+			label: "Fractions",
+			characters: ["½", "¼", "¾", "⅓", "⅔", "⅛", "⅜", "⅝", "⅞"],
+		},
+		{
+			label: "Currency",
+			characters: ["$", "€", "£", "¥", "¢", "₩", "₹", "₽"],
 		},
 	];
 
@@ -274,19 +304,12 @@
 	function renderSpecialCharsMenu() {
 		return `
 			<div class="ppe__menu" data-menu-group="special-chars">
-				<button type="button" class="ppe__tool ppe__menu-toggle" data-menu-toggle="special-chars" aria-haspopup="menu" aria-expanded="false" title="Special characters">
-					<i class="bi bi-omega ppe__menu-toggle-icon" aria-hidden="true"></i>
+				<button type="button" class="ppe__tool ppe__menu-toggle" data-menu-toggle="special-chars" aria-haspopup="menu" aria-expanded="false" aria-label="Special characters" title="Special characters">
+					<span class="ppe__menu-toggle-mark ppe__menu-toggle-mark--omega" aria-hidden="true">Ω</span>
 					<i class="bi bi-chevron-down ppe__menu-caret" aria-hidden="true"></i>
 				</button>
 				<div class="ppe__menu-panel ppe__special-chars-panel" hidden>
 					${renderSpecialCharacterGroups()}
-					<div class="ppe__special-chars-custom">
-						<label class="ppe__special-chars-custom-label">
-							<span>Add character</span>
-							<input type="text" class="ppe__special-chars-input" maxlength="4" placeholder="Type a character" autocomplete="off" spellcheck="false">
-						</label>
-						<button type="button" class="ppe__btn ppe__special-chars-insert">Insert</button>
-					</div>
 				</div>
 			</div>`;
 	}
@@ -1258,9 +1281,6 @@
 		#bindToolbar() {
 			const { toolbar } = this.#els();
 			toolbar?.addEventListener("mousedown", (event) => {
-				if (event.target.closest(".ppe__special-chars-input, .ppe__special-chars-insert")) {
-					return;
-				}
 				// Keep the prose selection while clicking a tool.
 				event.preventDefault();
 			});
@@ -1276,16 +1296,6 @@
 					this.#closeMenus();
 					return;
 				}
-				if (event.target.closest(".ppe__special-chars-insert")) {
-					event.preventDefault();
-					const input = this.querySelector(".ppe__special-chars-input");
-					const value = String(input?.value || "").trim();
-					if (!value) return;
-					this.#insertSpecialCharacter(value);
-					if (input) input.value = "";
-					this.#closeMenus();
-					return;
-				}
 				const menuItem = event.target.closest(".ppe__menu-item");
 				if (menuItem) {
 					this.#runMenuItem(menuItem);
@@ -1295,12 +1305,6 @@
 				const button = event.target.closest(".ppe__tool:not(.ppe__menu-toggle)");
 				if (!button) return;
 				this.#runCommand(button);
-			});
-			this.querySelector(".ppe__special-chars-input")?.addEventListener("keydown", (event) => {
-				if (event.key === "Enter") {
-					event.preventDefault();
-					this.querySelector(".ppe__special-chars-insert")?.click();
-				}
 			});
 			this.__onOutsideMenu = (event) => {
 				if (!event.target.closest(".ppe__menu")) this.#closeMenus();
