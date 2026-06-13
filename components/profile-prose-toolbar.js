@@ -202,17 +202,26 @@
 	];
 
 	function renderToolButton(btn) {
+		// Only emit data-* attributes that have a value. Emitting empty
+		// attributes (e.g. data-block="") makes presence-based selectors like
+		// [data-block] / [data-text-align] match inline tool buttons, which then
+		// strips their active state during toolbar refresh.
 		const attrs = [
-			`data-command="${btn.command || ""}"`,
-			`data-block="${btn.block || ""}"`,
-			`data-action="${btn.action || ""}"`,
-			`data-list-type="${btn.listType || ""}"`,
-			`data-ol-type="${btn.olType || ""}"`,
-			`data-text-align="${btn.textAlign || ""}"`,
-			`data-state="${btn.state || ""}"`,
-			`aria-label="${btn.label}"`,
-			`title="${btn.label}"`,
-		].join(" ");
+			["data-command", btn.command],
+			["data-block", btn.block],
+			["data-action", btn.action],
+			["data-list-type", btn.listType],
+			["data-ol-type", btn.olType],
+			["data-text-align", btn.textAlign],
+			["data-state", btn.state],
+		]
+			.filter(([, value]) => value)
+			.map(([name, value]) => `${name}="${value}"`)
+			.concat([
+				`aria-label="${btn.label}"`,
+				`title="${btn.label}"`,
+			])
+			.join(" ");
 		if (btn.text) {
 			return `<button type="button" class="ppe__tool ppe__tool--text" ${attrs}><span class="ppe__tool-text" aria-hidden="true">${btn.text}</span></button>`;
 		}
