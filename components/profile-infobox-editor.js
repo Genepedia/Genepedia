@@ -240,9 +240,23 @@
 		}
 	}
 
-	async function fetchSiteResource(url) {
+	async function fetchSiteResource(url, init = {}) {
+		if (window.App?.fetchSiteResource) {
+			return window.App.fetchSiteResource(url, init);
+		}
+
 		try {
-			const response = await fetch(url, { cache: "no-store" });
+			const requestUrl = new URL(url, window.location.href);
+			requestUrl.searchParams.set("_", String(Date.now()));
+			const response = await fetch(requestUrl.href, {
+				cache: "no-store",
+				...init,
+				headers: {
+					"Cache-Control": "no-cache",
+					Pragma: "no-cache",
+					...(init.headers || {}),
+				},
+			});
 			return response.ok ? response : null;
 		} catch (error) {
 			return null;
@@ -617,6 +631,13 @@
 				return;
 			}
 
+			this.__onPageShow = (event) => {
+				if (event.persisted) {
+					void this.#loadExisting();
+				}
+			};
+			window.addEventListener("pageshow", this.__onPageShow);
+
 			this.#loadExisting();
 		}
 
@@ -886,6 +907,10 @@
 		}
 
 		disconnectedCallback() {
+			if (this.__onPageShow) {
+				window.removeEventListener("pageshow", this.__onPageShow);
+				this.__onPageShow = null;
+			}
 			this.#clearPendingPhotoFile();
 			this.#closePhotoMediaPicker();
 			if (this.__extraPublishProvider && Array.isArray(window.__extraPublishFileProviders)) {
@@ -1098,7 +1123,7 @@
 			this.#applyLocationValue("burial.location", this.__data.burial.location);
 		}
 
-		#applyLocationValue(path, value, { expanded = null } = {}) {
+		#applyLocationValue(path, value, { expanded = false } = {}) {
 			const state = this.__locationFields?.get(path);
 			if (!state) return;
 
@@ -1113,7 +1138,7 @@
 				input.value = location[key] ?? "";
 			});
 
-			this.#setLocationDetailsExpanded(path, expanded == null ? hasLocationDetails(location) : expanded);
+			this.#setLocationDetailsExpanded(path, expanded);
 			this.#closeLocationDropdown(path);
 		}
 

@@ -36,6 +36,25 @@
         }
     }
 
+    async function fetchSiteResource(url, init = {}) {
+        try {
+            const requestUrl = new URL(url, window.location.href);
+            requestUrl.searchParams.set('_', String(Date.now()));
+            const response = await fetch(requestUrl.href, {
+                cache: 'no-store',
+                ...init,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    Pragma: 'no-cache',
+                    ...(init.headers || {}),
+                },
+            });
+            return response.ok ? response : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
     function normalizeSitePath(path) {
         return String(path || '').replace(/\\/g, '/').replace(/^\//, '').trim();
     }
@@ -587,6 +606,7 @@
     app.getGitHubFetchInit = getGitHubFetchInit;
     app.getSlogan = getSlogan;
     app.resolveSiteUrl = resolveSiteUrl;
+    app.fetchSiteResource = fetchSiteResource;
     app.resolvePageEditUrl = resolvePageEditUrl;
     app.navigateToRandomProfile = navigateToRandomProfile;
     app.navigateToNewTree = navigateToNewTree;
