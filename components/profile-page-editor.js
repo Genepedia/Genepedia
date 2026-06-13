@@ -6,8 +6,8 @@
  * to the right with the article text wrapping around it — so editors see the
  * real layout while they type. Only the prose is editable here; the infobox is
  * read-only context (identity details are edited on the Identity tab; the
- * portrait can be changed from the Page tab) and the page title is the
- * display name (also owned by the infobox).
+ * portrait can be changed from the Page tab). The page title is still written
+ * on save from the infobox display name, but it is not shown in the editor.
  *
  * On save it reconstructs the fragment as:
  *   <!-- header comment -->  (preserved verbatim if present)
@@ -1061,7 +1061,6 @@
 					<div class="ppe__status" role="status" hidden></div>
 					<div class="ppe__canvas-scroll">
 						<article class="people-page__content ppe__canvas">
-							<h1 class="ppe__title"></h1>
 							<div class="ppe__prose ppe__prose--empty" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Profile text" data-placeholder="Write this profile…"></div>
 						</article>
 					</div>
@@ -1120,7 +1119,6 @@
 		#els() {
 			return {
 				canvas: this.querySelector(".ppe__canvas"),
-				title: this.querySelector(".ppe__title"),
 				prose: this.querySelector(".ppe__prose"),
 				status: this.querySelector(".ppe__status"),
 				toolbar: this.querySelector("profile-prose-toolbar"),
@@ -2825,8 +2823,7 @@
 				document.dispatchEvent(new CustomEvent("profile-display-name-change", { detail: { name: parsed.title } }));
 			}
 
-			const { title, prose } = this.#els();
-			if (title) title.textContent = parsed.title;
+			const { prose } = this.#els();
 			if (prose) {
 				prose.innerHTML = parsed.proseHtml;
 				// Resolve image paths (relative to data/) for display, remembering
@@ -3224,19 +3221,17 @@
 			return src.replace(/^\.?\//, "");
 		}
 
-		// Public: refresh the floated infobox + title from the infobox editor.
+		// Public: refresh the floated infobox from the infobox editor.
 		// Called when the Page tab becomes active.
 		refreshInfoboxPreview() {
 			void this.#renderInfobox();
 		}
 
-		// Public: keep the rendered <h1> in step with the infobox display name.
+		// Public: keep the saved page title in step with the infobox display name.
 		setDisplayName(name) {
 			const clean = String(name || "").trim();
 			if (!clean) return;
 			this.__displayName = clean;
-			const { title } = this.#els();
-			if (title) title.textContent = clean;
 		}
 
 		#getProseHtml() {

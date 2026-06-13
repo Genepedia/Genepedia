@@ -33,9 +33,9 @@ body.theme-dark .people-page__content a {
 .people-page__content h1 {
   margin: 0 0 1rem;
   font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
-  font-size: clamp(1.75rem, 4vw, 2.3rem);
+  font-size: 1.5rem;
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .people-page__content h2 {
@@ -231,6 +231,13 @@ html body.profile-edit-page[data-has-full-header="true"] {
    page so the fixed full-header aligns flush with the editor header. */
 body.profile-edit-page {
   margin: 0;
+  background: #f8f9fa;
+  color: #202122;
+}
+
+body.theme-dark.profile-edit-page {
+  background: #101418;
+  color: #eaecf0;
 }
 
 /* Sticky toolbar: breadcrumb · tabs · status + Save. */
@@ -244,7 +251,7 @@ body.profile-edit-page {
   gap: 0.75rem 1rem;
   padding: 0.6rem 1.25rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-  background: var(--background-color-base, #ffffff);
+  background: #f8f9fa;
 }
 
 body.theme-dark .profile-edit__bar {
@@ -379,7 +386,17 @@ body.theme-dark .profile-edit__tab.is-active {
 }
 
 .profile-edit__panels {
-  padding: 1.25rem;
+  width: 100%;
+  max-width: var(--site-content-max-width, 90rem);
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+  color: #202122;
+  font: 1rem/1.65 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+body.theme-dark .profile-edit__panels {
+  color: #eaecf0;
 }
 
 .profile-edit__error {
@@ -388,9 +405,11 @@ body.theme-dark .profile-edit__tab.is-active {
 }
 
 .profile-edit__claim-review {
-  max-width: 980px;
+  width: 100%;
+  max-width: var(--site-content-max-width, 90rem);
   margin: 0 auto;
   padding: 1rem;
+  box-sizing: border-box;
 }
 
 .profile-edit__claim-review[hidden] {
@@ -503,8 +522,9 @@ body.theme-dark .profile-edit__match-card p {
 
 .ppe {
   position: relative;
-  max-width: 60rem;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 /* Formatting toolbar */
@@ -514,18 +534,18 @@ body.theme-dark .profile-edit__match-card p {
 
 profile-prose-toolbar.page-editor__format-toolbar {
   display: block;
-  border-bottom: var(--border-subtle, 1px solid rgba(0, 0, 0, 0.12));
-  background: var(--background-color-neutral-subtle, #f8f9fa);
+  border-bottom: 0;
+  background: transparent;
 }
 
 body.theme-dark profile-prose-toolbar.page-editor__format-toolbar {
-  background: var(--background-color-neutral-subtle, #313438);
+  background: transparent;
 }
 
 profile-prose-toolbar.page-editor__format-toolbar .ppe__toolbar {
   position: static;
-  margin: 0;
-  padding: 0.55rem 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1180,33 +1200,28 @@ body.theme-dark .ppe__special-char:focus-visible {
   color: var(--color-danger, #cf222e);
 }
 
-/* The canvas renders exactly like the live profile page. flow-root keeps the
-   floated infobox contained within the card. */
+/* The canvas uses the same flat content column as the live profile page. */
 .ppe__canvas {
   display: flow-root;
-  padding: 1.75rem 2rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 0.5rem;
-  background: #ffffff;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 body.theme-dark .ppe__canvas {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: #15181d;
+  background: transparent;
 }
 
-.ppe__title {
-  position: relative;
-  z-index: 0;
-  margin: 0 0 1rem;
-}
-
-/* Floated identity card — mirrors the live page so prose wraps around it. */
+/* Floated identity card — keep edit-page sizing identical to the live profile page. */
 .ppe__canvas aside,
 .people-page__content aside {
   float: right;
   clear: right;
-  width: max-content;
+  position: relative;
+  z-index: 1;
+  width: fit-content;
   max-width: min(50%, 100%);
   margin: 0 0 1rem 1.25rem;
   padding: 0.65rem 0.85rem;
@@ -1224,37 +1239,71 @@ body.theme-dark .people-page__content aside {
 }
 
 .ppe__canvas aside.ppe__infobox {
-  position: relative;
   z-index: 2;
-  width: min(50%, 20rem);
-  max-width: 100%;
-  padding-top: 0.85rem;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.ppe__canvas aside table {
+.ppe__canvas aside table,
+.people-page__content aside table {
   width: max-content;
   max-width: 100%;
   border-collapse: collapse;
   margin: 0;
 }
 
-.ppe__canvas aside.ppe__infobox table {
+.ppe__canvas aside table img,
+.people-page__content aside table img {
+  display: block;
   width: 100%;
-  table-layout: fixed;
+  height: auto;
+  border-radius: 0.125rem;
 }
 
-.ppe__canvas aside.ppe__infobox th {
+.ppe__canvas aside th,
+.ppe__canvas aside td,
+.people-page__content aside th,
+.people-page__content aside td {
+  padding: 0.4rem 0;
+  border: 0;
+  vertical-align: top;
+  text-align: left;
+}
+
+.ppe__canvas aside tr:first-child th,
+.ppe__canvas aside tr:first-child td,
+.people-page__content aside tr:first-child th,
+.people-page__content aside tr:first-child td {
+  padding-top: 0;
+  padding-bottom: 0.5rem;
+}
+
+.ppe__canvas aside th,
+.people-page__content aside th {
   width: 1%;
-  padding-right: 0.75rem;
+  padding-right: 1rem;
   white-space: nowrap;
-  vertical-align: top;
   font-weight: 600;
+  color: #54595d;
 }
 
-.ppe__canvas aside.ppe__infobox td {
-  vertical-align: top;
-  word-break: break-word;
+body.theme-dark .ppe__canvas aside th,
+body.theme-dark .people-page__content aside th {
+  color: #a7adb4;
+}
+
+.ppe__canvas aside td,
+.people-page__content aside td {
+  color: inherit;
+}
+
+.ppe__canvas aside td p,
+.people-page__content aside td p {
+  margin: 0 0 0.55rem;
+}
+
+.ppe__canvas aside td p:last-child,
+.people-page__content aside td p:last-child {
+  margin-bottom: 0;
 }
 
 
@@ -1271,8 +1320,8 @@ body.theme-dark .ppe__infobox-photo--example {
 }
 
 .ppe__infobox-photo-row td {
-  padding: 0 !important;
-  width: 100%;
+  padding-top: 0 !important;
+  padding-bottom: 0.5rem !important;
 }
 
 .ppe__infobox-photo-frame {
@@ -1281,7 +1330,7 @@ body.theme-dark .ppe__infobox-photo--example {
   display: block;
   width: 100%;
   max-width: 100%;
-  margin: 0 0 0.5rem;
+  margin: 0;
   cursor: pointer;
   overflow: hidden;
 }
@@ -1291,7 +1340,7 @@ body.theme-dark .ppe__infobox-photo--example {
   width: 100%;
   max-width: 100%;
   height: auto;
-  border-radius: 0;
+  border-radius: 0.125rem;
 }
 
 .ppe__infobox-photo-actions {
@@ -1356,26 +1405,6 @@ body.theme-dark .ppe__infobox-photo--example {
 
 .ppe__infobox-photo-action[hidden] {
   display: none;
-}
-
-.ppe__canvas aside th,
-.ppe__canvas aside td {
-  padding: 0.4rem 0;
-  border: 0;
-  vertical-align: top;
-  text-align: left;
-}
-
-.ppe__canvas aside th {
-  width: 1%;
-  padding-right: 1rem;
-  white-space: nowrap;
-  font-weight: 600;
-  color: #54595d;
-}
-
-body.theme-dark .ppe__canvas aside th {
-  color: #a7adb4;
 }
 
 /* Keep normal block flow so the editable prose wraps around the floated
@@ -1484,26 +1513,14 @@ body.theme-dark .ppe__brand {
 }
 
 .ppe__infobox-field {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.35rem;
+  position: relative;
   max-width: 100%;
-  padding-right: 0 !important;
   box-sizing: border-box;
 }
 
-.ppe__infobox-field.is-editing {
-  flex-wrap: wrap;
-}
-
 .ppe__infobox-field-main {
-  flex: 1 1 auto;
+  display: block;
   min-width: 0;
-  max-width: 100%;
-}
-
-.ppe__infobox-field.is-editing .ppe__infobox-field-main {
-  flex: 1 1 calc(100% - 3.5rem);
 }
 
 .ppe__infobox-field-editor {
@@ -1520,11 +1537,22 @@ body.theme-dark .ppe__brand {
 }
 
 .ppe__infobox-field-controls {
+  position: absolute;
+  top: 0.1rem;
+  right: 0;
   display: inline-flex;
-  flex: 0 0 auto;
   flex-shrink: 0;
   gap: 0.2rem;
-  margin-left: auto;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.ppe__infobox-field:hover .ppe__infobox-field-controls,
+.ppe__infobox-field:focus-within .ppe__infobox-field-controls,
+.ppe__infobox-field.is-editing .ppe__infobox-field-controls {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .ppe__infobox-field-edit,
@@ -1648,14 +1676,17 @@ body.theme-dark .ppe__infobox-field-editor .pie__date-input {
 }
 
 .ppe__infobox-note {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  left: 0;
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  width: 100%;
-  margin: 0.6rem 0 0;
-  padding: 0.5rem 0 0;
+  width: auto;
+  margin: 0;
+  padding: 0;
   border: 0;
-  border-top: 1px dashed rgba(0, 0, 0, 0.15);
   background: transparent;
   font: inherit;
   font-size: 0.72rem;
@@ -1674,7 +1705,6 @@ body.theme-dark .ppe__infobox-field-editor .pie__date-input {
 }
 
 body.theme-dark .ppe__infobox-note {
-  border-top-color: rgba(255, 255, 255, 0.18);
   color: #6b9eff;
 }
 
@@ -2844,13 +2874,13 @@ body.theme-dark .pie__status {
 
 .pie__group {
   margin: 0 0 1.5rem;
-  padding: 0.5rem 1rem 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 0.125rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
 }
 
 body.theme-dark .pie__group {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: transparent;
 }
 
 .pie__group--death[hidden] {
@@ -3575,11 +3605,10 @@ body.theme-dark .pie__date-preview {
 /* Infobox section quick-nav + readability                             */
 /* ------------------------------------------------------------------ */
 
-/* Keep the structured form to a comfortable reading width and centre it
-   so inputs don't stretch edge-to-edge on wide screens. */
+/* Keep the structured form aligned with the profile page content column. */
 .profile-edit__panel[data-edit-panel="infobox"] .pie {
-  max-width: 52rem;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
 }
 
 .pie__group {
@@ -3606,14 +3635,16 @@ body.theme-dark .pie__date-preview {
 }
 
 @media (max-width: 720px) {
-  .ppe__canvas aside.ppe__infobox {
+  .ppe__canvas aside,
+  .people-page__content aside {
     float: none;
     width: 100%;
     max-width: none;
     margin: 0 0 1rem;
   }
 
-  .ppe__canvas aside.ppe__infobox table {
+  .ppe__canvas aside table,
+  .people-page__content aside table {
     width: 100%;
   }
 
@@ -3637,8 +3668,4 @@ body.theme-dark .pie__date-preview {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-}
-
-.ppe__infobox-photo-row td[colspan] {
-  width: 100%;
 }
