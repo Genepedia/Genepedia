@@ -2053,7 +2053,7 @@
 		}
 
 		#proseIsEmpty(prose) {
-			if (prose?.querySelector(`${ATOMIC_BLOCK_SELECTOR}, table.ppe-profile-table, figure.profile-figure`)) {
+			if (prose?.querySelector(`${ATOMIC_BLOCK_SELECTOR}, table.ppe-profile-table, figure.profile-figure, .ppe-profile-columns, .ppe-profile-actions, .ppe-profile-divider, .ppe-profile-spacer`)) {
 				return false;
 			}
 			return !String(prose?.textContent || "").replace(/\u00a0/g, " ").trim();

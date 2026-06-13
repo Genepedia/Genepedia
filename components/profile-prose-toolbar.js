@@ -395,6 +395,111 @@
 		return parts.join("");
 	}
 
+	function normalizeColumnOptions(options = {}) {
+		return {
+			columns: clampTableInt(options.columns, 1, 4, 2),
+			headings: Boolean(options.headings),
+			cards: Boolean(options.cards),
+		};
+	}
+
+	function buildProfileColumnsHtml(options = {}) {
+		const normalized = normalizeColumnOptions(options);
+		const classes = [
+			"ppe-profile-columns",
+			`ppe-profile-columns--${normalized.columns}`,
+			normalized.cards ? "ppe-profile-columns--cards" : "",
+		].filter(Boolean).join(" ");
+		const parts = [`<div class="${classes}">`];
+
+		for (let index = 0; index < normalized.columns; index += 1) {
+			const label = `Column ${index + 1}`;
+			if (normalized.headings) {
+				parts.push(`<section class="ppe-profile-column"><h3>${escapeHtml(label)}</h3><p>Start writing...</p></section>`);
+			} else {
+				parts.push(`<div class="ppe-profile-column"><p>${escapeHtml(label)}</p></div>`);
+			}
+		}
+
+		parts.push("</div>");
+		return parts.join("");
+	}
+
+	function safeLinkHref(value) {
+		const href = String(value || "").trim();
+		if (!href || /^\s*javascript:/i.test(href)) return "#";
+		return href;
+	}
+
+	function normalizeButtonStyle(value) {
+		const style = String(value || "").trim();
+		return ["primary", "secondary", "quiet"].includes(style) ? style : "primary";
+	}
+
+	function buildProfileButtonHtml(options = {}) {
+		const label = String(options.label || "").trim() || "Button label";
+		const href = safeLinkHref(options.href);
+		const style = normalizeButtonStyle(options.style);
+		const newTab = Boolean(options.newTab);
+		const targetAttrs = newTab ? ' target="_blank" rel="noopener noreferrer"' : "";
+		return `<p class="ppe-profile-actions"><a class="ppe-profile-button ppe-profile-button--${style}" href="${escapeHtml(href)}"${targetAttrs}>${escapeHtml(label)}</a></p>`;
+	}
+
+	function normalizeButtonsOptions(options = {}) {
+		const count = clampTableInt(options.count, 2, 4, 2);
+		const rawLabels = Array.isArray(options.labels) ? options.labels : [];
+		const rawHrefs = Array.isArray(options.hrefs) ? options.hrefs : [];
+		const labels = [];
+		const hrefs = [];
+		for (let index = 0; index < count; index += 1) {
+			labels.push(String(rawLabels[index] || "").trim() || `Button ${index + 1}`);
+			hrefs.push(safeLinkHref(rawHrefs[index] || "#"));
+		}
+		return {
+			count,
+			labels,
+			hrefs,
+			primaryFirst: options.primaryFirst !== false,
+			newTab: Boolean(options.newTab),
+		};
+	}
+
+	function buildProfileButtonsHtml(options = {}) {
+		const normalized = normalizeButtonsOptions(options);
+		const targetAttrs = normalized.newTab ? ' target="_blank" rel="noopener noreferrer"' : "";
+		const buttons = normalized.labels.map((label, index) => {
+			const style = normalized.primaryFirst && index === 0 ? "primary" : "secondary";
+			return `<a class="ppe-profile-button ppe-profile-button--${style}" href="${escapeHtml(normalized.hrefs[index])}"${targetAttrs}>${escapeHtml(label)}</a>`;
+		});
+		return `<div class="ppe-profile-actions">${buttons.join("")}</div>`;
+	}
+
+	function normalizeDividerOptions(options = {}) {
+		const style = String(options.style || "").trim();
+		const spacing = String(options.spacing || "").trim();
+		return {
+			style: ["solid", "dashed", "dotted"].includes(style) ? style : "solid",
+			spacing: ["compact", "normal", "loose"].includes(spacing) ? spacing : "normal",
+		};
+	}
+
+	function buildProfileDividerHtml(options = {}) {
+		const normalized = normalizeDividerOptions(options);
+		return `<hr class="ppe-profile-divider ppe-profile-divider--${normalized.style} ppe-profile-divider--${normalized.spacing}">`;
+	}
+
+	function normalizeSpacerOptions(options = {}) {
+		const size = String(options.size || "").trim();
+		return {
+			size: ["small", "medium", "large", "xlarge"].includes(size) ? size : "medium",
+		};
+	}
+
+	function buildProfileSpacerHtml(options = {}) {
+		const normalized = normalizeSpacerOptions(options);
+		return `<div class="ppe-profile-spacer ppe-profile-spacer--${normalized.size}" aria-hidden="true"></div>`;
+	}
+
 	function parseChartNumber(value) {
 		const parsed = Number.parseFloat(String(value).replace(/,/g, ""));
 		return Number.isFinite(parsed) ? parsed : 0;
@@ -934,6 +1039,197 @@
 				</div>
 			</div>
 
+			<div class="ppe__columns-modal ppe__table-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-columns-close></div>
+				<div class="ppe__table-panel" role="dialog" aria-label="Insert Columns" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert Columns</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-columns-close>✕</button>
+					</header>
+					<div class="ppe__table-body">
+						<div class="ppe__table-form">
+							<label class="ppe__table-field">
+								<span>Columns</span>
+								<input type="number" class="ppe__columns-count" min="2" max="4" value="2" inputmode="numeric">
+							</label>
+							<label class="ppe__table-check">
+								<input type="checkbox" class="ppe__columns-headings">
+								<span>Include headings</span>
+							</label>
+							<label class="ppe__table-check">
+								<input type="checkbox" class="ppe__columns-cards">
+								<span>Card style</span>
+							</label>
+						</div>
+						<div class="ppe__table-preview-wrap">
+							<div class="ppe__table-preview-label">Preview</div>
+							<div class="ppe__table-preview ppe__columns-preview" aria-hidden="true"></div>
+						</div>
+						<div class="ppe__popover-actions">
+							<button type="button" class="ppe__btn ppe__btn--primary ppe__columns-insert">Insert Columns</button>
+							<button type="button" class="ppe__btn" data-columns-close>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="ppe__button-modal ppe__table-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-button-close></div>
+				<div class="ppe__table-panel" role="dialog" aria-label="Insert Button" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert Button</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-button-close>✕</button>
+					</header>
+					<div class="ppe__table-body">
+						<div class="ppe__table-form">
+							<label class="ppe__table-field">
+								<span>Label</span>
+								<input type="text" class="ppe__button-label" value="Button label">
+							</label>
+							<label class="ppe__table-field">
+								<span>Link</span>
+								<input type="url" class="ppe__button-href" value="#">
+							</label>
+							<label class="ppe__table-field">
+								<span>Style</span>
+								<select class="ppe__button-style">
+									<option value="primary">Primary</option>
+									<option value="secondary">Secondary</option>
+									<option value="quiet">Quiet</option>
+								</select>
+							</label>
+							<label class="ppe__table-check">
+								<input type="checkbox" class="ppe__button-new-tab">
+								<span>Open in new tab</span>
+							</label>
+						</div>
+						<div class="ppe__table-preview-wrap">
+							<div class="ppe__table-preview-label">Preview</div>
+							<div class="ppe__table-preview ppe__button-preview" aria-hidden="true"></div>
+						</div>
+						<div class="ppe__popover-actions">
+							<button type="button" class="ppe__btn ppe__btn--primary ppe__button-insert">Insert Button</button>
+							<button type="button" class="ppe__btn" data-button-close>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="ppe__buttons-modal ppe__table-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-buttons-close></div>
+				<div class="ppe__table-panel" role="dialog" aria-label="Insert Buttons" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert Buttons</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-buttons-close>✕</button>
+					</header>
+					<div class="ppe__table-body">
+						<div class="ppe__table-form">
+							<label class="ppe__table-field">
+								<span>Buttons</span>
+								<input type="number" class="ppe__buttons-count" min="2" max="4" value="2" inputmode="numeric">
+							</label>
+							<label class="ppe__table-check">
+								<input type="checkbox" class="ppe__buttons-primary-first" checked>
+								<span>Make first button primary</span>
+							</label>
+							<label class="ppe__table-check">
+								<input type="checkbox" class="ppe__buttons-new-tab">
+								<span>Open links in new tab</span>
+							</label>
+						</div>
+						<div class="ppe__chart-data-wrap">
+							<div class="ppe__chart-data-label">Buttons</div>
+							<table class="ppe__chart-data ppe__buttons-data">
+								<thead>
+									<tr>
+										<th scope="col">Label</th>
+										<th scope="col">Link</th>
+									</tr>
+								</thead>
+								<tbody></tbody>
+							</table>
+						</div>
+						<div class="ppe__table-preview-wrap">
+							<div class="ppe__table-preview-label">Preview</div>
+							<div class="ppe__table-preview ppe__buttons-preview" aria-hidden="true"></div>
+						</div>
+						<div class="ppe__popover-actions">
+							<button type="button" class="ppe__btn ppe__btn--primary ppe__buttons-insert">Insert Buttons</button>
+							<button type="button" class="ppe__btn" data-buttons-close>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="ppe__divider-modal ppe__table-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-divider-close></div>
+				<div class="ppe__table-panel" role="dialog" aria-label="Insert Divider" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert Divider</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-divider-close>✕</button>
+					</header>
+					<div class="ppe__table-body">
+						<div class="ppe__table-form">
+							<label class="ppe__table-field">
+								<span>Line style</span>
+								<select class="ppe__divider-style">
+									<option value="solid">Solid</option>
+									<option value="dashed">Dashed</option>
+									<option value="dotted">Dotted</option>
+								</select>
+							</label>
+							<label class="ppe__table-field">
+								<span>Spacing</span>
+								<select class="ppe__divider-spacing">
+									<option value="compact">Compact</option>
+									<option value="normal" selected>Normal</option>
+									<option value="loose">Loose</option>
+								</select>
+							</label>
+						</div>
+						<div class="ppe__table-preview-wrap">
+							<div class="ppe__table-preview-label">Preview</div>
+							<div class="ppe__table-preview ppe__divider-preview" aria-hidden="true"></div>
+						</div>
+						<div class="ppe__popover-actions">
+							<button type="button" class="ppe__btn ppe__btn--primary ppe__divider-insert">Insert Divider</button>
+							<button type="button" class="ppe__btn" data-divider-close>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="ppe__spacer-modal ppe__table-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-spacer-close></div>
+				<div class="ppe__table-panel" role="dialog" aria-label="Insert Spacer" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert Spacer</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-spacer-close>✕</button>
+					</header>
+					<div class="ppe__table-body">
+						<div class="ppe__table-form">
+							<label class="ppe__table-field">
+								<span>Height</span>
+								<select class="ppe__spacer-size">
+									<option value="small">Small</option>
+									<option value="medium" selected>Medium</option>
+									<option value="large">Large</option>
+									<option value="xlarge">Extra large</option>
+								</select>
+							</label>
+						</div>
+						<div class="ppe__table-preview-wrap">
+							<div class="ppe__table-preview-label">Preview</div>
+							<div class="ppe__table-preview ppe__spacer-preview" aria-hidden="true"></div>
+						</div>
+						<div class="ppe__popover-actions">
+							<button type="button" class="ppe__btn ppe__btn--primary ppe__spacer-insert">Insert Spacer</button>
+							<button type="button" class="ppe__btn" data-spacer-close>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
 			<div class="ppe__chart-modal" hidden aria-hidden="true">
 				<div class="ppe__media-backdrop" data-chart-close></div>
 				<div class="ppe__chart-panel" role="dialog" aria-label="Insert Chart" aria-modal="true">
@@ -1012,6 +1308,11 @@
 			this.#bindLinkPopover();
 			this.#bindMediaModal();
 			this.#bindTableModal();
+			this.#bindColumnsModal();
+			this.#bindButtonModal();
+			this.#bindButtonsModal();
+			this.#bindDividerModal();
+			this.#bindSpacerModal();
 			this.#bindChartModal();
 			this.__onToolbarSelectionChange = () => {
 				if (!this.#selectionTouchesProse()) return;
@@ -1340,6 +1641,36 @@
 					bubbles: true,
 					detail: { blockId, block },
 				}));
+				return;
+			}
+
+			if (blockId === "columns") {
+				this.#openColumnsModal();
+				return;
+			}
+
+			if (blockId === "row") {
+				this.#insertRowBlock();
+				return;
+			}
+
+			if (blockId === "button") {
+				this.#openButtonModal();
+				return;
+			}
+
+			if (blockId === "buttons") {
+				this.#openButtonsModal();
+				return;
+			}
+
+			if (blockId === "divider") {
+				this.#openDividerModal();
+				return;
+			}
+
+			if (blockId === "spacer") {
+				this.#openSpacerModal();
 				return;
 			}
 
@@ -2278,6 +2609,364 @@
 			this.#closeTableModal();
 		}
 
+		#bindColumnsModal() {
+			const modal = this.querySelector(".ppe__columns-modal");
+			if (!modal) return;
+
+			modal.querySelectorAll("[data-columns-close]").forEach((el) => {
+				el.addEventListener("click", () => this.#closeColumnsModal());
+			});
+			modal.querySelector(".ppe__columns-insert")?.addEventListener("click", () => this.#insertColumns());
+			modal.querySelectorAll(".ppe__columns-count, .ppe__columns-headings, .ppe__columns-cards").forEach((input) => {
+				input.addEventListener("input", () => this.#updateColumnsPreview());
+				input.addEventListener("change", () => this.#updateColumnsPreview());
+			});
+		}
+
+		#readColumnsModalOptions() {
+			const modal = this.querySelector(".ppe__columns-modal");
+			return normalizeColumnOptions({
+				columns: modal?.querySelector(".ppe__columns-count")?.value,
+				headings: modal?.querySelector(".ppe__columns-headings")?.checked,
+				cards: modal?.querySelector(".ppe__columns-cards")?.checked,
+			});
+		}
+
+		#updateColumnsPreview() {
+			const preview = this.querySelector(".ppe__columns-preview");
+			if (!preview) return;
+			preview.innerHTML = buildProfileColumnsHtml(this.#readColumnsModalOptions());
+		}
+
+		#openColumnsModal() {
+			this.#saveSelection();
+			const modal = this.querySelector(".ppe__columns-modal");
+			if (!modal) return;
+
+			const columns = modal.querySelector(".ppe__columns-count");
+			const headings = modal.querySelector(".ppe__columns-headings");
+			const cards = modal.querySelector(".ppe__columns-cards");
+			if (columns) columns.value = "2";
+			if (headings) headings.checked = false;
+			if (cards) cards.checked = false;
+
+			this.#updateColumnsPreview();
+			modal.hidden = false;
+			modal.setAttribute("aria-hidden", "false");
+			document.body.style.overflow = "hidden";
+			columns?.focus();
+		}
+
+		#closeColumnsModal() {
+			const modal = this.querySelector(".ppe__columns-modal");
+			if (!modal) return;
+			modal.hidden = true;
+			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+		}
+
+		#insertConfiguredBlock(blockId, html) {
+			const prose = this.#getRoot();
+			if (!prose || !html) return;
+
+			const block = window.EditorBlocks?.getById?.(blockId) || null;
+			this.#insertHtmlIntoRoot(`${html}<p><br></p>`);
+			this.#afterCommand();
+			this.dispatchEvent(new CustomEvent("ppe-block-inserted", {
+				bubbles: true,
+				detail: { blockId, block },
+			}));
+		}
+
+		#insertRowBlock() {
+			this.#saveSelection();
+			this.#insertConfiguredBlock("row", buildProfileColumnsHtml({ columns: 1 }));
+		}
+
+		#insertColumns() {
+			this.#insertConfiguredBlock("columns", buildProfileColumnsHtml(this.#readColumnsModalOptions()));
+			this.#closeColumnsModal();
+		}
+
+		#bindButtonModal() {
+			const modal = this.querySelector(".ppe__button-modal");
+			if (!modal) return;
+
+			modal.querySelectorAll("[data-button-close]").forEach((el) => {
+				el.addEventListener("click", () => this.#closeButtonModal());
+			});
+			modal.querySelector(".ppe__button-insert")?.addEventListener("click", () => this.#insertButton());
+			modal.querySelectorAll(".ppe__button-label, .ppe__button-href, .ppe__button-style, .ppe__button-new-tab").forEach((input) => {
+				input.addEventListener("input", () => this.#updateButtonPreview());
+				input.addEventListener("change", () => this.#updateButtonPreview());
+			});
+		}
+
+		#readButtonModalOptions() {
+			const modal = this.querySelector(".ppe__button-modal");
+			return {
+				label: modal?.querySelector(".ppe__button-label")?.value,
+				href: modal?.querySelector(".ppe__button-href")?.value,
+				style: modal?.querySelector(".ppe__button-style")?.value,
+				newTab: modal?.querySelector(".ppe__button-new-tab")?.checked,
+			};
+		}
+
+		#updateButtonPreview() {
+			const preview = this.querySelector(".ppe__button-preview");
+			if (!preview) return;
+			preview.innerHTML = buildProfileButtonHtml(this.#readButtonModalOptions());
+		}
+
+		#openButtonModal() {
+			this.#saveSelection();
+			const modal = this.querySelector(".ppe__button-modal");
+			if (!modal) return;
+
+			const label = modal.querySelector(".ppe__button-label");
+			const href = modal.querySelector(".ppe__button-href");
+			const style = modal.querySelector(".ppe__button-style");
+			const newTab = modal.querySelector(".ppe__button-new-tab");
+			if (label) label.value = "Button label";
+			if (href) href.value = "#";
+			if (style) style.value = "primary";
+			if (newTab) newTab.checked = false;
+
+			this.#updateButtonPreview();
+			modal.hidden = false;
+			modal.setAttribute("aria-hidden", "false");
+			document.body.style.overflow = "hidden";
+			label?.focus();
+			label?.select?.();
+		}
+
+		#closeButtonModal() {
+			const modal = this.querySelector(".ppe__button-modal");
+			if (!modal) return;
+			modal.hidden = true;
+			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+		}
+
+		#insertButton() {
+			this.#insertConfiguredBlock("button", buildProfileButtonHtml(this.#readButtonModalOptions()));
+			this.#closeButtonModal();
+		}
+
+		#bindButtonsModal() {
+			const modal = this.querySelector(".ppe__buttons-modal");
+			if (!modal) return;
+
+			modal.querySelectorAll("[data-buttons-close]").forEach((el) => {
+				el.addEventListener("click", () => this.#closeButtonsModal());
+			});
+			modal.querySelector(".ppe__buttons-insert")?.addEventListener("click", () => this.#insertButtons());
+			modal.addEventListener("input", (event) => {
+				if (event.target.matches(".ppe__buttons-count")) {
+					this.#syncButtonsRows();
+				}
+				if (event.target.matches(".ppe__buttons-count, .ppe__buttons-primary-first, .ppe__buttons-new-tab, .ppe__buttons-label, .ppe__buttons-href")) {
+					this.#updateButtonsPreview();
+				}
+			});
+			modal.addEventListener("change", (event) => {
+				if (event.target.matches(".ppe__buttons-count")) {
+					this.#syncButtonsRows();
+				}
+				if (event.target.matches(".ppe__buttons-count, .ppe__buttons-primary-first, .ppe__buttons-new-tab, .ppe__buttons-label, .ppe__buttons-href")) {
+					this.#updateButtonsPreview();
+				}
+			});
+		}
+
+		#readButtonsModalOptions() {
+			const modal = this.querySelector(".ppe__buttons-modal");
+			const rows = [...(modal?.querySelectorAll(".ppe__buttons-data tbody tr") || [])];
+			return normalizeButtonsOptions({
+				count: modal?.querySelector(".ppe__buttons-count")?.value,
+				labels: rows.map((row) => row.querySelector(".ppe__buttons-label")?.value),
+				hrefs: rows.map((row) => row.querySelector(".ppe__buttons-href")?.value),
+				primaryFirst: modal?.querySelector(".ppe__buttons-primary-first")?.checked,
+				newTab: modal?.querySelector(".ppe__buttons-new-tab")?.checked,
+			});
+		}
+
+		#syncButtonsRows(presetOptions = null) {
+			const modal = this.querySelector(".ppe__buttons-modal");
+			const tbody = modal?.querySelector(".ppe__buttons-data tbody");
+			const countInput = modal?.querySelector(".ppe__buttons-count");
+			if (!modal || !tbody || !countInput) return;
+
+			const existing = presetOptions || this.#readButtonsModalOptions();
+			const count = clampTableInt(existing.count || countInput.value, 2, 4, 2);
+			countInput.value = String(count);
+			tbody.innerHTML = "";
+
+			for (let index = 0; index < count; index += 1) {
+				const row = document.createElement("tr");
+				const label = existing.labels[index] || `Button ${index + 1}`;
+				const href = existing.hrefs[index] || "#";
+				row.innerHTML = `
+					<td><input type="text" class="ppe__buttons-label" value="${escapeHtml(label)}"></td>
+					<td><input type="url" class="ppe__buttons-href" value="${escapeHtml(href)}"></td>
+				`;
+				tbody.appendChild(row);
+			}
+		}
+
+		#updateButtonsPreview() {
+			const preview = this.querySelector(".ppe__buttons-preview");
+			if (!preview) return;
+			preview.innerHTML = buildProfileButtonsHtml(this.#readButtonsModalOptions());
+		}
+
+		#openButtonsModal() {
+			this.#saveSelection();
+			const modal = this.querySelector(".ppe__buttons-modal");
+			if (!modal) return;
+
+			const count = modal.querySelector(".ppe__buttons-count");
+			const primaryFirst = modal.querySelector(".ppe__buttons-primary-first");
+			const newTab = modal.querySelector(".ppe__buttons-new-tab");
+			if (count) count.value = "2";
+			if (primaryFirst) primaryFirst.checked = true;
+			if (newTab) newTab.checked = false;
+			this.#syncButtonsRows({
+				count: 2,
+				labels: ["Primary action", "Secondary action"],
+				hrefs: ["#", "#"],
+				primaryFirst: true,
+				newTab: false,
+			});
+			this.#updateButtonsPreview();
+
+			modal.hidden = false;
+			modal.setAttribute("aria-hidden", "false");
+			document.body.style.overflow = "hidden";
+			count?.focus();
+		}
+
+		#closeButtonsModal() {
+			const modal = this.querySelector(".ppe__buttons-modal");
+			if (!modal) return;
+			modal.hidden = true;
+			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+		}
+
+		#insertButtons() {
+			this.#insertConfiguredBlock("buttons", buildProfileButtonsHtml(this.#readButtonsModalOptions()));
+			this.#closeButtonsModal();
+		}
+
+		#bindDividerModal() {
+			const modal = this.querySelector(".ppe__divider-modal");
+			if (!modal) return;
+
+			modal.querySelectorAll("[data-divider-close]").forEach((el) => {
+				el.addEventListener("click", () => this.#closeDividerModal());
+			});
+			modal.querySelector(".ppe__divider-insert")?.addEventListener("click", () => this.#insertDivider());
+			modal.querySelectorAll(".ppe__divider-style, .ppe__divider-spacing").forEach((input) => {
+				input.addEventListener("input", () => this.#updateDividerPreview());
+				input.addEventListener("change", () => this.#updateDividerPreview());
+			});
+		}
+
+		#readDividerModalOptions() {
+			const modal = this.querySelector(".ppe__divider-modal");
+			return normalizeDividerOptions({
+				style: modal?.querySelector(".ppe__divider-style")?.value,
+				spacing: modal?.querySelector(".ppe__divider-spacing")?.value,
+			});
+		}
+
+		#updateDividerPreview() {
+			const preview = this.querySelector(".ppe__divider-preview");
+			if (!preview) return;
+			preview.innerHTML = buildProfileDividerHtml(this.#readDividerModalOptions());
+		}
+
+		#openDividerModal() {
+			this.#saveSelection();
+			const modal = this.querySelector(".ppe__divider-modal");
+			if (!modal) return;
+
+			const style = modal.querySelector(".ppe__divider-style");
+			const spacing = modal.querySelector(".ppe__divider-spacing");
+			if (style) style.value = "solid";
+			if (spacing) spacing.value = "normal";
+			this.#updateDividerPreview();
+			modal.hidden = false;
+			modal.setAttribute("aria-hidden", "false");
+			document.body.style.overflow = "hidden";
+			style?.focus();
+		}
+
+		#closeDividerModal() {
+			const modal = this.querySelector(".ppe__divider-modal");
+			if (!modal) return;
+			modal.hidden = true;
+			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+		}
+
+		#insertDivider() {
+			this.#insertConfiguredBlock("divider", buildProfileDividerHtml(this.#readDividerModalOptions()));
+			this.#closeDividerModal();
+		}
+
+		#bindSpacerModal() {
+			const modal = this.querySelector(".ppe__spacer-modal");
+			if (!modal) return;
+
+			modal.querySelectorAll("[data-spacer-close]").forEach((el) => {
+				el.addEventListener("click", () => this.#closeSpacerModal());
+			});
+			modal.querySelector(".ppe__spacer-insert")?.addEventListener("click", () => this.#insertSpacer());
+			modal.querySelector(".ppe__spacer-size")?.addEventListener("change", () => this.#updateSpacerPreview());
+		}
+
+		#readSpacerModalOptions() {
+			const modal = this.querySelector(".ppe__spacer-modal");
+			return normalizeSpacerOptions({
+				size: modal?.querySelector(".ppe__spacer-size")?.value,
+			});
+		}
+
+		#updateSpacerPreview() {
+			const preview = this.querySelector(".ppe__spacer-preview");
+			if (!preview) return;
+			preview.innerHTML = buildProfileSpacerHtml(this.#readSpacerModalOptions());
+		}
+
+		#openSpacerModal() {
+			this.#saveSelection();
+			const modal = this.querySelector(".ppe__spacer-modal");
+			if (!modal) return;
+
+			const size = modal.querySelector(".ppe__spacer-size");
+			if (size) size.value = "medium";
+			this.#updateSpacerPreview();
+			modal.hidden = false;
+			modal.setAttribute("aria-hidden", "false");
+			document.body.style.overflow = "hidden";
+			size?.focus();
+		}
+
+		#closeSpacerModal() {
+			const modal = this.querySelector(".ppe__spacer-modal");
+			if (!modal) return;
+			modal.hidden = true;
+			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+		}
+
+		#insertSpacer() {
+			this.#insertConfiguredBlock("spacer", buildProfileSpacerHtml(this.#readSpacerModalOptions()));
+			this.#closeSpacerModal();
+		}
+
 		#bindChartModal() {
 			const modal = this.querySelector(".ppe__chart-modal");
 			if (!modal) return;
@@ -2522,8 +3211,8 @@
 				const caption = captionFromFileName(result.filename);
 				this.#insertImage(`images/${result.filename}`, caption);
 				if (result.payload?.pull_request?.url) {
-									} else {
-									}
+				} else {
+				}
 				this.#closeMediaModal();
 			} catch (error) {
 				console.warn("Could not upload image", error);
@@ -2587,6 +3276,11 @@
 	customElements.define("profile-prose-toolbar", ProfileProseToolbar);
 
 	window.ProfileProseToolbar = {
+		buildProfileButtonHtml,
+		buildProfileButtonsHtml,
+		buildProfileColumnsHtml,
+		buildProfileDividerHtml,
+		buildProfileSpacerHtml,
 		buildProfileChartHtml,
 		buildProfileTableHtml,
 		prepareAtomicChartElement,
