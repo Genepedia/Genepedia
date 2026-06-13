@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title data-brand-template="GEDCOM Export - {{APP_NAME}}"></title>
+    <script src="../../site-info.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../lib/Web-Framework/styles/common.css">
+    <style>
+        .gedcom-page__back {
+            margin: 0 0 1rem;
+        }
+
+        .gedcom-page__steps {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+
+        .gedcom-page__steps li + li {
+            margin-top: 0.5rem;
+        }
+
+        .gedcom-page__figure {
+            margin: 1.25rem 0;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--border-color-subtle);
+            border-radius: var(--border-radius-base);
+            background: var(--background-color-neutral, #f8f9fa);
+        }
+
+        body.theme-dark .gedcom-page__figure {
+            background: var(--background-color-neutral-subtle, #1a1d21);
+        }
+
+        .gedcom-page__figure ol {
+            margin: 0.5rem 0 0;
+            padding-left: 1.25rem;
+        }
+    </style>
+</head>
+
+<body>
+    <full-header></full-header>
+    <article>
+        <full-page-toolbar title="GEDCOM Export" edit-text="Edit Page" edit-source="pages/gedcom/export.html"
+            variant="page"></full-page-toolbar>
+        <main class="main-content gedcom-page">
+            <p class="gedcom-page__back"><a href="../gedcom.html">← GEDCOM Import and Export</a></p>
+
+            <p>
+                A GEDCOM export downloads a profile's family tree as a standard file you can open in other genealogy
+                software. The export is centred on one person—the profile you open.
+            </p>
+
+            <h2>How to export a GEDCOM file</h2>
+            <div class="gedcom-page__figure">
+                <p><strong>From any profile with a family tree:</strong></p>
+                <ol class="gedcom-page__steps">
+                    <li>Open the person's profile page.</li>
+                    <li>Select the <strong>Tree</strong> tab.</li>
+                    <li>Open the toolbar <strong>Download</strong> menu.</li>
+                    <li>Choose <strong>GEDCOM</strong> to save the family tree file.</li>
+                </ol>
+            </div>
+
+            <p>
+                If you are signed in and the profile is yours, you can also reach it from the user menu. To export a
+                tree centred on someone else, use <a href="../search.html">Search</a> or
+                <a href="../home.html">browse profiles</a> to open their page first.
+            </p>
+
+            <h2>What is included</h2>
+            <p>
+                The download contains the profile's family tree data—people, relationships, and key life events. You
+                can open it in desktop genealogy software, upload it to another website that accepts GEDCOM, or keep it as
+                a backup.
+            </p>
+            <p>
+                Biography text, photos, and sources on the profile and page tabs are not included; only the structured
+                tree data is exported.
+            </p>
+
+            <h2>If export is unavailable</h2>
+            <p>
+                If the Tree tab says no family tree is available yet, open the profile editor, fill in the identity
+                details, and save. That creates the tree so you can add relatives and export later.
+            </p>
+
+            <h2>Related</h2>
+            <ul>
+                <li><a href="../gedcom.html">GEDCOM overview</a></li>
+                <li><a href="import.html">GEDCOM import</a></li>
+                <li><a href="../search.html">Search profiles</a></li>
+            </ul>
+        </main>
+        <full-footer></full-footer>
+    </article>
+    <script src="../../lib/Web-Framework/components/mini-header.js"></script>
+    <script src="../../lib/Web-Framework/components/mini-footer.js"></script>
+    <script src="../../lib/Web-Framework/components/full-header.js"></script>
+    <script src="../../lib/Web-Framework/components/full-page-toolbar.js"></script>
+    <script src="../../lib/page-tabs.js"></script>
+    <script src="../../lib/Web-Framework/components/full-footer.js"></script>
+    <script src="../../lib/Web-Framework/components/sister-projects.js"></script>
+    <script src="../../index.js"></script>
+</body>
+
+</html>

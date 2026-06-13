@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title data-brand-template="GEDCOM Import - {{APP_NAME}}"></title>
+    <script src="../../site-info.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../lib/Web-Framework/styles/common.css">
+    <style>
+        .gedcom-page__back {
+            margin: 0 0 1rem;
+        }
+
+        .gedcom-page__steps {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+
+        .gedcom-page__steps li + li {
+            margin-top: 0.5rem;
+        }
+
+        .gedcom-page__note {
+            margin-top: 1.5rem;
+            padding: 1rem 1.25rem;
+            border: 1px solid var(--border-color-subtle);
+            border-radius: var(--border-radius-base);
+            background: var(--background-color-neutral, #f8f9fa);
+        }
+
+        body.theme-dark .gedcom-page__note {
+            background: var(--background-color-neutral-subtle, #1a1d21);
+        }
+    </style>
+</head>
+
+<body>
+    <full-header></full-header>
+    <article>
+        <full-page-toolbar title="GEDCOM Import" edit-text="Edit Page" edit-source="pages/gedcom/import.html"
+            variant="page"></full-page-toolbar>
+        <main class="main-content gedcom-page">
+            <p class="gedcom-page__back"><a href="../gedcom.html">← GEDCOM Import and Export</a></p>
+
+            <p>
+                A GEDCOM import brings people, families, and events from another genealogy program into
+                {{APP_NAME}}. Imports are always focused on a particular person—the profile who anchors the branch you
+                are building.
+            </p>
+
+            <h2>How to import a GEDCOM file</h2>
+            <p>Choose the path that matches your situation:</p>
+
+            <h3>Start a new branch</h3>
+            <p>
+                If your GEDCOM file contains people who are not yet on {{APP_NAME}}, create a profile for one of them
+                and grow the tree from there.
+            </p>
+            <ol class="gedcom-page__steps">
+                <li>Open <strong>New Tree</strong> from the site menu and create a profile for the person who should
+                    anchor the import.</li>
+                <li>Fill in the identity details and save the profile.</li>
+                <li>Add relatives on the profile's <strong>Tree</strong> tab as you build out the branch.</li>
+            </ol>
+            <p>
+                <button type="button" class="pure-button" id="gedcom-import-new-tree">New Tree</button>
+            </p>
+
+            <h3>Extend an existing profile</h3>
+            <p>
+                If your GEDCOM file includes people who already have profiles on {{APP_NAME}}, open that person's
+                profile first. Use the <strong>Tree</strong> tab to review what is already recorded, then add missing
+                relatives and events through the profile editor rather than duplicating existing profiles.
+            </p>
+            <p>
+                <a class="pure-button" href="../search.html">Search profiles</a>
+            </p>
+
+            <h3>Upload a GEDCOM file</h3>
+            <p>
+                Direct GEDCOM file upload—with matching to existing profiles and guided merge—is coming in a future
+                release. For now, start with <strong>New Tree</strong> or extend an existing profile as described above.
+                If you need help with a large import, <a href="../contact.html">contact {{APP_NAME}}</a>.
+            </p>
+
+            <div class="gedcom-page__note">
+                <p>
+                    <strong>Tip:</strong> Because a large import can create duplicate profiles that already exist on
+                    {{APP_NAME}}, work in small sections—ancestors and descendants around one focus person at a time—and
+                    resolve matches before continuing on that branch.
+                </p>
+            </div>
+
+            <h2>Related</h2>
+            <ul>
+                <li><a href="../gedcom.html">GEDCOM overview</a></li>
+                <li><a href="export.html">GEDCOM export</a></li>
+                <li><a href="../contact.html">Contact {{APP_NAME}}</a> if you need help with a large import</li>
+            </ul>
+        </main>
+        <full-footer></full-footer>
+    </article>
+    <script src="../../lib/Web-Framework/components/mini-header.js"></script>
+    <script src="../../lib/Web-Framework/components/mini-footer.js"></script>
+    <script src="../../lib/Web-Framework/components/full-header.js"></script>
+    <script src="../../lib/Web-Framework/components/full-page-toolbar.js"></script>
+    <script src="../../lib/page-tabs.js"></script>
+    <script src="../../lib/Web-Framework/components/full-footer.js"></script>
+    <script src="../../lib/Web-Framework/components/sister-projects.js"></script>
+    <script src="../../index.js"></script>
+    <script>
+        document.getElementById('gedcom-import-new-tree')?.addEventListener('click', () => {
+            if (typeof window.App?.navigateToNewTree === 'function') {
+                void window.App.navigateToNewTree();
+                return;
+            }
+            window.location.assign('../../people/edit.html');
+        });
+    </script>
+</body>
+
+</html>

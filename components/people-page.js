@@ -1324,7 +1324,39 @@ class PeoplePage extends HTMLElement {
     return doc.querySelector('h1')?.textContent?.trim() || '';
   }
 
+  async #ensureProfileInfoboxRender() {
+    if (window.AppProfileInfobox?.refreshIdentityElementsInDocument) {
+      return;
+    }
+
+    window.__profileInfoboxRenderPromise = window.__profileInfoboxRenderPromise || new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-profile-infobox-render]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('Could not load profile infobox render library.')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = this.#resolveSiteUrl('lib/profile-infobox-render.js');
+      script.dataset.profileInfoboxRender = '1';
+      script.addEventListener('load', () => resolve(), { once: true });
+      script.addEventListener('error', () => reject(new Error('Could not load profile infobox render library.')), { once: true });
+      document.head.append(script);
+    });
+
+    await window.__profileInfoboxRenderPromise;
+  }
+
   async #prepareContentHtml(html, tab) {
+    if (tab === 'profile') {
+      try {
+        await this.#ensureProfileInfoboxRender();
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
     if (tab === 'profile') {
@@ -1360,6 +1392,10 @@ class PeoplePage extends HTMLElement {
       } catch (err) {
         console.warn('Could not inline include', src, err);
       }
+    }
+
+    if (tab === 'profile' && typeof window.AppProfileInfobox?.refreshIdentityElementsInDocument === 'function') {
+      window.AppProfileInfobox.refreshIdentityElementsInDocument(doc);
     }
 
     if (tab === 'profile' && typeof window.upgradeProfileIdentityInDocument === 'function') {

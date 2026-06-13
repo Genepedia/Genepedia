@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title data-brand-template="GEDCOM - {{APP_NAME}}"></title>
+    <script src="../site-info.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../lib/Web-Framework/styles/common.css">
+    <style>
+        .gedcom-page__intro {
+            margin-bottom: 1.5rem;
+        }
+
+        .gedcom-page__actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0 2rem;
+        }
+
+        .gedcom-page__action-card {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 1.25rem;
+            border-radius: var(--border-radius-base);
+        }
+
+        .gedcom-page__action-card h2 {
+            margin: 0;
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .gedcom-page__action-card p {
+            margin: 0;
+            color: var(--color-subtle, #54595d);
+        }
+
+        .gedcom-page__action-card .gedcom-page__action-link {
+            margin-top: auto;
+            font-weight: 600;
+            align-self: flex-start;
+        }
+
+        .gedcom-page__action-link:hover {
+            text-decoration: underline;
+        }
+
+        .gedcom-page__toc {
+            margin: 0 0 1rem;
+            padding-left: 1.25rem;
+        }
+
+        .gedcom-page__toc a {
+            color: inherit;
+        }
+    </style>
+</head>
+
+<body>
+    <full-header></full-header>
+    <article>
+        <full-page-toolbar title="GEDCOM Import and Export" edit-text="Edit Page" edit-source="pages/gedcom.html"
+            variant="page"></full-page-toolbar>
+        <main class="main-content gedcom-page">
+            <p class="gedcom-page__intro">
+                GEDCOM is a standard file format for saving and sharing family tree data between genealogy programs and
+                websites. On {{APP_NAME}}, you can import tree data from a GEDCOM file or export a profile's tree to
+                use elsewhere.
+            </p>
+
+            <div class="gedcom-page__actions">
+                <div class="card gedcom-page__action-card">
+                    <h2><i class="bi bi-box-arrow-in-down" aria-hidden="true"></i> Import GEDCOM</h2>
+                    <p>Bring genealogical data from another program into {{APP_NAME}} by starting a new profile branch
+                        or preparing a GEDCOM file for import.</p>
+                    <a class="gedcom-page__action-link" href="gedcom/import.html">Go to GEDCOM Import →</a>
+                </div>
+                <div class="card gedcom-page__action-card">
+                    <h2><i class="bi bi-box-arrow-up" aria-hidden="true"></i> Export GEDCOM</h2>
+                    <p>Download a profile's family tree as a standard GEDCOM file to open in desktop software or
+                        other genealogy sites.</p>
+                    <a class="gedcom-page__action-link" href="gedcom/export.html">Go to GEDCOM Export →</a>
+                </div>
+            </div>
+
+            <h2 id="overview">Overview</h2>
+            <p>
+                A GEDCOM file describes people, families, events, and relationships in a format most genealogy
+                applications understand. On {{APP_NAME}}, each profile's family tree can be exported as GEDCOM or built
+                up by importing data from another program.
+            </p>
+            <p>
+                Use <a href="gedcom/import.html">Import</a> to bring tree data into {{APP_NAME}}, or
+                <a href="gedcom/export.html">Export</a> to download a profile's tree for backups, offline research, or
+                use in another genealogy tool.
+            </p>
+
+            <h2 id="learn-more">Learn more</h2>
+            <ul class="gedcom-page__toc">
+                <li><a href="gedcom/import.html">How to import a GEDCOM file</a></li>
+                <li><a href="gedcom/export.html">How to export a GEDCOM file</a></li>
+                <li><a href="https://www.gedcom.org/" rel="noopener noreferrer">GEDCOM specification (FamilySearch)</a></li>
+            </ul>
+        </main>
+        <full-footer></full-footer>
+    </article>
+    <script src="../lib/Web-Framework/components/mini-header.js"></script>
+    <script src="../lib/Web-Framework/components/mini-footer.js"></script>
+    <script src="../lib/Web-Framework/components/full-header.js"></script>
+    <script src="../lib/Web-Framework/components/full-page-toolbar.js"></script>
+    <script src="../lib/page-tabs.js"></script>
+    <script src="../lib/Web-Framework/components/full-footer.js"></script>
+    <script src="../lib/Web-Framework/components/sister-projects.js"></script>
+    <script src="../index.js"></script>
+</body>
+
+</html>
