@@ -1402,6 +1402,10 @@ class PeoplePage extends HTMLElement {
       window.upgradeProfileIdentityInDocument(doc);
     }
 
+    if (tab === 'profile') {
+      this.#rewriteDataAssetUrls(doc);
+    }
+
     // Remove unwanted sections from loaded profile content (e.g. "See also" lists)
     try {
       const headings = Array.from(doc.querySelectorAll('h2, h3'));

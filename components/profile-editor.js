@@ -122,6 +122,13 @@
 			.join(" ");
 	}
 
+	function hasRequiredProfileName(data = {}) {
+		if (window.AppProfileInfobox?.hasRequiredProfileName) {
+			return window.AppProfileInfobox.hasRequiredProfileName(data);
+		}
+		return Boolean(compactText(data.firstName) || compactText(data.lastName));
+	}
+
 	function registryEntryFromProfileData(personId, data = {}) {
 		const displayName = displayNameFromProfileData(data);
 		const parts = displayName.split(/\s+/).filter(Boolean);
@@ -395,6 +402,12 @@
 			if (name === "profile" && typeof this.__pageEditor?.refreshInfoboxPreview === "function") {
 				this.__pageEditor.refreshInfoboxPreview();
 			}
+		}
+
+		#focusRequiredNameField() {
+			const first = this.__infobox?.querySelector?.('[data-field="firstName"]');
+			const last = this.__infobox?.querySelector?.('[data-field="lastName"]');
+			(first || last)?.focus();
 		}
 
 		#bindSave() {
@@ -825,9 +838,10 @@
 
 		async #saveSelfProfile(files) {
 			const profileData = this.#profileData();
-			if (!displayNameFromProfileData(profileData)) {
+			if (!hasRequiredProfileName(profileData)) {
 				this.#activate("infobox");
-				this.#setStatus("Add at least your name before saving your profile.", "error");
+				this.#focusRequiredNameField();
+				this.#setStatus("Enter a first name or last name before saving.", "error");
 				return;
 			}
 
@@ -868,9 +882,10 @@
 
 		async #commitNewProfile(files) {
 			const profileData = this.#profileData();
-			if (!displayNameFromProfileData(profileData)) {
+			if (!hasRequiredProfileName(profileData)) {
 				this.#activate("infobox");
-				this.#setStatus("Add at least a name before saving this new profile.", "error");
+				this.#focusRequiredNameField();
+				this.#setStatus("Enter a first name or last name before saving.", "error");
 				return;
 			}
 
@@ -944,6 +959,14 @@
 			if (this.__saving || !VALID_ID) return;
 			if (!this.#isDirty()) {
 				this.#setStatus("Nothing to save yet.", "info");
+				return;
+			}
+
+			const profileData = this.#profileData();
+			if (!hasRequiredProfileName(profileData)) {
+				this.#activate("infobox");
+				this.#focusRequiredNameField();
+				this.#setStatus("Enter a first name or last name before saving.", "error");
 				return;
 			}
 

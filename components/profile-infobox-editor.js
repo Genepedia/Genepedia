@@ -39,6 +39,7 @@
 		normalizeData,
 		migrateFromMarkup,
 		displayNameFrom,
+		hasRequiredProfileName,
 		genderLabel,
 		buildFragment,
 	} = I;
@@ -2214,6 +2215,14 @@
 
 			const data = this.#collect();
 			this.__data = data;
+
+			if (!hasRequiredProfileName(data)) {
+				this.#setStatus("Enter a first name or last name before saving.", "error");
+				const first = this.querySelector('[data-field="firstName"]');
+				const last = this.querySelector('[data-field="lastName"]');
+				(first || last)?.focus();
+				return;
+			}
 
 			try {
 				await this.prepareForPublish();
