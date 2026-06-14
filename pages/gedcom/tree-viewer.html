@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title data-brand-template="GEDCOM Tree Viewer - {{APP_NAME}}"></title>
+    <script src="../../site-info.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../lib/Web-Framework/styles/common.css">
+    <style>
+        .gedcom-viewer {
+            max-width: none;
+            padding: 1rem clamp(0.75rem, 2vw, 1.5rem) 1.5rem;
+        }
+
+        .gedcom-viewer__back {
+            margin: 0 0 1rem;
+        }
+
+        .gedcom-viewer__toolbar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-top: 1px solid var(--border-color-subtle, rgba(0, 0, 0, 0.15));
+            border-bottom: 1px solid var(--border-color-subtle, rgba(0, 0, 0, 0.15));
+        }
+
+        .gedcom-viewer__file-input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+        }
+
+        .gedcom-viewer__file-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .gedcom-viewer__file-name,
+        .gedcom-viewer__status {
+            min-width: min(20rem, 100%);
+            color: var(--color-subtle, #54595d);
+            font-size: 0.95rem;
+        }
+
+        body.theme-dark .gedcom-viewer__file-name,
+        body.theme-dark .gedcom-viewer__status {
+            color: var(--color-subtle, #a7adb4);
+        }
+
+        .gedcom-viewer__status[data-type="error"] {
+            color: #b32424;
+        }
+
+        body.theme-dark .gedcom-viewer__status[data-type="error"] {
+            color: #ff8a8a;
+        }
+
+        .gedcom-viewer__stage {
+            position: relative;
+            height: clamp(30rem, 72vh, 58rem);
+            margin-top: 1rem;
+            border: 1px solid var(--border-color-subtle, rgba(0, 0, 0, 0.15));
+            background: Canvas;
+            color: CanvasText;
+            overflow: hidden;
+        }
+
+        .gedcom-viewer__stage.is-dragover {
+            outline: 3px solid Highlight;
+            outline-offset: -6px;
+        }
+
+        .gedcom-viewer__empty {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--color-subtle, #54595d);
+            pointer-events: none;
+        }
+
+        .gedcom-viewer__empty[hidden] {
+            display: none;
+        }
+
+        body.theme-dark .gedcom-viewer__empty {
+            color: var(--color-subtle, #a7adb4);
+        }
+
+        .gedcom-viewer__tree-mount,
+        .gedcom-viewer__tree {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        @media (max-width: 44rem) {
+            .gedcom-viewer__toolbar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .gedcom-viewer__file-button,
+            .gedcom-viewer__file-name,
+            .gedcom-viewer__status {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <full-header></full-header>
+    <article>
+        <full-page-toolbar title="GEDCOM Tree Viewer" edit-text="Edit Page"
+            edit-source="pages/gedcom/tree-viewer.html" variant="page"></full-page-toolbar>
+        <main class="main-content gedcom-viewer">
+            <p class="gedcom-viewer__back"><a href="../gedcom.html">← GEDCOM Import and Export</a></p>
+
+            <div class="gedcom-viewer__toolbar" aria-label="GEDCOM file controls">
+                <button class="pure-button gedcom-viewer__file-button" id="gedcom-viewer-open" type="button">
+                    <i class="bi bi-folder2-open" aria-hidden="true"></i>
+                    <span>Open GEDCOM</span>
+                </button>
+                <input class="gedcom-viewer__file-input" id="gedcom-viewer-file" type="file"
+                    accept=".ged,.gedcom,text/plain">
+                <div class="gedcom-viewer__file-name" id="gedcom-viewer-file-name">No file selected</div>
+                <div class="gedcom-viewer__status" id="gedcom-viewer-status" role="status"></div>
+            </div>
+
+            <div class="gedcom-viewer__stage" id="gedcom-viewer-stage">
+                <div class="gedcom-viewer__empty" id="gedcom-viewer-empty">Open a GEDCOM file to view it here.</div>
+                <div class="gedcom-viewer__tree-mount" id="gedcom-viewer-tree-mount"></div>
+            </div>
+        </main>
+        <full-footer></full-footer>
+    </article>
+    <script src="../../lib/Web-Framework/components/mini-header.js"></script>
+    <script src="../../lib/Web-Framework/components/mini-footer.js"></script>
+    <script src="../../lib/Web-Framework/components/full-header.js"></script>
+    <script src="../../lib/Web-Framework/components/full-page-toolbar.js"></script>
+    <script src="../../lib/page-tabs.js"></script>
+    <script src="../../lib/Web-Framework/components/full-footer.js"></script>
+    <script src="../../lib/Web-Framework/components/sister-projects.js"></script>
+    <script src="../../components/family-tree.js"></script>
+    <script src="../../index.js"></script>
+    <script>
+        (() => {
+            const fileInput = document.getElementById('gedcom-viewer-file');
+            const openButton = document.getElementById('gedcom-viewer-open');
+            const fileName = document.getElementById('gedcom-viewer-file-name');
+            const status = document.getElementById('gedcom-viewer-status');
+            const stage = document.getElementById('gedcom-viewer-stage');
+            const empty = document.getElementById('gedcom-viewer-empty');
+            const mount = document.getElementById('gedcom-viewer-tree-mount');
+            const LARGE_GEDCOM_BYTES = 2 * 1024 * 1024;
+            let currentObjectUrl = '';
+
+            function formatBytes(bytes) {
+                if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+                const units = ['B', 'KB', 'MB', 'GB'];
+                const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+                const value = bytes / Math.pow(1024, exponent);
+                return `${value.toFixed(value >= 10 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+            }
+
+            function setStatus(message, type = '') {
+                status.textContent = message;
+                if (type) {
+                    status.dataset.type = type;
+                } else {
+                    delete status.dataset.type;
+                }
+            }
+
+            function releaseCurrentFile() {
+                if (currentObjectUrl) {
+                    URL.revokeObjectURL(currentObjectUrl);
+                    currentObjectUrl = '';
+                }
+            }
+
+            function openFile(file) {
+                if (!file) return;
+
+                releaseCurrentFile();
+                mount.replaceChildren();
+
+                currentObjectUrl = URL.createObjectURL(file);
+                const isLargeFile = file.size > LARGE_GEDCOM_BYTES;
+                const tree = document.createElement('family-tree');
+                tree.className = 'gedcom-viewer__tree';
+                tree.setAttribute('ged', currentObjectUrl);
+                tree.setAttribute('readonly', '');
+                if (!isLargeFile) {
+                    tree.setAttribute('whole-tree', '');
+                }
+                tree.setAttribute('theme', document.body.classList.contains('theme-dark') ? 'dark' : 'light');
+                tree.addEventListener('family-tree-loaded', () => {
+                    setStatus(isLargeFile
+                        ? 'Tree loaded. Large file mode shows one connected tree at a time.'
+                        : 'Tree loaded.');
+                }, { once: true });
+                tree.addEventListener('family-tree-error', (event) => {
+                    setStatus(event.detail?.message || 'Could not load the GEDCOM file.', 'error');
+                }, { once: true });
+
+                fileName.textContent = `${file.name} (${formatBytes(file.size)})`;
+                setStatus('Loading tree...');
+                empty.hidden = true;
+                mount.append(tree);
+            }
+
+            openButton?.addEventListener('click', () => {
+                fileInput?.click();
+            });
+
+            fileInput?.addEventListener('change', () => {
+                openFile(fileInput.files?.[0]);
+            });
+
+            stage?.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                stage.classList.add('is-dragover');
+            });
+
+            stage?.addEventListener('dragleave', (event) => {
+                if (event.currentTarget === event.target) {
+                    stage.classList.remove('is-dragover');
+                }
+            });
+
+            stage?.addEventListener('drop', (event) => {
+                event.preventDefault();
+                stage.classList.remove('is-dragover');
+                openFile(event.dataTransfer?.files?.[0]);
+            });
+
+            window.addEventListener('beforeunload', releaseCurrentFile);
+        })();
+    </script>
+</body>
+
+</html>

@@ -785,11 +785,6 @@
   "lib/people-registry.js": [
     {"hash":"9b9726427a34426916a3a3322b89c0d1663cf6e6","date":"2026-06-07T16:35:08+02:00","author":"Shaun Roselt","subject":"feat: implement people registry and update home page layout"}
   ],
-  "lib/gedcom.js": [
-    {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
-    {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},
-    {"hash":"f4c7a57fe368af3bf8414297f1cf061a9ea818aa","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Add notifications feature with sample data and HTML structure"}
-  ],
   "lib/notifications.js": [
     {"hash":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","date":"2026-06-06T00:59:14+02:00","author":"Shaun Roselt","subject":"Refactor branding to use APP_NAME token across profiles and site info"},
     {"hash":"ffc147287ccd9ea7805235c7850e304035292486","date":"2026-06-06T00:05:34+02:00","author":"Shaun Roselt","subject":"Rebranded to Genepedia"},

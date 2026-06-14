@@ -832,7 +832,7 @@
 		}
 
 		#buildStarterGedcom(data) {
-			const starter = window.AppGedcomStarter;
+			const starter = window.GenepediaGedcomStarter;
 			if (!starter?.buildProfileGedcomFromInfoboxData) {
 				return "";
 			}
@@ -840,7 +840,7 @@
 		}
 
 		async #buildGedcomPublishContent(data) {
-			const starter = window.AppGedcomStarter;
+			const starter = window.GenepediaGedcomStarter;
 			if (!starter?.buildProfileGedcomFromInfoboxData) {
 				return "";
 			}
@@ -849,14 +849,16 @@
 				return this.#buildStarterGedcom(data);
 			}
 
+			let existing = "";
 			try {
 				const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/family-tree.ged`));
-				const existing = response ? await response.text() : "";
-				if (starter.syncProfileGedcomFromInfoboxData) {
-					return starter.syncProfileGedcomFromInfoboxData(existing, this.__personId, data);
-				}
+				existing = response ? await response.text() : "";
 			} catch (error) {
 				// fall through to a fresh starter file
+			}
+
+			if (existing && starter.syncProfileGedcomFromInfoboxData) {
+				return starter.syncProfileGedcomFromInfoboxData(existing, this.__personId, data);
 			}
 
 			return this.#buildStarterGedcom(data);

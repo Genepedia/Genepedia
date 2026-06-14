@@ -4,13 +4,15 @@
  *
  * It is fully self-contained: the markup, styles and bootstrap-icons stylesheet
  * are injected into a shadow root so nothing leaks into (or is affected by) the
- * host page. The GEDCOM parsing library (window.AppGedcom) is loaded on demand.
+ * host page. The GEDCOM parsing library (window.GenepediaGedcom) is loaded on demand.
  *
  * Attributes:
  *   ged    — URL of the GEDCOM file to render (absolute, or resolved against the
  *            current page).
  *   person — a Genepedia profile id (or GEDCOM xref) to open centred/selected.
- *   theme  — "light" | "dark" (falls back to the site/OS theme).
+ *   readonly   — hide edit/add controls when present.
+ *   theme      — "light" | "dark" (falls back to the site/OS theme).
+ *   whole-tree — render every disconnected branch and lone person when present.
  */
 (function () {
 	"use strict";
@@ -35,6 +37,145 @@
 
 	const BOOTSTRAP_ICONS_HREF =
 		"https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css";
+	const GEDCOM_LIBRARY_SRC =
+		"https://cdn.jsdelivr.net/gh/Genepedia/GEDCOM@main/dist/genepedia-gedcom.min.js";
+	const GEDCOM_POINTER_RE = /^@([^@]+)@$/;
+	const GEDCOM_EVENT_TAGS = new Set([
+		"ADOP",
+		"BAPM",
+		"BARM",
+		"BASM",
+		"BIRT",
+		"BLES",
+		"BURI",
+		"CENS",
+		"CHR",
+		"CHRA",
+		"CONF",
+		"CREM",
+		"DEAT",
+		"DIV",
+		"DIVF",
+		"EDUC",
+		"EMIG",
+		"ENGA",
+		"EVEN",
+		"FCOM",
+		"GRAD",
+		"IMMI",
+		"MARB",
+		"MARC",
+		"MARL",
+		"MARR",
+		"MARS",
+		"NATU",
+		"OCCU",
+		"ORDN",
+		"PROB",
+		"RELI",
+		"RESI",
+		"RETI",
+		"WILL",
+	]);
+	const GEDCOM_TAG_LABELS = {
+		ADDR: "Address",
+		ADOP: "Adoption",
+		ADR1: "Address line 1",
+		ADR2: "Address line 2",
+		ADR3: "Address line 3",
+		AGE: "Age",
+		AGNC: "Agency",
+		BAPM: "Baptism",
+		BARM: "Bar mitzvah",
+		BASM: "Bat mitzvah",
+		BIRT: "Birth",
+		BLES: "Blessing",
+		BURI: "Burial",
+		CAUS: "Cause",
+		CENS: "Census",
+		CHAN: "Last changed",
+		CHAR: "Character set",
+		CHIL: "Child",
+		CHR: "Christening",
+		CHRA: "Adult christening",
+		CITY: "City",
+		CONF: "Confirmation",
+		CONT: "Continued",
+		CONC: "Concatenated",
+		CORP: "Corporation",
+		CREM: "Cremation",
+		CTRY: "Country",
+		DATE: "Date",
+		DEAT: "Death",
+		DIV: "Divorce",
+		DIVF: "Divorce filed",
+		EDUC: "Education",
+		EMAIL: "Email",
+		EMIG: "Emigration",
+		ENGA: "Engagement",
+		EVEN: "Event",
+		FAMC: "Family as child",
+		FAMS: "Family as spouse",
+		FCOM: "First communion",
+		FILE: "File",
+		FORM: "Format",
+		GEDC: "GEDCOM",
+		GIVN: "Given name",
+		GRAD: "Graduation",
+		HEAD: "Header",
+		HUSB: "Husband",
+		IMMI: "Immigration",
+		MARB: "Marriage bann",
+		MARC: "Marriage contract",
+		MARL: "Marriage license",
+		MARNM: "Married name",
+		MARR: "Marriage",
+		MARS: "Marriage settlement",
+		NAME: "Name",
+		NATI: "Nationality",
+		NATU: "Naturalization",
+		NCHI: "Number of children",
+		NICK: "Nickname",
+		NOTE: "Note",
+		NPFX: "Name prefix",
+		NSFX: "Name suffix",
+		OBJE: "Media",
+		OCCU: "Occupation",
+		ORDN: "Ordination",
+		PEDI: "Pedigree",
+		PHON: "Phone",
+		PLAC: "Place",
+		POST: "Postal code",
+		PROB: "Probate",
+		REFN: "Reference number",
+		REPO: "Repository",
+		RELI: "Religion",
+		RESI: "Residence",
+		RETI: "Retirement",
+		RFN: "Record file number",
+		RIN: "Record ID",
+		SEX: "Sex",
+		SOUR: "Source",
+		SPFX: "Surname prefix",
+		STAE: "State",
+		SUBM: "Submitter",
+		SURN: "Surname",
+		TEXT: "Text",
+		TIME: "Time",
+		TITL: "Title",
+		TYPE: "Type",
+		WIFE: "Wife",
+		WILL: "Will",
+		WWW: "Website",
+		_PRIM: "Primary",
+	};
+	const GEDCOM_REFERENCE_RECORD_GETTERS = {
+		NOTE: "getNoteRecord",
+		OBJE: "getMultimediaRecord",
+		REPO: "getRepositoryRecord",
+		SOUR: "getSourceRecord",
+		SUBM: "getSubmitterRecord",
+	};
 
 	// Resolve a site-root-relative path. Prefer the shared site helper (present on
 	// every page that loads site-info.js); otherwise fall back to walking up from
@@ -45,19 +186,20 @@
 		return new URL(`../../${cleanPath}`, window.location.href).href;
 	}
 
-	// Load lib/gedcom.js once (it defines the global window.AppGedcom). The
-	// profile page doesn't include it, so the component pulls it in on demand.
+	// Load genepedia-gedcom once (it defines the global window.GenepediaGedcom).
+	// The profile page doesn't include it, so the component pulls it in on demand.
 	let gedcomLibPromise = null;
 	function ensureGedcomLibrary() {
-		if (window.AppGedcom && typeof window.AppGedcom.loadTreeData === "function") {
+		if (window.GenepediaGedcom && typeof window.GenepediaGedcom.readGedcom === "function") {
 			return Promise.resolve();
 		}
 		if (gedcomLibPromise) return gedcomLibPromise;
 
 		gedcomLibPromise = new Promise((resolve, reject) => {
-			const existing = document.querySelector("script[data-app-gedcom]");
+			const existing = [...document.querySelectorAll("script[src], script[data-genepedia-gedcom]")]
+				.find((script) => script.dataset.genepediaGedcom || script.src === GEDCOM_LIBRARY_SRC);
 			if (existing) {
-				if (window.AppGedcom) {
+				if (window.GenepediaGedcom) {
 					resolve();
 					return;
 				}
@@ -67,8 +209,9 @@
 			}
 
 			const script = document.createElement("script");
-			script.src = resolveSitePath("lib/gedcom.js");
-			script.dataset.appGedcom = "1";
+			script.src = GEDCOM_LIBRARY_SRC;
+			script.crossOrigin = "anonymous";
+			script.dataset.genepediaGedcom = "1";
 			script.addEventListener("load", () => resolve());
 			script.addEventListener("error", () => reject(new Error("Could not load the GEDCOM library.")));
 			document.head.appendChild(script);
@@ -76,12 +219,377 @@
 		return gedcomLibPromise;
 	}
 
-	async function loadTreeData(url) {
-		const api = window.AppGedcom;
-		if (!api || typeof api.loadTreeData !== "function") {
-			throw new Error("The GEDCOM library (window.AppGedcom) is not available.");
+	function requireGedcomLibrary() {
+		const api = window.GenepediaGedcom;
+		if (!api || typeof api.readGedcom !== "function") {
+			throw new Error("The GEDCOM library (window.GenepediaGedcom) is not available.");
 		}
-		return api.loadTreeData(url);
+		return api;
+	}
+
+	async function loadTreeData(url) {
+		const response = await fetch(url, { cache: "no-cache" });
+		if (!response.ok) {
+			throw new Error(`Unable to load GEDCOM file: ${response.status} ${response.statusText}`);
+		}
+		const gedcom = requireGedcomLibrary().readGedcom(await response.arrayBuffer());
+		return gedcomToTreeData(gedcom);
+	}
+
+	function gedcomToTreeData(gedcom) {
+		const individuals = gedcom.getIndividualRecord().array();
+		const families = gedcom.getFamilyRecord().array();
+		const people = individuals.map((individual) => gedcomIndividualToPerson(individual, gedcom));
+		const peopleByGedcomId = new Set(people.map((person) => person.id));
+		const unions = families
+			.map((family) => gedcomFamilyToUnion(family, peopleByGedcomId))
+			.filter((union) => union.partners.length > 0 || union.children.length > 0);
+
+		return {
+			gedcom,
+			people,
+			rootUnionId: unions[0]?.id ?? "",
+			unions,
+		};
+	}
+
+	function gedcomIndividualToPerson(record, rootGedcom = null) {
+		const id = gedcomRecordId(record);
+		const nameRecords = children(record, "NAME");
+		const primaryName = nameRecords[0] ?? null;
+		const birthName =
+			nameRecords.find((nameRecord) => {
+				const type = childValue(nameRecord, "TYPE").toLowerCase();
+				return type === "birth" || type === "maiden";
+			}) ?? null;
+
+		const birthDate = eventDate(record, "BIRT");
+		const birthPlace = eventPlace(record, "BIRT");
+		const deathDate = eventDate(record, "DEAT");
+		const deathPlace = eventPlace(record, "DEAT");
+		const sex = (childValue(record, "SEX") || "U").toUpperCase();
+		const genepediaId = gedcomGenepediaId(record);
+
+		return {
+			genepediaId: genepediaId || undefined,
+			aliases: gedcomIndividualAliases(record, primaryName),
+			birthDate: birthDate || undefined,
+			birthPlace: birthPlace || undefined,
+			birthSurname: birthName ? gedcomNameSurname(birthName) : "",
+			born: extractYearFromGedcomDate(birthDate),
+			deathDate: deathDate || undefined,
+			deathPlace: deathPlace || undefined,
+			died: extractYearFromGedcomDate(deathDate),
+			gender: sex === "M" || sex === "F" ? sex : "U",
+			gedcom: record,
+			gedcomXref: record.pointer,
+			id,
+			name: gedcomDisplayName(primaryName) || id,
+			photoUrl: gedcomIndividualPhotoUrl(record, rootGedcom) || undefined,
+			sex,
+		};
+	}
+
+	function gedcomFamilyToUnion(record, peopleByGedcomId) {
+		const partnerIds = ["HUSB", "WIFE"]
+			.map((tag) => gedcomPointerId(childValue(record, tag)))
+			.filter((id) => id && peopleByGedcomId.has(id));
+		const childrenIds = children(record, "CHIL")
+			.map((child) => gedcomPointerId(child.value))
+			.filter((id) => id && peopleByGedcomId.has(id));
+
+		return {
+			children: [...new Set(childrenIds)],
+			gedcom: record,
+			gedcomXref: record.pointer,
+			id: gedcomRecordId(record),
+			partners: [...new Set(partnerIds)],
+		};
+	}
+
+	function gedcomGenepediaId(record) {
+		const custom = childValue(record, "_GENEPEDIA");
+		if (custom && custom.trim()) return custom.trim();
+
+		for (const refn of children(record, "REFN")) {
+			const type = childValue(refn, "TYPE").trim().toLowerCase();
+			if (type === "" || type === "genepedia") {
+				const value = String(refn.value ?? "").trim();
+				if (value) return value;
+			}
+		}
+
+		return "";
+	}
+
+	function gedcomDisplayName(nameRecord) {
+		if (!nameRecord) return "";
+
+		const given = childValue(nameRecord, "GIVN");
+		const surnamePrefix = childValue(nameRecord, "SPFX");
+		const surname = childValue(nameRecord, "SURN") || gedcomNameValueSurname(nameRecord.value);
+		const fullSurname = [surnamePrefix, surname].filter(Boolean).join(" ");
+		if (given || fullSurname) return [given, fullSurname].filter(Boolean).join(" ");
+
+		return gedcomNameValueDisplay(nameRecord.value);
+	}
+
+	function gedcomNameSurname(nameRecord) {
+		if (!nameRecord) return "";
+
+		const surnamePrefix = childValue(nameRecord, "SPFX");
+		const surname = childValue(nameRecord, "SURN") || gedcomNameValueSurname(nameRecord.value);
+		if (surname || surnamePrefix) return [surnamePrefix, surname].filter(Boolean).join(" ");
+
+		return "";
+	}
+
+	function gedcomNameValueSurname(value) {
+		const match = String(value ?? "").match(/\/([^/]*)\//);
+		return match ? match[1].trim() : "";
+	}
+
+	function gedcomNameValueDisplay(value) {
+		return String(value ?? "")
+			.replaceAll("/", "")
+			.replace(/\s+/g, " ")
+			.trim();
+	}
+
+	function gedcomIndividualAliases(record, primaryName = null) {
+		const primary = gedcomDisplayName(primaryName);
+		const aliases = [];
+		for (const nameRecord of children(record, "NAME")) {
+			if (nameRecord !== primaryName) {
+				const display = gedcomDisplayName(nameRecord) || gedcomNameValueDisplay(nameRecord.value);
+				if (display && display !== primary) aliases.push(display);
+			}
+			for (const nick of children(nameRecord, "NICK")) {
+				const value = String(nick.value ?? "").trim();
+				if (value && value !== primary) aliases.push(value);
+			}
+		}
+		for (const nick of children(record, "NICK")) {
+			const value = String(nick.value ?? "").trim();
+			if (value && value !== primary) aliases.push(value);
+		}
+		return uniqueTextValues(aliases);
+	}
+
+	function gedcomIndividualPhotoUrl(record, rootGedcom = null) {
+		const mediaRecords = [];
+		for (const media of children(record, "OBJE")) {
+			if (media.value && GEDCOM_POINTER_RE.test(String(media.value)) && rootGedcom?.getMultimediaRecord) {
+				mediaRecords.push(...rootGedcom.getMultimediaRecord(media.value).array());
+			} else {
+				mediaRecords.push(media);
+			}
+		}
+
+		const media = mediaRecords
+			.map((record) => ({
+				isPrimary: childValue(record, "_PRIM").trim().toUpperCase() === "Y",
+				url: gedcomMediaFileUrl(record),
+			}))
+			.filter((item) => item.url);
+		return (media.find((item) => item.isPrimary) ?? media[0])?.url ?? "";
+	}
+
+	function gedcomMediaFileUrl(mediaRecord) {
+		for (const file of children(mediaRecord, "FILE")) {
+			const url = String(file.value ?? "").trim();
+			if (!url) continue;
+			const format = String(childValue(file, "FORM") || childValue(mediaRecord, "FORM")).trim().toLowerCase();
+			if (!format || ["gif", "jpeg", "jpg", "png", "webp"].includes(format)) return url;
+		}
+		return "";
+	}
+
+	function uniqueTextValues(values) {
+		const seen = new Set();
+		const result = [];
+		for (const value of values ?? []) {
+			const text = String(value ?? "").trim();
+			if (!text || seen.has(text)) continue;
+			seen.add(text);
+			result.push(text);
+		}
+		return result;
+	}
+
+	function extractYearFromGedcomDate(value) {
+		const matches = String(value ?? "").match(/\b\d{3,4}(?:\/\d{2})?\b/g);
+		if (!matches) return undefined;
+
+		const year = Number(matches[matches.length - 1].split("/")[0]);
+		return Number.isFinite(year) ? year : undefined;
+	}
+
+	function eventDate(record, eventTag) {
+		const event = firstChild(record, eventTag);
+		return event ? childValue(event, "DATE") : "";
+	}
+
+	function eventPlace(record, eventTag) {
+		const event = firstChild(record, eventTag);
+		if (!event) return "";
+		return gedcomPlaceAddressText(event);
+	}
+
+	function gedcomAddressParts(address) {
+		if (!address) return [];
+		const direct = String(address.value ?? "").trim();
+		return [
+			direct,
+			childValue(address, "ADR1"),
+			childValue(address, "ADR2"),
+			childValue(address, "ADR3"),
+			childValue(address, "CITY"),
+			childValue(address, "STAE"),
+			childValue(address, "POST"),
+			childValue(address, "CTRY"),
+		]
+			.map((value) => String(value ?? "").trim())
+			.filter(Boolean);
+	}
+
+	function gedcomAddressText(address) {
+		return uniqueTextValues(gedcomAddressParts(address)).join(", ");
+	}
+
+	function gedcomPlaceParts(value) {
+		return String(value ?? "")
+			.split(/\s*,\s*/)
+			.map((part) => part.trim())
+			.filter(Boolean);
+	}
+
+	function gedcomPlaceAddressText(record) {
+		if (!record) return "";
+		const parts = [
+			...gedcomPlaceParts(childValue(record, "PLAC")),
+			...gedcomAddressParts(firstChild(record, "ADDR")),
+		];
+		return uniqueTextValues(parts).join(", ");
+	}
+
+	function gedcomSexText(value) {
+		const sex = String(value ?? "U").trim().toUpperCase();
+		if (sex === "M") return "Male";
+		if (sex === "F") return "Female";
+		if (sex === "X") return "Intersex";
+		if (sex === "N") return "Not recorded";
+		if (!sex || sex === "U") return "Unknown";
+		return String(value ?? "").trim();
+	}
+
+	function gedcomTagLabel(tag) {
+		const cleanTag = String(tag ?? "").trim();
+		if (!cleanTag) return "Value";
+		if (GEDCOM_TAG_LABELS[cleanTag]) return GEDCOM_TAG_LABELS[cleanTag];
+		const withoutPrefix = cleanTag.replace(/^_+/, "");
+		if (GEDCOM_TAG_LABELS[withoutPrefix]) return GEDCOM_TAG_LABELS[withoutPrefix];
+		return withoutPrefix
+			.toLowerCase()
+			.replace(/(^|_)([a-z])/g, (_, prefix, letter) => `${prefix ? " " : ""}${letter.toUpperCase()}`);
+	}
+
+	function gedcomNodeValueText(node) {
+		if (!node) return "";
+		const raw = String(node.value ?? "").trim();
+		if (raw === "Y" && GEDCOM_EVENT_TAGS.has(node.tag)) return "";
+		if (node.tag === "NAME") return gedcomDisplayName(node) || gedcomNameValueDisplay(raw);
+		if (node.tag === "SEX") return gedcomSexText(raw);
+		if (node.tag === "ADDR") return gedcomAddressText(node) || raw;
+		if (node.tag === "CHAN") return uniqueTextValues([childValue(node, "DATE"), childValue(firstChild(node, "DATE"), "TIME")]).join(" ");
+		if (node.tag === "DATE") return uniqueTextValues([raw, childValue(node, "TIME")]).join(" ");
+		if (GEDCOM_EVENT_TAGS.has(node.tag)) {
+			return uniqueTextValues([
+				raw,
+				childValue(node, "TYPE"),
+				childValue(node, "DATE"),
+				gedcomPlaceAddressText(node),
+				childValue(node, "AGE"),
+				childValue(node, "CAUS"),
+			]).join(" - ");
+		}
+		return raw;
+	}
+
+	function gedcomFactDetailLines(node, depth = 0) {
+		const lines = [];
+		for (const child of node?.children ?? []) {
+			lines.push({
+				depth,
+				label: gedcomTagLabel(child.tag),
+				value: gedcomNodeValueText(child),
+				tag: child.tag,
+			});
+			lines.push(...gedcomFactDetailLines(child, depth + 1));
+		}
+		return lines;
+	}
+
+	function gedcomFactSummaries(record) {
+		return (record?.children ?? []).map((node) => ({
+			details: gedcomFactDetailLines(node),
+			label: gedcomTagLabel(node.tag),
+			tag: node.tag,
+			value: gedcomNodeValueText(node),
+		}));
+	}
+
+	function gedcomFactValues(record, tag) {
+		return uniqueTextValues(children(record, tag).map(gedcomNodeValueText));
+	}
+
+	function gedcomReferencedRecords(rootGedcom, records) {
+		if (!rootGedcom) return [];
+		const found = [];
+		const seen = new Set();
+
+		const addRecord = (record) => {
+			if (!record) return;
+			const key = `${record.tag || ""}:${record.pointer || ""}:${record.indexSource ?? ""}`;
+			if (seen.has(key)) return;
+			seen.add(key);
+			found.push(record);
+		};
+
+		const visit = (node) => {
+			if (!node) return;
+			const getter = GEDCOM_REFERENCE_RECORD_GETTERS[node.tag];
+			const pointer = GEDCOM_POINTER_RE.test(String(node.value ?? "")) ? String(node.value) : "";
+			if (getter && pointer && typeof rootGedcom[getter] === "function") {
+				for (const record of rootGedcom[getter](pointer).array()) addRecord(record);
+			}
+			for (const child of node.children ?? []) visit(child);
+		};
+
+		for (const record of records ?? []) visit(record);
+		return found;
+	}
+
+	function gedcomRecordId(record) {
+		return record.pointer ? gedcomPointerId(record.pointer) : `${record.tag}-${record.indexSource}`;
+	}
+
+	function gedcomPointerId(value) {
+		const match = String(value ?? "").match(GEDCOM_POINTER_RE);
+		return match ? match[1] : "";
+	}
+
+	function childValue(record, tag) {
+		const child = firstChild(record, tag);
+		return child?.value ?? "";
+	}
+
+	function firstChild(record, tag) {
+		return children(record, tag)[0] ?? null;
+	}
+
+	function children(record, tag) {
+		return (record?.children ?? []).filter((child) => child.tag === tag);
 	}
 
 	// Read the <table-photo> portrait out of a person's identity table and return
@@ -430,8 +938,45 @@
 			}
 
 			const rootUnion = indexes.unionsById.get(rootUnionId);
-			let rootWidth;
-			if (rootUnion) {
+			let rootWidth = 0;
+			if (opts.includeDisconnected) {
+				const orderedUnionIds = [
+					rootUnionId,
+					...data.unions.map((union) => union.id),
+				].filter((id, index, list) => id && list.indexOf(id) === index);
+				let cursorX = CONFIG.padding;
+
+				for (const unionId of orderedUnionIds) {
+					const union = indexes.unionsById.get(unionId);
+					if (!union) continue;
+
+					const relatedIds = [...(union.partners ?? []), ...(union.children ?? [])].filter(Boolean);
+					if (
+						positions.unions.has(unionId) ||
+						(relatedIds.length > 0 && relatedIds.every((id) => positions.people.has(id)))
+					) {
+						continue;
+					}
+
+					const width = measureUnion(unionId);
+					const beforeCount = positions.people.size;
+					layoutUnion(unionId, cursorX, 0, new Set());
+					if (positions.people.size > beforeCount) {
+						cursorX += width + CONFIG.padding;
+					}
+				}
+
+				for (const person of data.people) {
+					if (positions.people.has(person.id)) continue;
+					positions.people.set(person.id, {
+						x: cursorX + CONFIG.nodeWidth / 2,
+						y: CONFIG.padding,
+					});
+					cursorX += CONFIG.nodeWidth + CONFIG.partnerGap;
+				}
+
+				rootWidth = Math.max(CONFIG.nodeWidth, cursorX);
+			} else if (rootUnion) {
 				rootWidth = measureUnion(rootUnionId);
 				layoutUnion(rootUnionId, CONFIG.padding, 0, new Set());
 			} else {
@@ -534,6 +1079,7 @@
 		onEdit,
 		onAdd,
 		onTree,
+		readOnly = false,
 	}) {
 		const { peopleById } = indexes;
 		const { positions, edges, sceneSize } = layoutResult;
@@ -647,38 +1193,43 @@
 				});
 			}
 
-			const editAction = document.createElement("button");
-			editAction.type = "button";
-			editAction.className = "icon-button";
-			editAction.setAttribute("aria-label", "Edit person");
-			editAction.setAttribute("data-tooltip", "Edit");
-			editAction.appendChild(createBiIcon("pencil"));
-			editAction.addEventListener("click", (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				setSelected(personId, { source: "action" });
-				onEdit?.({ personId, anchorEl: editAction });
-			});
+			if (!readOnly) {
+				const editAction = document.createElement("button");
+				editAction.type = "button";
+				editAction.className = "icon-button";
+				editAction.setAttribute("aria-label", "Edit person");
+				editAction.setAttribute("data-tooltip", "Edit");
+				editAction.appendChild(createBiIcon("pencil"));
+				editAction.addEventListener("click", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					setSelected(personId, { source: "action" });
+					onEdit?.({ personId, anchorEl: editAction });
+				});
 
-			const addAction = document.createElement("button");
-			addAction.type = "button";
-			addAction.className = "icon-button";
-			addAction.setAttribute("aria-label", "Add relative");
-			addAction.setAttribute("data-tooltip", "Add");
-			addAction.appendChild(createBiIcon("plus-lg"));
-			addAction.addEventListener("click", (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				setSelected(personId, { source: "action" });
-				onAdd?.({ personId, anchorEl: addAction });
-			});
+				const addAction = document.createElement("button");
+				addAction.type = "button";
+				addAction.className = "icon-button";
+				addAction.setAttribute("aria-label", "Add relative");
+				addAction.setAttribute("data-tooltip", "Add");
+				addAction.appendChild(createBiIcon("plus-lg"));
+				addAction.addEventListener("click", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					setSelected(personId, { source: "action" });
+					onAdd?.({ personId, anchorEl: addAction });
+				});
 
-			// Order: Tree, Edit, Add (Tree omitted if nothing new to show)
-			if (treeAction) actions.append(treeAction);
-			actions.append(editAction, addAction);
+				// Order: Tree, Edit, Add (Tree omitted if nothing new to show)
+				if (treeAction) actions.append(treeAction);
+				actions.append(editAction, addAction);
+			} else if (treeAction) {
+				actions.append(treeAction);
+			}
 
 			content.append(name, meta);
-			node.append(avatar, content, actions);
+			node.append(avatar, content);
+			if (actions.childElementCount > 0) node.append(actions);
 			node.addEventListener("click", (e) => {
 				e.stopPropagation();
 				setSelected(personId, { source: "node" });
@@ -739,6 +1290,9 @@
 	}
 
 	function createPanZoom({ viewport, scene, onChange }) {
+		const host = viewport.getRootNode()?.host;
+		const configuredMinScale = Number(host?.dataset?.minScale);
+		const minScale = Number.isFinite(configuredMinScale) ? configuredMinScale : CONFIG.minScale;
 		const state = { x: 0, y: 0, scale: 1 };
 		const DRAG_THRESHOLD_PX = 6;
 		const dragThresholdSq = DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX;
@@ -760,7 +1314,7 @@
 			const px = clientX - rect.left;
 			const py = clientY - rect.top;
 			const prevScale = state.scale;
-			const nextScale = clamp(scale, CONFIG.minScale, CONFIG.maxScale);
+			const nextScale = clamp(scale, minScale, CONFIG.maxScale);
 
 			const sx = (px - state.x) / prevScale;
 			const sy = (py - state.y) / prevScale;
@@ -856,10 +1410,13 @@
 		const vw = viewport.clientWidth;
 		const vh = viewport.clientHeight;
 		if (vw <= 0 || vh <= 0) return { x: 0, y: 0, scale: 1 };
+		const host = viewport.getRootNode()?.host;
+		const configuredMinScale = Number(host?.dataset?.minScale);
+		const minScale = Number.isFinite(configuredMinScale) ? configuredMinScale : CONFIG.minScale;
 
 		const bboxW = Math.max(1, contentBbox.width + padding * 2);
 		const bboxH = Math.max(1, contentBbox.height + padding * 2);
-		const scale = clamp(Math.min(vw / bboxW, vh / bboxH), CONFIG.minScale, 1.6);
+		const scale = clamp(Math.min(vw / bboxW, vh / bboxH), minScale, 1.6);
 
 		const cx = (contentBbox.minX + contentBbox.maxX) / 2;
 		const cy = (contentBbox.minY + contentBbox.maxY) / 2;
@@ -1638,6 +2195,128 @@ button:focus-visible {
 	margin: 4px 0;
 }
 
+.sidebar__person-button {
+	appearance: none;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	padding: 0;
+	font: inherit;
+	font-weight: 650;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.sidebar__person-button:hover {
+	text-decoration: underline;
+}
+
+.sidebar__person-button:focus-visible {
+	outline: 2px solid Highlight;
+	outline-offset: 2px;
+}
+
+.sidebar__partner-names {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 6px;
+}
+
+.sidebar__fact-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.sidebar__fact-record {
+	border: 1px solid GrayText;
+	padding: 8px;
+}
+
+.sidebar__fact-record summary {
+	cursor: pointer;
+	font-weight: 800;
+	font-size: 13px;
+}
+
+.sidebar__fact-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.sidebar__fact {
+	border-top: 1px solid color-mix(in srgb, GrayText 40%, transparent);
+	padding-top: 8px;
+}
+
+.sidebar__fact:first-child {
+	border-top: 0;
+	padding-top: 0;
+}
+
+.sidebar__fact-label {
+	font-weight: 800;
+}
+
+.sidebar__fact-value {
+	margin-top: 2px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.sidebar__fact-details {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin-top: 6px;
+	color: inherit;
+	opacity: 0.86;
+}
+
+.sidebar__fact-detail {
+	display: grid;
+	grid-template-columns: minmax(74px, max-content) 1fr;
+	gap: 6px;
+}
+
+.sidebar__fact-detail-label {
+	font-weight: 700;
+}
+
+.sidebar__fact-empty {
+	opacity: 0.65;
+}
+
+.sidebar__gedcom-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.sidebar__gedcom-record {
+	border: 1px solid GrayText;
+	padding: 8px;
+}
+
+.sidebar__gedcom-record summary {
+	cursor: pointer;
+	font-weight: 800;
+	font-size: 13px;
+}
+
+.sidebar__gedcom-pre {
+	margin: 8px 0 0;
+	max-height: 18rem;
+	overflow: auto;
+	white-space: pre-wrap;
+	word-break: break-word;
+	font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
 .sidebar__dot {
 	width: 10px;
 	height: 10px;
@@ -1780,17 +2459,27 @@ a.node__name:focus-visible {
 			};
 			window.addEventListener("storage", this.__onStorage);
 
-			this.#init(root).catch((err) => {
-				console.error(err);
-				const nodesRoot = root.getElementById("nodes");
-				if (nodesRoot) {
-					const message = el("div", "node");
-					message.style.left = "180px";
-					message.style.top = "120px";
-					message.textContent = err instanceof Error ? err.message : "Unable to load GEDCOM data.";
-					nodesRoot.replaceChildren(message);
-				}
-			});
+			this.#init(root)
+				.then(() => {
+					this.dispatchEvent(new CustomEvent("family-tree-loaded", { bubbles: true, composed: true }));
+				})
+				.catch((err) => {
+					console.error(err);
+					const errorMessage = err instanceof Error ? err.message : "Unable to load GEDCOM data.";
+					const nodesRoot = root.getElementById("nodes");
+					if (nodesRoot) {
+						const message = el("div", "node");
+						message.style.left = "180px";
+						message.style.top = "120px";
+						message.textContent = errorMessage;
+						nodesRoot.replaceChildren(message);
+					}
+					this.dispatchEvent(new CustomEvent("family-tree-error", {
+						bubbles: true,
+						composed: true,
+						detail: { message: errorMessage },
+					}));
+				});
 		}
 
 		disconnectedCallback() {
@@ -1842,6 +2531,9 @@ a.node__name:focus-visible {
 
 			const gedAttr = (this.getAttribute("ged") || "").trim();
 			const personRef = (this.getAttribute("person") || "").trim();
+			const includeDisconnected = this.hasAttribute("whole-tree");
+			const isReadOnly = this.hasAttribute("readonly");
+			this.dataset.minScale = includeDisconnected ? "0.01" : String(CONFIG.minScale);
 			const gedUrl = gedAttr
 				? new URL(gedAttr, window.location.href).href
 				: resolveSitePath("data/family-tree.ged");
@@ -2055,6 +2747,17 @@ a.node__name:focus-visible {
 			const uniq = (list) => [...new Set((list ?? []).filter(Boolean))];
 			const displayPersonName = (personId) => formatDisplayName(personById(personId)) || personId;
 			const displayPersonGender = (personId) => normalizeGender(personById(personId).gender);
+			const selectPersonFromAnywhere = (personId, source = "sidebar") => {
+				if (!personId || !indexes.peopleById.has(personId)) return;
+				closeTreeSearch();
+				closeRelationMenu();
+				if (!layoutResult?.positions?.people?.has(personId)) {
+					openTreeForPerson(personId, { source });
+					return;
+				}
+				rendered?.setSelected(personId, { source });
+				viewport?.focus();
+			};
 
 			let searchIsOpen = false;
 			const closeTreeSearch = () => {
@@ -2078,17 +2781,17 @@ a.node__name:focus-visible {
 					return;
 				}
 
-				const visibleIds = layoutResult ? [...layoutResult.positions.people.keys()] : [];
-				const candidates = visibleIds
-					.map((id) => {
-						const person = personById(id);
+				const candidates = data.people
+					.map((person) => {
+						const id = person.id;
 						const name = displayPersonName(id);
 						const dates = formatDates(person);
+						const isVisible = Boolean(layoutResult?.positions?.people?.has(id));
 						return {
 							id,
 							name,
 							gender: displayPersonGender(id),
-							label: dates ? `${name} ${dates}` : name,
+							label: `${dates ? `${name} ${dates}` : name}${isVisible ? "" : " - open tree"}`,
 						};
 					})
 					.filter((c) => c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query))
@@ -2112,7 +2815,7 @@ a.node__name:focus-visible {
 						e.preventDefault();
 						treeSearchInput.value = "";
 						closeTreeSearch();
-						rendered?.setSelected(c.id, { source: "search" });
+						selectPersonFromAnywhere(c.id, "search");
 						viewport?.focus();
 					});
 					treeSearchResults.appendChild(btn);
@@ -2160,6 +2863,18 @@ a.node__name:focus-visible {
 				return avatar;
 			};
 
+			const createPersonButton = (personId) => {
+				const button = document.createElement("button");
+				button.type = "button";
+				button.className = "sidebar__person-button";
+				button.textContent = displayPersonName(personId);
+				button.addEventListener("click", (event) => {
+					event.preventDefault();
+					selectPersonFromAnywhere(personId, "sidebar");
+				});
+				return button;
+			};
+
 			const createPersonList = (ids) => {
 				const ul = document.createElement("ul");
 				ul.className = "sidebar__list sidebar__list--plain";
@@ -2167,12 +2882,82 @@ a.node__name:focus-visible {
 					const li = document.createElement("li");
 					const dot = el("span", "sidebar__dot");
 					dot.dataset.gender = displayPersonGender(id);
-					const text = document.createElement("span");
-					text.textContent = displayPersonName(id);
-					li.append(dot, text);
+					li.append(dot, createPersonButton(id));
 					ul.appendChild(li);
 				}
 				return ul;
+			};
+
+			const gedcomRecordTitle = (record, fallback = "GEDCOM record") => {
+				if (!record) return fallback;
+				const pointer = record.pointer ? `${record.pointer} ` : "";
+				return `${pointer}${record.tag || fallback}`.trim();
+			};
+
+			const gedcomRecordLines = (record, level = 0, lines = []) => {
+				if (!record) return lines;
+				const fields = [String(level)];
+				if (record.pointer) fields.push(record.pointer);
+				fields.push(record.tag || "");
+				if (record.value !== null && record.value !== undefined) fields.push(String(record.value));
+				lines.push(fields.filter(Boolean).join(" "));
+				for (const child of record.children || []) gedcomRecordLines(child, level + 1, lines);
+				return lines;
+			};
+
+			const createGedcomRecordDetails = (record, fallbackTitle, open = false) => {
+				const details = document.createElement("details");
+				details.className = "sidebar__gedcom-record";
+				details.open = open;
+				const summary = document.createElement("summary");
+				summary.textContent = gedcomRecordTitle(record, fallbackTitle);
+				const pre = document.createElement("pre");
+				pre.className = "sidebar__gedcom-pre";
+				pre.textContent = gedcomRecordLines(record).join("\n");
+				details.append(summary, pre);
+				return details;
+			};
+
+			const createGedcomFactRecordDetails = (record, fallbackTitle, open = false) => {
+				const details = document.createElement("details");
+				details.className = "sidebar__fact-record";
+				details.open = open;
+				const summary = document.createElement("summary");
+				summary.textContent = gedcomRecordTitle(record, fallbackTitle);
+				const list = el("div", "sidebar__fact-list");
+				for (const fact of gedcomFactSummaries(record)) {
+					const item = el("div", "sidebar__fact");
+					const label = el("div", "sidebar__fact-label");
+					label.textContent = fact.label;
+					const value = el("div", "sidebar__fact-value");
+					value.textContent = fact.value || "-";
+					item.append(label, value);
+
+					if (fact.details.length > 0) {
+						const detailList = el("div", "sidebar__fact-details");
+						for (const line of fact.details) {
+							const row = el("div", "sidebar__fact-detail");
+							row.style.paddingLeft = `${Math.min(line.depth, 6) * 10}px`;
+							const detailLabel = el("span", "sidebar__fact-detail-label");
+							detailLabel.textContent = `${line.label}:`;
+							const detailValue = el("span");
+							detailValue.textContent = line.value || "-";
+							if (!line.value) detailValue.classList.add("sidebar__fact-empty");
+							row.append(detailLabel, detailValue);
+							detailList.append(row);
+						}
+						item.append(detailList);
+					}
+
+					list.append(item);
+				}
+				if (list.childElementCount === 0) {
+					const empty = el("div", "sidebar__meta");
+					empty.textContent = "No GEDCOM facts available.";
+					list.append(empty);
+				}
+				details.append(summary, list);
+				return details;
 			};
 
 			const updateSidebar = (personId) => {
@@ -2229,6 +3014,13 @@ a.node__name:focus-visible {
 				addDetail("Death:", person.deathDate || (typeof person.died === "number" ? String(person.died) : "-"));
 				addDetail("Death place:", person.deathPlace || "-");
 				addDetail("Sex:", sexLabel(person.sex ?? gender));
+				const occupations = gedcomFactValues(person.gedcom, "OCCU");
+				if (occupations.length > 0) {
+					addDetail(occupations.length === 1 ? "Occupation:" : "Occupations:", occupations.join(", "));
+				}
+				if (Array.isArray(person.aliases) && person.aliases.length > 0) {
+					addDetail("Also known as:", person.aliases.join(", "));
+				}
 				if (typeof person.birthSurname === "string" && person.birthSurname.trim()) {
 					addDetail("Birth surname:", person.birthSurname.trim());
 				}
@@ -2241,6 +3033,31 @@ a.node__name:focus-visible {
 				);
 
 				const unionIds = indexes.unionsByPartner.get(personId) ?? [];
+				const familyRecords = uniq([...parentUnionIds, ...unionIds])
+					.map((familyId) => indexes.unionsById.get(familyId)?.gedcom)
+					.filter(Boolean);
+				const referencedRecords = gedcomReferencedRecords(data.gedcom, [person.gedcom, ...familyRecords]);
+
+				const factsHeading = el("div", "sidebar__heading");
+				factsHeading.textContent = "GEDCOM Facts";
+				sidebarContent.append(factsHeading);
+
+				const factsGroup = el("div", "sidebar__fact-group");
+				if (person.gedcom) {
+					factsGroup.append(createGedcomFactRecordDetails(person.gedcom, "Individual facts", true));
+				}
+				for (const familyRecord of familyRecords) {
+					factsGroup.append(createGedcomFactRecordDetails(familyRecord, "Family facts", true));
+				}
+				for (const referencedRecord of referencedRecords) {
+					factsGroup.append(createGedcomFactRecordDetails(referencedRecord, "Referenced facts", true));
+				}
+				if (factsGroup.childElementCount === 0) {
+					const empty = el("div", "sidebar__meta");
+					empty.textContent = "No GEDCOM facts available for this person.";
+					factsGroup.append(empty);
+				}
+				sidebarContent.append(factsGroup);
 
 				const familyHeading = el("div", "sidebar__heading");
 				familyHeading.textContent = "Immediate Family";
@@ -2273,9 +3090,12 @@ a.node__name:focus-visible {
 							const dot = el("span", "sidebar__dot");
 							dot.dataset.gender =
 								otherPartners.length === 1 ? displayPersonGender(otherPartners[0]) : "U";
-							const text = document.createElement("span");
-							text.textContent = otherPartners.map(displayPersonName).join(" & ");
-							row.append(dot, text);
+							const names = el("span", "sidebar__partner-names");
+							otherPartners.forEach((partnerId, index) => {
+								if (index > 0) names.append(document.createTextNode("&"));
+								names.append(createPersonButton(partnerId));
+							});
+							row.append(dot, names);
 							group.append(row);
 						}
 
@@ -2289,6 +3109,27 @@ a.node__name:focus-visible {
 
 					sidebarContent.append(group);
 				}
+
+				const gedcomHeading = el("div", "sidebar__heading");
+				gedcomHeading.textContent = "GEDCOM Data";
+				sidebarContent.append(gedcomHeading);
+
+				const gedcomGroup = el("div", "sidebar__gedcom-group");
+				if (person.gedcom) {
+					gedcomGroup.append(createGedcomRecordDetails(person.gedcom, "Individual record", true));
+				}
+				for (const familyRecord of familyRecords) {
+					if (familyRecord) gedcomGroup.append(createGedcomRecordDetails(familyRecord, "Family record"));
+				}
+				for (const referencedRecord of referencedRecords) {
+					if (referencedRecord) gedcomGroup.append(createGedcomRecordDetails(referencedRecord, "Referenced record"));
+				}
+				if (gedcomGroup.childElementCount === 0) {
+					const empty = el("div", "sidebar__meta");
+					empty.textContent = "No GEDCOM record data available for this person.";
+					gedcomGroup.append(empty);
+				}
+				sidebarContent.append(gedcomGroup);
 			};
 
 			let selectedPersonId = null;
@@ -2330,6 +3171,7 @@ a.node__name:focus-visible {
 				const prevTransform = panZoom.get();
 				layoutResult = engine.layout(currentRootUnionId, {
 					fallbackPersonId: opts.selectPersonId || initialPersonId || null,
+					includeDisconnected,
 				});
 				rendered = render({
 					data,
@@ -2355,6 +3197,7 @@ a.node__name:focus-visible {
 						openRelationMenu({ personId, anchorEl });
 					},
 					onTree: ({ personId }) => openTreeForPerson(personId),
+					readOnly: isReadOnly,
 				});
 
 				contentBbox = rendered.getContentBbox();
@@ -2388,11 +3231,11 @@ a.node__name:focus-visible {
 				updateTreeStatsNow();
 			};
 
-			function openTreeForPerson(personId) {
+			function openTreeForPerson(personId, opts = {}) {
 				if (!personId) return;
 				closeRelationMenu();
 				currentRootUnionId = getPreferredRootUnionIdForPerson(personId);
-				renderTree({ selectPersonId: personId, source: "tree", transformMode: "pan" });
+				renderTree({ selectPersonId: personId, source: opts.source ?? "tree", transformMode: "pan" });
 			}
 
 			const findPersonIdByRef = (ref) => {
@@ -2409,7 +3252,9 @@ a.node__name:focus-visible {
 				return null;
 			};
 
-			const initialPersonId = findPersonIdByRef(personRef);
+			const shouldFocusFirstPerson = isReadOnly && !includeDisconnected && !personRef;
+			const initialPersonId = findPersonIdByRef(personRef) ||
+				(shouldFocusFirstPerson ? data.people[0]?.id ?? null : null);
 			if (initialPersonId) {
 				currentRootUnionId = getPreferredRootUnionIdForPerson(initialPersonId);
 				// Open zoomed in on the selected person so the node's Edit/Add

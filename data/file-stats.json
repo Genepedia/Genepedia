@@ -167,7 +167,6 @@
   {"path":"lib/Web-Framework/site-runtime.js","size":4908,"last_commit":"","last_date":"","last_author":""},
   {"path":"lib/Web-Framework/site-info.js","size":13300,"last_commit":"","last_date":"","last_author":""},
   {"path":"lib/people-registry.js","size":1832,"last_commit":"9b9726427a34426916a3a3322b89c0d1663cf6e6","last_date":"2026-06-07T16:35:08+02:00","last_author":"Shaun Roselt"},
-  {"path":"lib/gedcom.js","size":24890,"last_commit":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","last_date":"2026-06-06T00:59:14+02:00","last_author":"Shaun Roselt"},
   {"path":"lib/notifications.js","size":3064,"last_commit":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","last_date":"2026-06-06T00:59:14+02:00","last_author":"Shaun Roselt"},
   {"path":"lib/routing.js","size":0,"last_commit":"8c820135e5f98c014c3de475ad4c16a03aa0233c","last_date":"2026-06-04T00:29:28+02:00","last_author":"Shaun Roselt"},
   {"path":"lib/download-manager.js","size":13314,"last_commit":"e7fa1ef7535c303059cb5490e5db33e40380fbfe","last_date":"2026-06-06T00:59:14+02:00","last_author":"Shaun Roselt"},
