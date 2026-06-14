@@ -2817,6 +2817,7 @@
 			this.__infoboxCanonical = parsed.infoboxCanonical;
 			this.__hadInfoboxNode = Boolean(parsed.infoboxMarkup);
 			this.__displayName = parsed.title;
+			this.__savedDisplayName = parsed.title;
 			// Let the shell label the breadcrumb with the profile name. The infobox
 			// overrides this if it carries an explicit display name.
 			if (parsed.title) {
@@ -3256,8 +3257,13 @@
 			return this.#getProseHtml() !== this.__savedProse;
 		}
 
+		hasDisplayNameChange() {
+			return String(this.__displayName || "").trim() !== String(this.__savedDisplayName || "").trim();
+		}
+
 		setSavedBaseline() {
 			this.__savedProse = this.#getProseHtml();
+			this.__savedDisplayName = this.__displayName;
 			// After a save, profile.html now carries the canonical include.
 			if (this.#hasInfobox()) {
 				this.__hadInfoboxNode = true;

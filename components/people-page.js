@@ -1396,6 +1396,15 @@ class PeoplePage extends HTMLElement {
 
     if (tab === 'profile' && typeof window.AppProfileInfobox?.refreshIdentityElementsInDocument === 'function') {
       window.AppProfileInfobox.refreshIdentityElementsInDocument(doc);
+      const identity = doc.querySelector('profile-identity');
+      if (identity && typeof window.AppProfileInfobox.parseIdentityElement === 'function') {
+        const infoboxName = window.AppProfileInfobox.displayNameFrom(
+          window.AppProfileInfobox.parseIdentityElement(identity),
+        );
+        if (infoboxName) {
+          this.#setTitle(infoboxName);
+        }
+      }
     }
 
     if (tab === 'profile' && typeof window.upgradeProfileIdentityInDocument === 'function') {

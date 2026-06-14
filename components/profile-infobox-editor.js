@@ -839,7 +839,30 @@
 			return starter.buildProfileGedcomFromInfoboxData(this.__personId, data);
 		}
 
-		#buildInfoboxPublishFiles(data = null) {
+		async #buildGedcomPublishContent(data) {
+			const starter = window.AppGedcomStarter;
+			if (!starter?.buildProfileGedcomFromInfoboxData) {
+				return "";
+			}
+
+			if (!this.__gedcomExists) {
+				return this.#buildStarterGedcom(data);
+			}
+
+			try {
+				const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/family-tree.ged`));
+				const existing = response ? await response.text() : "";
+				if (starter.syncProfileGedcomFromInfoboxData) {
+					return starter.syncProfileGedcomFromInfoboxData(existing, this.__personId, data);
+				}
+			} catch (error) {
+				// fall through to a fresh starter file
+			}
+
+			return this.#buildStarterGedcom(data);
+		}
+
+		async #buildInfoboxPublishFiles(data = null) {
 			const collected = data || this.#collect();
 			const fragment = buildFragment(collected, this.__familyHtml);
 			const files = [{
@@ -847,14 +870,12 @@
 				content: fragment,
 			}];
 
-			if (!this.__gedcomExists) {
-				const gedcom = this.#buildStarterGedcom(collected);
-				if (gedcom) {
-					files.push({
-						path: `people/${this.__personId}/data/family-tree.ged`,
-						content: gedcom,
-					});
-				}
+			const gedcom = await this.#buildGedcomPublishContent(collected);
+			if (gedcom) {
+				files.push({
+					path: `people/${this.__personId}/data/family-tree.ged`,
+					content: gedcom,
+				});
 			}
 
 			return files;
@@ -2233,11 +2254,12 @@
 				return;
 			}
 
-			const publishFiles = this.#buildInfoboxPublishFiles(this.#collect());
+			const publishFiles = await this.#buildInfoboxPublishFiles(this.#collect());
 			const primary = publishFiles[0];
 			const path = primary.path;
 			const name = displayNameFrom(data) || `profile ${this.__personId}`;
-			const creatingGedcom = publishFiles.some((file) => file.path.endsWith("/family-tree.ged"));
+			const includesGedcom = publishFiles.some((file) => file.path.endsWith("/family-tree.ged"));
+			const creatingGedcom = includesGedcom && !this.__gedcomExists;
 
 			if (save) save.disabled = true;
 			this.#setStatus("Saving infobox…");
@@ -2250,7 +2272,9 @@
 					pr_title: `Update infobox for ${name}`,
 					pr_body: creatingGedcom
 						? `Updates the identity infobox (\`${path}\`) and creates the required \`family-tree.ged\` file for this profile.`
-						: `Updates the identity infobox (\`${path}\`) via the profile editor.`,
+						: includesGedcom
+							? `Updates the identity infobox (\`${path}\`) and keeps \`family-tree.ged\` in sync.`
+							: `Updates the identity infobox (\`${path}\`) via the profile editor.`,
 				};
 				if (publishFiles.length > 1) {
 					requestBody.files = publishFiles;

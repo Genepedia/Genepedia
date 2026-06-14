@@ -978,6 +978,14 @@
 				return;
 			}
 
+			const displayName = displayNameFromProfileData(profileData);
+			if (displayName) {
+				this.__pageEditor?.setDisplayName?.(displayName);
+				this.#setBreadcrumbCurrent(displayName, this.__isDraftProfile
+					? {}
+					: { href: resolveSiteUrl(`people/${PERSON_ID}/profile.html`) });
+			}
+
 			const endpoint = SELF_PROFILE_MODE ? "" : resolveGitHubApiUrl("github-submit-page-edit.php");
 			if (!SELF_PROFILE_MODE && !endpoint) {
 				this.#setStatus("The publishing service is not configured.", "error");
@@ -990,7 +998,8 @@
 			const files = [];
 			const wantsProfileHtml = SELF_PROFILE_MODE
 				|| Boolean(this.__pageEditor?.isDirty?.())
-				|| Boolean(this.__pageEditor?.hasPendingInfoboxStructureChange?.());
+				|| Boolean(this.__pageEditor?.hasPendingInfoboxStructureChange?.())
+				|| Boolean(this.__pageEditor?.hasDisplayNameChange?.());
 			if (wantsProfileHtml) {
 				const mainFile = this.__pageEditor.getPublishFile?.();
 				if (!mainFile?.content) {
