@@ -4,9 +4,3 @@
 [submodule "lib/GEDCOM"]
 	path = lib/GEDCOM
 	url = https://github.com/Genepedia/GEDCOM.git
-[submodule "data/Genepedia-Media"]
-	path = data/Genepedia-Media
-	url = https://github.com/Genepedia/Genepedia-Media.git
-[submodule "data/Genepedia-Database"]
-	path = data/Genepedia-Database
-	url = https://github.com/Genepedia/Genepedia-Database.git
