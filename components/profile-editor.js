@@ -31,6 +31,27 @@
 		return new URL(`../${clean}`, window.location.href).href;
 	}
 
+	// Database paths for a person's ownership record (data/Genepedia-Database/ownership/...).
+	function peopleDbBucket(personId) {
+		const n = Number(String(personId).replace(/[^0-9]/g, "")) || 0;
+		return Math.floor((Math.max(1, n) - 1) / 1000);
+	}
+
+	function peopleDbPath(path) {
+		const clean = String(path || "").replace(/^\/+/, "");
+		if (window.App?.resolvePeopleDbPath) return window.App.resolvePeopleDbPath(clean);
+		if (!clean) return "data/Genepedia-Database";
+		if (clean.startsWith("data/Genepedia-Database/")) return clean;
+		if (clean.startsWith("data/people/v1/")) {
+			return `data/Genepedia-Database/${clean.slice("data/people/v1/".length)}`;
+		}
+		return `data/Genepedia-Database/${clean}`;
+	}
+
+	function peopleDbOwnershipPath(personId) {
+		return peopleDbPath(`ownership/${peopleDbBucket(personId)}/${personId}.json`);
+	}
+
 	function resolveGitHubApiUrl(fileName) {
 		const base = String(window.App?.getGitHubApiBase?.() || window.App?.GitHubApiBase || "").trim();
 		if (!base) return "";
@@ -377,7 +398,7 @@
 			}
 
 			this.#setBreadcrumbCurrent("Profile", {
-				href: resolveSiteUrl(`people/${PERSON_ID}/profile.html`),
+				href: resolveSiteUrl(`people/${PERSON_ID}/`),
 			});
 		}
 
@@ -555,7 +576,7 @@
 
 		async #loadProfileConfig(personId) {
 			try {
-				const response = await fetch(resolveSiteUrl(`people/${personId}/profile.json`), { cache: "no-store" });
+				const response = await fetch(resolveSiteUrl(peopleDbOwnershipPath(personId)), { cache: "no-store" });
 				if (!response.ok) return null;
 				const payload = await response.json();
 				return payload && typeof payload === "object" ? payload : null;
@@ -700,20 +721,12 @@
 				if (file?.path) byPath.set(file.path, { path: file.path, content: String(file.content || "") });
 			});
 
-			byPath.set(`people/${PERSON_ID}/profile.html`, {
-				path: `people/${PERSON_ID}/profile.html`,
-				content: buildProfileShell(PERSON_ID),
-			});
-			byPath.set(`people/${PERSON_ID}/data/tree.html`, {
-				path: `people/${PERSON_ID}/data/tree.html`,
-				content: "<h1>Tree</h1>\n<p>This page shows the family tree for the person.</p>\n",
-			});
-			byPath.set(`people/${PERSON_ID}/data/media.html`, {
-				path: `people/${PERSON_ID}/data/media.html`,
-				content: "<h1>Media</h1>\n<p>Photographs and images from this person's life.</p>\n",
-			});
-			byPath.set(`people/${PERSON_ID}/profile.json`, {
-				path: `people/${PERSON_ID}/profile.json`,
+			// Ownership lives in the database; the SEO shell (index.html) and the
+			// canonical record (persons/<id>.json) come from the infobox editor, and
+			// the prose (data/profile.html) from the page editor.
+			const ownershipPath = peopleDbOwnershipPath(PERSON_ID);
+			byPath.set(ownershipPath, {
+				path: ownershipPath,
 				content: buildProfileConfig(PERSON_ID, profileData, user, { claimSelf }),
 			});
 
@@ -730,7 +743,8 @@
 				return url.href;
 			}
 
-			const url = new URL(resolveSiteUrl(`people/${personId}/profile.html`), window.location.href);
+			const profileHref = resolveSiteUrl(`people/${personId}/${window.location.protocol === 'file:' ? 'index.html' : ''}`);
+			const url = new URL(profileHref, window.location.href);
 			if (SELF_RETURN_TARGET === "tree") {
 				url.hash = "tree";
 			}
@@ -871,7 +885,7 @@
 			}
 
 			try {
-				const response = await fetch(resolveSiteUrl(`people/${PERSON_ID}/profile.json`), { cache: "no-store" });
+				const response = await fetch(resolveSiteUrl(peopleDbOwnershipPath(PERSON_ID)), { cache: "no-store" });
 				if (!response.ok) return false;
 				const config = await response.json();
 				return Boolean(config && typeof config === "object");

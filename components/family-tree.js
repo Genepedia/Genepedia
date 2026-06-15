@@ -186,6 +186,33 @@
 		return new URL(`../../${cleanPath}`, window.location.href).href;
 	}
 
+	function isAbsoluteUrlLike(value) {
+		return /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(String(value || "").trim());
+	}
+
+	function resolvePersonMediaUrl(personId, path = "") {
+		const id = String(personId || "").trim();
+		const value = String(path || "").trim();
+		if (isAbsoluteUrlLike(value)) {
+			return value;
+		}
+		if (window.App?.resolvePersonMediaUrl) {
+			return window.App.resolvePersonMediaUrl(id, value);
+		}
+
+		const normalized = value.replace(/^\.?\//, "").replace(/^\/+/, "");
+		if (!normalized) {
+			return resolveSitePath(`data/Genepedia-Media/people/${encodeURIComponent(id)}/`);
+		}
+
+		const relative = normalized.startsWith("data/images/")
+			? normalized.slice("data/images/".length)
+			: normalized.startsWith("images/")
+				? normalized.slice("images/".length)
+				: normalized;
+		return resolveSitePath(`data/Genepedia-Media/people/${encodeURIComponent(id)}/${relative}`);
+	}
+
 	// Load genepedia-gedcom once (it defines the global window.GenepediaGedcom).
 	// The profile page doesn't include it, so the component pulls it in on demand.
 	let gedcomLibPromise = null;
@@ -602,17 +629,65 @@
 		const doc = new DOMParser().parseFromString(await response.text(), "text/html");
 		const src = doc.querySelector("table-photo img")?.getAttribute("src")?.trim() || "";
 		if (!src) return "";
-		if (/^(https?:)?\/\//i.test(src) || src.startsWith("data:")) return src;
-		return resolveSitePath(
-			`people/${encodeURIComponent(id)}/data/${src.replace(/^\.?\//, "")}`,
-		);
+		if (isAbsoluteUrlLike(src)) return src;
+		const normalized = src.replace(/^\.?\//, "");
+		if (
+			normalized.startsWith("assets/")
+			|| normalized.startsWith("people/")
+			|| normalized.startsWith("data/Genepedia-Media/")
+		) {
+			return resolveSitePath(normalized);
+		}
+		if (normalized.startsWith("data/")) {
+			return resolveSitePath(`people/${encodeURIComponent(id)}/${normalized}`);
+		}
+		return resolvePersonMediaUrl(id, normalized);
 	}
 
-	// Resolve the portrait for a Genepedia person from their identity table.
-	// GEDCOM has no portrait field, so node avatars are hydrated from each
-	// person's profile. Infobox-edited profiles keep the table in its own
-	// profile-table.html fragment; older profiles inline it in profile.html — so
-	// both are tried. Results are cached (as promises) per person.
+	// Portrait lookup from the JSON database (the source of truth for structured
+	// data). GEDCOM has no portrait field, so node avatars are hydrated from each
+	// person's database record media.primary. Results are cached per person.
+	function personDbBucket(id) {
+		const n = Number(String(id).replace(/[^0-9]/g, "")) || 0;
+		return Math.floor((Math.max(1, n) - 1) / 1000);
+	}
+
+	function resolvePeopleDbPath(path = "") {
+		const clean = String(path || "").replace(/^\/+/, "");
+		if (typeof window.App?.resolvePeopleDbPath === "function") {
+			return window.App.resolvePeopleDbPath(clean);
+		}
+		if (!clean) {
+			return "data/Genepedia-Database";
+		}
+		if (clean.startsWith("data/Genepedia-Database/")) {
+			return clean;
+		}
+		if (clean.startsWith("data/people/v1/")) {
+			return `data/Genepedia-Database/${clean.slice("data/people/v1/".length)}`;
+		}
+		return `data/Genepedia-Database/${clean}`;
+	}
+
+	async function readPersonPhotoFromDb(id) {
+		const url = resolveSitePath(resolvePeopleDbPath(`persons/${personDbBucket(id)}/${encodeURIComponent(id)}.json`));
+		const response = await fetch(url, { cache: "no-store" });
+		if (!response.ok) return "";
+		const record = await response.json();
+		const primary = record?.media?.primary;
+		if (!primary) return "";
+		if (typeof window.App?.resolvePreferredPersonMediaUrl === "function") {
+			return String(window.App.resolvePreferredPersonMediaUrl(id, primary) || "");
+		}
+		if (primary.local) {
+			return resolvePersonMediaUrl(id, primary.local);
+		}
+		return String(primary.remote || "");
+	}
+
+	// Resolve the portrait for a Genepedia person. Tries the JSON database first
+	// (canonical), then falls back to a person's profile prose for older or
+	// hand-authored profiles. Results are cached (as promises) per person.
 	const personPhotoCache = new Map();
 	function resolveGenepediaPhotoUrl(genepediaId) {
 		const id = String(genepediaId || "").trim();
@@ -620,7 +695,13 @@
 		if (personPhotoCache.has(id)) return personPhotoCache.get(id);
 
 		const promise = (async () => {
-			for (const fileName of ["profile-table.html", "profile.html"]) {
+			try {
+				const dbUrl = await readPersonPhotoFromDb(id);
+				if (dbUrl) return dbUrl;
+			} catch (error) {
+				// Fall through to prose-based lookup.
+			}
+			for (const fileName of ["profile.html"]) {
 				try {
 					const url = await readPersonPhotoFromFile(id, fileName);
 					if (url) return url;
@@ -1162,7 +1243,7 @@
 			if (genepediaId) {
 				name = document.createElement("a");
 				name.className = "node__name";
-				name.href = resolveSitePath(`people/${encodeURIComponent(genepediaId)}/profile.html`);
+				name.href = resolveSitePath(`people/${encodeURIComponent(genepediaId)}/`);
 				name.addEventListener("click", (e) => {
 					// Let the link navigate; don't also trigger node selection.
 					e.stopPropagation();
@@ -2989,7 +3070,7 @@ a.node__name:focus-visible {
 				if (person.genepediaId) {
 					const profileLink = document.createElement("a");
 					profileLink.className = "sidebar__profile-link";
-					profileLink.href = resolveSitePath(`people/${encodeURIComponent(person.genepediaId)}/profile.html`);
+					profileLink.href = resolveSitePath(`people/${encodeURIComponent(person.genepediaId)}/`);
 					profileLink.append(createBiIcon("person-badge", "sidebar__profile-link-icon"));
 					const linkText = document.createElement("span");
 					linkText.textContent = "View Genepedia profile";

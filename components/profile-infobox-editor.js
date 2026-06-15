@@ -229,6 +229,27 @@
 		return new URL(`../${String(path || "").replace(/^\/+/, "")}`, window.location.href).href;
 	}
 
+	// Lazily load the browser database client so the infobox editor can read and
+	// write the canonical person record (data/Genepedia-Database/persons/<bucket>/<id>.json).
+	function ensurePeopleDb() {
+		if (window.PeopleDB) return Promise.resolve();
+		window.__peopleDbLoadPromise = window.__peopleDbLoadPromise || new Promise((resolve, reject) => {
+			const existing = document.querySelector("script[data-people-db]");
+			if (existing) {
+				existing.addEventListener("load", () => resolve(), { once: true });
+				existing.addEventListener("error", () => reject(new Error("Could not load people-db.js")), { once: true });
+				return;
+			}
+			const script = document.createElement("script");
+			script.src = resolveSiteUrl("lib/people-db.js");
+			script.dataset.peopleDb = "1";
+			script.addEventListener("load", () => resolve(), { once: true });
+			script.addEventListener("error", () => reject(new Error("Could not load people-db.js")), { once: true });
+			document.head.append(script);
+		});
+		return window.__peopleDbLoadPromise;
+	}
+
 	async function isDraftProfile(personId) {
 		if (new URLSearchParams(window.location.search).get("new") === "1") return true;
 		if (!window.PeopleRegistry?.loadPeopleRegistry) return false;
@@ -564,9 +585,26 @@
 								<span>Remove picture</span>
 							</button>
 						</div>
+						<div class="pie__photo-choice-row">
+							<button type="button" class="page-editor__button" data-photo-pick-existing>
+								<i class="bi bi-images" aria-hidden="true"></i>
+								<span>Select existing media file</span>
+							</button>
+							<button type="button" class="page-editor__button" data-photo-pick-upload>
+								<i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+								<span>Upload new media file</span>
+							</button>
+						</div>
+						<div class="pie__photo-link-row">
+							<input type="url" class="pie__input" data-photo-link-input placeholder="https://example.com/photo.jpg" autocomplete="off">
+							<button type="button" class="page-editor__button" data-photo-link-add>
+								<i class="bi bi-link-45deg" aria-hidden="true"></i>
+								<span>Use link</span>
+							</button>
+						</div>
 						<button type="button" class="pie__photo-dropzone" data-photo-dropzone>
 							<i class="bi bi-cloud-arrow-up pie__photo-dropzone-icon" aria-hidden="true"></i>
-							<span class="pie__photo-dropzone-title">Drag a picture here, or click to upload</span>
+							<span class="pie__photo-dropzone-title">Drag a picture here, or click to choose a new file</span>
 							<span class="pie__photo-dropzone-hint">JPG, PNG, GIF, WebP, or SVG</span>
 						</button>
 						<p class="pie__media-modal-status">Loading images…</p>
@@ -866,21 +904,34 @@
 
 		async #buildInfoboxPublishFiles(data = null) {
 			const collected = data || this.#collect();
-			const fragment = buildFragment(collected, this.__familyHtml);
-			const files = [{
-				path: `people/${this.__personId}/data/profile-table.html`,
-				content: fragment,
-			}];
-
-			const gedcom = await this.#buildGedcomPublishContent(collected);
-			if (gedcom) {
-				files.push({
-					path: `people/${this.__personId}/data/family-tree.ged`,
-					content: gedcom,
-				});
+			await ensurePeopleDb();
+			if (!window.PeopleDB) {
+				return [];
 			}
 
-			return files;
+			let record = this.__record || null;
+			if (!record) {
+				try {
+					record = await window.PeopleDB.loadPerson(this.__personId);
+				} catch (error) {
+					record = null;
+				}
+			}
+			record = record || window.PeopleDB.emptyRecord(this.__personId);
+
+			const updated = window.PeopleDB.applyInfoboxToRecord(record, collected);
+			this.__record = updated;
+
+			return [
+				{
+					path: window.PeopleDB.recordPath(this.__personId),
+					content: `${JSON.stringify(updated, null, 2)}\n`,
+				},
+				{
+					path: `people/${this.__personId}/index.html`,
+					content: window.PeopleDB.buildProfileShellHtml(updated),
+				},
+			];
 		}
 
 		async #checkGedcomExists() {
@@ -894,28 +945,19 @@
 
 		async #loadExisting() {
 			this.#setStatus("Loading…");
-			await this.#checkGedcomExists();
-			if (!(await isDraftProfile(this.__personId))) {
-				const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/profile-table.html`));
-				if (response) {
-					const html = await response.text();
-					const doc = new DOMParser().parseFromString(html, "text/html");
-					const identity = doc.querySelector("profile-identity");
-					if (identity) {
-						const family = identity.querySelector("table-immediate-family");
-						if (family) this.__familyHtml = family.outerHTML;
-
-						const dataScript = identity.querySelector("script.profile-infobox-data");
-						if (dataScript) {
-							try {
-								this.__data = normalizeData(JSON.parse(dataScript.textContent || "{}"));
-							} catch (error) {
-								this.__data = migrateFromMarkup(identity);
-							}
-						} else {
-							this.__data = migrateFromMarkup(identity);
+			await ensurePeopleDb();
+			if (!(await isDraftProfile(this.__personId)) && window.PeopleDB) {
+				try {
+					const record = await window.PeopleDB.loadPerson(this.__personId);
+					if (record) {
+						this.__record = record;
+						if (typeof record.familyHtml === "string" && record.familyHtml.trim()) {
+							this.__familyHtml = `<table-immediate-family>${record.familyHtml}</table-immediate-family>`;
 						}
+						this.__data = window.PeopleDB.toInfoboxData(record);
 					}
+				} catch (error) {
+					console.warn("Could not load person record from the database", error);
 				}
 			}
 
@@ -1540,16 +1582,31 @@
 			if (!trimmed) {
 				return "";
 			}
-			if (/^https?:\/\//i.test(trimmed)) {
+			if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(trimmed)) {
 				return trimmed;
 			}
 
 			const normalized = trimmed.replace(/^\.?\//, "");
-			if (normalized.startsWith("people/")) {
+			if (
+				normalized.startsWith("people/")
+				|| normalized.startsWith("assets/")
+				|| normalized.startsWith("data/Genepedia-Media/")
+			) {
 				return resolveSiteUrl(normalized);
 			}
+			if (normalized.startsWith("data/")) {
+				return resolveSiteUrl(`people/${this.__personId}/${normalized}`);
+			}
+			if (window.App?.resolvePersonMediaUrl) {
+				return window.App.resolvePersonMediaUrl(this.__personId, normalized);
+			}
+			const relative = normalized.startsWith("data/images/")
+				? normalized.slice("data/images/".length)
+				: normalized.startsWith("images/")
+					? normalized.slice("images/".length)
+					: normalized;
 
-			return resolveSiteUrl(`people/${this.__personId}/data/${normalized}`);
+			return resolveSiteUrl(`data/Genepedia-Media/people/${this.__personId}/${relative}`);
 		}
 
 		hasPhoto() {
@@ -1846,6 +1903,10 @@
 			const modal = this.#photoModal();
 			const removeBtn = modal?.querySelector("[data-photo-remove]");
 			const dropzone = modal?.querySelector("[data-photo-dropzone]");
+			const pickExistingBtn = modal?.querySelector('[data-photo-pick-existing]');
+			const pickUploadBtn = modal?.querySelector('[data-photo-pick-upload]');
+			const linkInput = modal?.querySelector('[data-photo-link-input]');
+			const linkAddBtn = modal?.querySelector('[data-photo-link-add]');
 
 			const pickPhotoFile = async (file) => {
 				if (!file) {
@@ -1890,6 +1951,43 @@
 				});
 			}
 
+			pickExistingBtn?.addEventListener('click', () => {
+				void this.#openPhotoMediaPicker();
+			});
+
+			pickUploadBtn?.addEventListener('click', () => {
+				fileInput?.click();
+			});
+
+			linkAddBtn?.addEventListener('click', async () => {
+				const raw = String(linkInput?.value || '').trim();
+				if (!raw || !/^https?:\/\//i.test(raw)) {
+					this.#setStatus('Enter a valid http(s) media link.', 'error');
+					return;
+				}
+				const title = decodeURIComponent((raw.split('?')[0].split('/').pop() || 'Media').replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '));
+				try {
+					await ensurePeopleDb();
+					let record = this.__record || await window.PeopleDB.loadPerson(this.__personId) || window.PeopleDB.emptyRecord(this.__personId);
+					record = window.PeopleDB.upsertMediaItem(record, {
+						local: null,
+						remote: raw,
+						title,
+						alt: title,
+					}, { setPrimary: true });
+					this.__record = record;
+					this.#setPhotoSrc(raw);
+					if (linkInput) {
+						linkInput.value = '';
+					}
+					this.#closePhotoMediaPicker();
+					this.#setStatus('Link added — save the profile to publish it.', 'info');
+				} catch (error) {
+					console.error(error);
+					this.#setStatus('Could not add that media link.', 'error');
+				}
+			});
+
 			if (modal) {
 				modal.addEventListener("click", (ev) => {
 					if (ev.target.closest("[data-media-modal-close]")) {
@@ -1907,6 +2005,26 @@
 		}
 
 		async #fetchPhotoList() {
+			await ensurePeopleDb();
+			if (window.PeopleDB) {
+				try {
+					const record = await window.PeopleDB.loadPerson(this.__personId);
+					const items = record ? window.PeopleDB.normalizeMediaItems(record, this.__personId) : [];
+					if (items.length) {
+						return items.map((item) => ({
+							name: String(item.name || ''),
+							url: String(item.url || ''),
+							title: String(item.title || ''),
+							local: String(item.local || ''),
+							remote: String(item.remote || ''),
+							sourceType: String(item.sourceType || 'file'),
+						})).filter((item) => item.name && item.url);
+					}
+				} catch (error) {
+					console.warn('Could not load canonical media items', error);
+				}
+			}
+
 			// Try the GitHub-backed API first
 			const apiUrl = resolveApiUrl('github-media.php');
 			if (apiUrl) {
@@ -1916,7 +2034,7 @@
 					const resp = await fetch(url.href, fetchInit({ cache: 'no-store' }));
 					const payload = await resp.json().catch(() => null);
 					if (resp.ok && payload?.ok) {
-						return (payload.images || []).map((img) => ({ name: String(img?.name || ''), url: String(img?.download_url || '') || resolveSiteUrl(`people/${this.__personId}/data/images/${img?.name || ''}`) })).filter(i => i.name);
+						return (payload.images || []).map((img) => ({ name: String(img?.name || ''), url: this.#resolvePhotoPreviewUrl(`images/${img?.name || ''}`) || String(img?.download_url || '') })).filter(i => i.name);
 					}
 				} catch (error) {
 					console.warn('Could not load media via API', error);
@@ -1932,7 +2050,7 @@
 					const imgs = Array.from(doc.querySelectorAll('img[src]')).map((img) => {
 						const href = String(img.getAttribute('src') || '').trim();
 						const name = decodeURIComponent((href.split('?')[0].split('/').pop() || '').trim());
-						return name ? { name, url: resolveSiteUrl(href) } : null;
+						return name ? { name, url: this.#resolvePhotoPreviewUrl(href) } : null;
 					}).filter(Boolean);
 					if (imgs.length) return imgs;
 				}
@@ -1975,9 +2093,9 @@
 				btn.type = 'button';
 				btn.className = 'pie__media-thumb';
 				btn.dataset.mediaName = img.name;
-				btn.innerHTML = `<img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.name)}"><span class="pie__media-thumb-label">${escapeHtml(img.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '))}</span>`;
+				btn.innerHTML = `<img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.title || img.name)}"><span class="pie__media-thumb-label">${escapeHtml((img.title || img.name).replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '))}</span>${img.sourceType === 'link' ? '<span class="pie__media-thumb-badge">Link</span>' : ''}`;
 				btn.addEventListener("click", () => {
-					this.#setPhotoSrc(`images/${img.name}`);
+					this.#setPhotoSrc(img.local ? `images/${img.name}` : (img.remote || img.url));
 					this.#closePhotoMediaPicker();
 				});
 				grid.append(btn);

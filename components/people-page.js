@@ -522,6 +522,62 @@ body.theme-dark .people-page__media-manage {
   gap: 0.75rem;
 }
 
+.people-page__media-link-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.people-page__media-link-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 2.4rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #a2a9b1;
+  border-radius: 0.125rem;
+  background: #ffffff;
+  color: #202122;
+  font: inherit;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+body.theme-dark .people-page__media-link-input {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: #101418;
+  color: #eaecf0;
+}
+
+.people-page__media-link-input:focus {
+  outline: none;
+  border-color: #3366cc;
+  box-shadow: inset 0 0 0 1px #3366cc;
+}
+
+.people-page__media-link-input::placeholder {
+  color: var(--page-toolbar-muted);
+}
+
+.people-page__media-link-add {
+  flex: 0 0 auto;
+  justify-content: center;
+  min-height: 2.4rem;
+  padding: 0.35rem 0.85rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .people-page__media-link-row {
+    flex-wrap: wrap;
+  }
+
+  .people-page__media-link-add {
+    width: 100%;
+  }
+}
+
 /* Multi-file staging queue */
 .people-page__media-staging {
   margin-top: 0.85rem;
@@ -558,6 +614,19 @@ body.theme-dark .people-page__media-queue-item {
   object-fit: cover;
   border-radius: 0.125rem;
   background: rgba(0, 0, 0, 0.05);
+}
+
+.people-page__media-queue-thumb--file {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  text-align: center;
+}
+
+.people-page__media-queue-thumb--file .people-page__media-file-icon {
+  font-size: 1.4rem;
 }
 
 .people-page__media-queue-info {
@@ -793,6 +862,68 @@ body.theme-dark .people-page__media-thumb {
   display: block;
   border: 0;
   border-radius: 0;
+}
+
+.people-page__media-thumb--file,
+.people-page__media-thumb--upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.9rem;
+  text-align: center;
+}
+
+.people-page__media-thumb--file {
+  cursor: pointer;
+}
+
+.people-page__media-thumb--upload {
+  border-width: 2px;
+  border-style: dashed;
+  background: transparent;
+  cursor: pointer;
+}
+
+.people-page__media-thumb--upload:hover,
+.people-page__media-thumb--upload:focus-within,
+.people-page__media-thumb--upload.is-dragover {
+  border-color: #3366cc;
+  background: rgba(51, 102, 204, 0.06);
+}
+
+.people-page__media-file-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--page-toolbar-muted);
+}
+
+.people-page__media-thumb--pdf .people-page__media-file-icon {
+  color: #d02c3f;
+}
+
+.people-page__media-thumb--upload .people-page__media-file-icon {
+  color: #3366cc;
+}
+
+.people-page__media-file-ext {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--page-toolbar-muted);
+}
+
+.people-page__media-file-label {
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.people-page__media-upload-copy {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--page-toolbar-muted);
 }
 
 .people-page__media-item.is-pending .people-page__media-thumb,
@@ -1108,7 +1239,9 @@ body.theme-dark .people-page__talk-form textarea {
 
 const PEOPLE_PAGE_TABS = ['profile', 'tree', 'media', 'talk', 'changes'];
 const PEOPLE_PAGE_IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp|svg|avif)$/i;
-const PEOPLE_PAGE_DATA_DIR = 'data/';
+const PEOPLE_PAGE_MEDIA_EXTENSIONS = /\.(jpe?g|png|gif|webp|svg|avif|pdf)$/i;
+const PEOPLE_PAGE_MEDIA_INPUT_ACCEPT = 'image/*,.pdf,application/pdf';
+const PEOPLE_PAGE_DATA_DIR = './';
 const PEOPLE_PAGE_MEDIA_MAX_BYTES = 8_000_000;
 
 function peoplePageEscapeHtml(value) {
@@ -1152,6 +1285,84 @@ function peoplePageImageStem(name) {
 function peoplePageImageExtension(name) {
   const match = String(name || '').toLowerCase().match(/\.([a-z0-9]+)$/);
   return match ? match[1] : '';
+}
+
+function peoplePageMediaKind(nameOrUrl, mimeType = '') {
+  const type = String(mimeType || '').toLowerCase();
+  if (type.startsWith('image/')) {
+    return 'image';
+  }
+  if (type === 'application/pdf') {
+    return 'pdf';
+  }
+
+  const value = String(nameOrUrl || '').split('?')[0];
+  if (PEOPLE_PAGE_IMAGE_EXTENSIONS.test(value)) {
+    return 'image';
+  }
+  if (/\.pdf$/i.test(value)) {
+    return 'pdf';
+  }
+  return 'file';
+}
+
+function peoplePageAcceptsUpload(file) {
+  const kind = peoplePageMediaKind(file?.name || '', file?.type || '');
+  return kind === 'image' || kind === 'pdf';
+}
+
+function peoplePageMediaIcon(kind) {
+  if (kind === 'pdf') {
+    return 'bi-file-earmark-pdf';
+  }
+  if (kind === 'image') {
+    return 'bi-image';
+  }
+  return 'bi-file-earmark';
+}
+
+function peoplePageMediaLabel(kind) {
+  if (kind === 'pdf') {
+    return 'PDF';
+  }
+  if (kind === 'image') {
+    return 'Image';
+  }
+  return 'File';
+}
+
+function peoplePageRenderMediaThumbContent({ kind, url = '', caption = '', upload = false }) {
+  if (upload) {
+    return `
+      <i class="bi bi-cloud-arrow-up people-page__media-file-icon" aria-hidden="true"></i>
+      <span class="people-page__dropzone-title">Upload media</span>
+      <span class="people-page__media-upload-copy">Drag files here or click to choose</span>
+      <span class="people-page__media-file-ext">Images or PDF</span>
+    `;
+  }
+
+  if (kind === 'image') {
+    return `<img src="${peoplePageEscapeHtml(url)}" alt="${peoplePageEscapeHtml(caption)}" loading="lazy">`;
+  }
+
+  return `
+    <i class="bi ${peoplePageMediaIcon(kind)} people-page__media-file-icon" aria-hidden="true"></i>
+    <span class="people-page__media-file-ext">${peoplePageEscapeHtml(peoplePageMediaLabel(kind))}</span>
+    <span class="people-page__media-file-label">${peoplePageEscapeHtml(caption)}</span>
+  `;
+}
+
+function peoplePageRenderQueueThumb(item) {
+  if (item.kind === 'image') {
+    return `<img class="people-page__media-queue-thumb" src="${peoplePageEscapeHtml(item.dataUrl)}" alt="">`;
+  }
+
+  return `
+    <div class="people-page__media-queue-thumb people-page__media-queue-thumb--file" aria-hidden="true">
+      <i class="bi ${peoplePageMediaIcon(item.kind)} people-page__media-file-icon" aria-hidden="true"></i>
+      <span class="people-page__media-file-ext">${peoplePageEscapeHtml(peoplePageMediaLabel(item.kind))}</span>
+    </div>
+  `;
 }
 
 function peoplePageRandomId() {
@@ -1228,7 +1439,18 @@ class PeoplePage extends HTMLElement {
     const next = (title || '').trim();
     const titleEl = this.querySelector('.people-page__title');
     if (titleEl) {
-      titleEl.textContent = next;
+      const titleLink = titleEl.querySelector?.('.people-page__title-link');
+      if (titleLink) {
+        titleLink.textContent = next;
+        try {
+          const href = window.location.href.replace(/(?:index|profile)\.html(?:#.*)?$/i, '');
+          titleLink.href = href;
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        titleEl.textContent = next;
+      }
     }
 
     if (next) {
@@ -1239,7 +1461,9 @@ class PeoplePage extends HTMLElement {
 
   #resolvePersonId() {
     const pathname = window.location.pathname.replace(/\\/g, '/');
-    const match = pathname.match(/\/people\/([^/]+)\/[^/]+$/);
+    // Supports clean directory routes (/people/<id>/) and legacy file routes
+    // (/people/<id>/index.html, /people/<id>/profile.html).
+    const match = pathname.match(/\/people\/([^/]+)\//);
     return match?.[1]?.trim() || '';
   }
 
@@ -1264,7 +1488,7 @@ class PeoplePage extends HTMLElement {
     }
 
     const pathname = window.location.pathname.replace(/\\/g, '/');
-    const nestedMatch = pathname.match(/^(.*\/)people\/[^/]+\/[^/]+$/);
+    const nestedMatch = pathname.match(/^(.*\/)people\/[^/]+\/(?:[^/]+)?$/);
     const prefix = nestedMatch?.[1] || '';
     return new URL('people/people.json', new URL(prefix, window.location.href)).href;
   }
@@ -1348,6 +1572,52 @@ class PeoplePage extends HTMLElement {
     await window.__profileInfoboxRenderPromise;
   }
 
+  // Lazily load the browser database client so the profile reads structured
+  // data (identity, relationships, tree) from data/Genepedia-Database at runtime.
+  async #ensurePeopleDb() {
+    if (window.PeopleDB) {
+      return;
+    }
+
+    window.__peopleDbLoadPromise = window.__peopleDbLoadPromise || new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-people-db]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(), { once: true });
+        existing.addEventListener('error', () => reject(new Error('Could not load the people database client.')), { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = this.#resolveSiteUrl('lib/people-db.js');
+      script.dataset.peopleDb = '1';
+      script.addEventListener('load', () => resolve(), { once: true });
+      script.addEventListener('error', () => reject(new Error('Could not load the people database client.')), { once: true });
+      document.head.append(script);
+    });
+
+    await window.__peopleDbLoadPromise;
+  }
+
+  // Build the identity infobox fragment for the current person from the JSON
+  // database. Returns '' when the record or renderer is unavailable.
+  async #buildInfoboxHtml() {
+    try {
+      const personId = this.#resolvePersonId();
+      if (!personId) {
+        return '';
+      }
+      await this.#ensurePeopleDb();
+      await this.#ensureProfileInfoboxRender();
+      if (!window.PeopleDB) {
+        return '';
+      }
+      return await window.PeopleDB.buildInfoboxFragment(personId);
+    } catch (error) {
+      console.warn('Could not build identity infobox from the database.', error);
+      return '';
+    }
+  }
+
   async #prepareContentHtml(html, tab) {
     if (tab === 'profile') {
       try {
@@ -1359,6 +1629,7 @@ class PeoplePage extends HTMLElement {
 
     const doc = new DOMParser().parseFromString(html, 'text/html');
 
+    let infoboxHtml = '';
     if (tab === 'profile') {
       const heading = doc.querySelector('h1');
       const title = heading?.textContent?.trim();
@@ -1366,16 +1637,35 @@ class PeoplePage extends HTMLElement {
         this.#setTitle(title);
       }
       heading?.remove();
+
+      // Structured identity comes from the JSON database, not the prose file.
+      // Drop any legacy inline infobox so the database version is authoritative.
+      doc.querySelectorAll('profile-identity').forEach((el) => el.remove());
+      infoboxHtml = await this.#buildInfoboxHtml();
     }
 
     // Rewrite asset URLs in the main document
     this.#rewriteDataAssetUrls(doc);
 
-    // Inline any <include src="..."></include> or elements with data-include
+    // Inline any <include src="..."></include> or elements with data-include.
+    // The identity infobox include is resolved from the database, not a file.
     const includeEls = Array.from(doc.querySelectorAll('include[src], [data-include]'));
     for (const el of includeEls) {
       const src = el.getAttribute('src') || el.dataset.include;
       if (!src) continue;
+
+      if (tab === 'profile' && /profile-table\.html$/.test(src)) {
+        if (infoboxHtml) {
+          const fragDoc = new DOMParser().parseFromString(infoboxHtml, 'text/html');
+          this.#rewriteDataAssetUrls(fragDoc);
+          const nodes = Array.from(fragDoc.body.childNodes).map((n) => n.cloneNode(true));
+          el.replaceWith(...nodes);
+          infoboxHtml = '';
+        } else {
+          el.remove();
+        }
+        continue;
+      }
 
       try {
         const url = this.#resolveDataUrl(src);
@@ -1392,6 +1682,15 @@ class PeoplePage extends HTMLElement {
       } catch (err) {
         console.warn('Could not inline include', src, err);
       }
+    }
+
+    // If the prose carried no infobox include, inject the database infobox at top.
+    if (tab === 'profile' && infoboxHtml) {
+      const fragDoc = new DOMParser().parseFromString(infoboxHtml, 'text/html');
+      this.#rewriteDataAssetUrls(fragDoc);
+      const nodes = Array.from(fragDoc.body.childNodes).map((n) => n.cloneNode(true));
+      doc.body.prepend(...nodes);
+      infoboxHtml = '';
     }
 
     if (tab === 'profile' && typeof window.AppProfileInfobox?.refreshIdentityElementsInDocument === 'function') {
@@ -1445,7 +1744,7 @@ class PeoplePage extends HTMLElement {
   #rewriteDataAssetUrls(doc) {
     doc.querySelectorAll('img[src]').forEach((img) => {
       const src = img.getAttribute('src');
-      if (!src || /^https?:\/\//i.test(src) || src.startsWith('data:')) {
+      if (!src || /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(src)) {
         return;
       }
 
@@ -1478,7 +1777,7 @@ class PeoplePage extends HTMLElement {
       toolbar.removeAttribute('edit-content-selector');
     } catch (error) {
       // Fall back to the generic page editor when URL resolution fails.
-      toolbar.setAttribute('edit-source', `people/${personId}/data/profile.html`);
+      toolbar.setAttribute('edit-source', `people/${personId}/profile.html`);
       toolbar.setAttribute('edit-content-selector', '__fragment__');
       toolbar.removeAttribute('edit-href');
     }
@@ -1679,11 +1978,14 @@ class PeoplePage extends HTMLElement {
 
     if (fmt === 'gedcom') {
       try {
-        const response = await fetch(this.#resolveDataUrl('family-tree.ged'), { cache: 'no-store' });
-        if (!response.ok) {
+        await this.#ensurePeopleDb();
+        const text = window.PeopleDB
+          ? await window.PeopleDB.buildNeighborhoodGedcom(this.#resolvePersonId())
+          : '';
+        if (!text) {
           return false;
         }
-        const blob = await response.blob();
+        const blob = new Blob([text], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
@@ -1960,24 +2262,30 @@ class PeoplePage extends HTMLElement {
     contentEl.setAttribute('aria-busy', 'true');
     const personId = this.#resolvePersonId();
 
-    let hasTree = false;
+    let gedUrl = '';
     try {
-      const response = await fetch(this.#resolveDataUrl('family-tree.ged'), { cache: 'no-store' });
-      hasTree = response.ok;
+      await this.#ensurePeopleDb();
+      if (window.PeopleDB) {
+        gedUrl = (await window.PeopleDB.buildTreeGedcomUrl(personId)) || '';
+      }
     } catch (error) {
-      hasTree = false;
+      console.warn('Could not build the family tree from the database.', error);
+      gedUrl = '';
     }
 
     if (this.#isStaleTabLoad(token)) {
+      if (gedUrl) {
+        URL.revokeObjectURL(gedUrl);
+      }
       return;
     }
 
-    if (!hasTree) {
+    if (!gedUrl) {
       contentEl.innerHTML = `
-        <p>This profile is missing its required <code>data/family-tree.ged</code> file.</p>
+        <p>No family tree data is available for this profile yet.</p>
         <p class="people-page__tree-hint">
-          Every {{APP_NAME}} profile must have a GEDCOM family tree. Open the profile editor and save
-          the infobox to create one, or run <code>node scripts/ensure-profile-gedcom.mjs</code> in the repository.
+          Relationships are stored in the {{APP_NAME}} database. Open the profile editor to add
+          parents, partners, or children and they will appear here.
         </p>
       `;
       contentEl.removeAttribute('aria-busy');
@@ -1990,19 +2298,27 @@ class PeoplePage extends HTMLElement {
     } catch (error) {
       console.error(error);
       if (this.#isStaleTabLoad(token)) {
+        URL.revokeObjectURL(gedUrl);
         return;
       }
       contentEl.innerHTML = '<p>Could not load the family tree viewer.</p>';
       contentEl.removeAttribute('aria-busy');
       this.#notifyTabLoaded('tree');
+      URL.revokeObjectURL(gedUrl);
       return;
     }
 
     if (this.#isStaleTabLoad(token)) {
+      URL.revokeObjectURL(gedUrl);
       return;
     }
 
-    const gedUrl = this.#resolveDataUrl('family-tree.ged');
+    // Release the previous tree blob before swapping in the new one.
+    if (this.__treeBlobUrl) {
+      URL.revokeObjectURL(this.__treeBlobUrl);
+    }
+    this.__treeBlobUrl = gedUrl;
+
     const theme = document.body.classList.contains('theme-dark') ? 'dark' : 'light';
 
     contentEl.innerHTML = `
@@ -2061,13 +2377,15 @@ class PeoplePage extends HTMLElement {
 
     contentEl.innerHTML = `
       <div class="people-page__status-note people-page__media-status" role="status" hidden></div>
-      <section class="people-page__media-manage" aria-label="Add images" hidden>
-        <input type="file" class="people-page__media-file" accept="image/*" multiple hidden>
-        <button type="button" class="people-page__dropzone">
-          <i class="bi bi-cloud-arrow-up people-page__dropzone-icon" aria-hidden="true"></i>
-          <span class="people-page__dropzone-title">Drag images here, or click to choose</span>
-          <span class="people-page__dropzone-hint">JPG, PNG, GIF, WebP or SVG · pick several at once · uploads are reviewed before they appear</span>
-        </button>
+      <section class="people-page__media-manage" aria-label="Manage media" hidden>
+        <input type="file" class="people-page__media-file" accept="${PEOPLE_PAGE_MEDIA_INPUT_ACCEPT}" multiple hidden>
+        <div class="people-page__media-link-row">
+          <input type="url" class="people-page__media-link-input" placeholder="https://example.com/photo.jpg" autocomplete="off">
+          <button type="button" class="people-page__button-secondary people-page__media-link-add">
+            <i class="bi bi-link-45deg" aria-hidden="true"></i>
+            <span>Add media link</span>
+          </button>
+        </div>
         <div class="people-page__media-staging" hidden>
           <ul class="people-page__media-queue"></ul>
           <div class="people-page__media-row">
@@ -2084,7 +2402,7 @@ class PeoplePage extends HTMLElement {
         </div>
       </section>
       <div class="people-page__media-gallery-mount">
-        <p class="people-page__gallery-empty">Loading images…</p>
+        <p class="people-page__gallery-empty">Loading media…</p>
       </div>
       <div class="people-page__lightbox" hidden>
         <button type="button" class="people-page__lightbox-close" aria-label="Close">
@@ -2140,7 +2458,7 @@ class PeoplePage extends HTMLElement {
     }
 
     if (!response.ok || !payload?.ok) {
-      throw new Error(payload?.message || `Could not load the image list (${response.status}).`);
+      throw new Error(payload?.message || `Could not load the media list (${response.status}).`);
     }
 
     return payload;
@@ -2153,6 +2471,18 @@ class PeoplePage extends HTMLElement {
       return;
     }
 
+    let recordImages = [];
+    try {
+      await this.#ensurePeopleDb();
+      const record = window.PeopleDB ? await window.PeopleDB.loadPerson(personId) : null;
+      recordImages = record && window.PeopleDB
+        ? window.PeopleDB.normalizeMediaItems(record, personId)
+        : [];
+    } catch (error) {
+      console.warn('Could not load canonical media items from the database', error);
+      recordImages = [];
+    }
+
     try {
       const payload = await this.#fetchMediaList(personId);
       const canManage = Boolean(payload.can_manage);
@@ -2160,10 +2490,24 @@ class PeoplePage extends HTMLElement {
         manage.hidden = !canManage;
       }
 
-      const images = (payload.images || []).map((image) => ({
-        name: String(image?.name || ''),
-        url: String(image?.download_url || '') || this.#resolveImageUrl(`images/${image?.name || ''}`),
-      })).filter((image) => image.name);
+      const imagesByName = new Map(recordImages.map((image) => [String(image.name || ''), image]));
+      for (const image of (payload.images || [])) {
+        const name = String(image?.name || '');
+        if (!name || imagesByName.has(name)) {
+          continue;
+        }
+        imagesByName.set(name, {
+          key: name,
+          name,
+          url: this.#resolveImageUrl(`images/${name}`) || String(image?.download_url || ''),
+          title: this.#imageCaptionFromUrl(name),
+          local: `images/${name}`,
+          remote: '',
+          primary: false,
+          sourceType: 'file',
+        });
+      }
+      const images = [...imagesByName.values()].filter((image) => image.name || image.url);
 
       const pending = (payload.pending || []).map((entry) => ({
         number: Number(entry?.number || 0),
@@ -2177,16 +2521,25 @@ class PeoplePage extends HTMLElement {
       this.__mediaState = { canManage, images, pending };
       this.#renderMediaItems(contentEl);
     } catch (error) {
-      console.warn('Falling back to static image listing', error);
+      console.warn('Falling back to local media listing', error);
       if (manage) {
         manage.hidden = true;
       }
 
-      const urls = await this.#listDataImages();
-      const images = urls.map((url) => ({
-        name: decodeURIComponent(url.split('/').pop() || ''),
-        url,
-      }));
+      let images = recordImages;
+      if (!images.length) {
+        const urls = await this.#listDataImages();
+        images = urls.map((url) => ({
+          key: decodeURIComponent(url.split('/').pop() || ''),
+          name: decodeURIComponent(url.split('/').pop() || ''),
+          url,
+          title: this.#imageCaptionFromUrl(url),
+          local: '',
+          remote: '',
+          primary: false,
+          sourceType: 'file',
+        }));
+      }
       this.__mediaState = { canManage: false, images, pending: [] };
       this.#renderMediaItems(contentEl);
     }
@@ -2216,13 +2569,17 @@ class PeoplePage extends HTMLElement {
     ` : '<span class="people-page__pending-note">Awaiting review</span>');
 
     const pendingSection = pendingUploads.length ? `
-      <section class="people-page__media-section" aria-label="Pending images">
+      <section class="people-page__media-section" aria-label="Pending media">
         <h2 class="people-page__media-section-title">Pending review</h2>
         <div class="people-page__gallery">
           ${pendingUploads.map((entry) => `
             <figure class="people-page__media-item is-pending">
-              <div class="people-page__media-thumb">
-                <img src="${peoplePageEscapeHtml(entry.url)}" alt="${peoplePageEscapeHtml(this.#imageCaptionFromUrl(entry.filename))}" loading="lazy">
+              <div class="people-page__media-thumb ${peoplePageMediaKind(entry.filename) === 'image' ? '' : `people-page__media-thumb--file people-page__media-thumb--${peoplePageMediaKind(entry.filename)}`}">
+                ${peoplePageRenderMediaThumbContent({
+      kind: peoplePageMediaKind(entry.filename),
+      url: entry.url,
+      caption: this.#imageCaptionFromUrl(entry.filename),
+    })}
                 <span class="people-page__media-badge">Pending</span>
               </div>
               <figcaption>
@@ -2236,20 +2593,35 @@ class PeoplePage extends HTMLElement {
       </section>
     ` : '';
 
+    const uploadTile = state.canManage ? `
+      <figure class="people-page__media-item people-page__media-item--upload">
+        <div class="people-page__media-thumb people-page__media-thumb--upload" data-media-upload role="button" tabindex="0" aria-label="Upload media to this profile">
+          ${peoplePageRenderMediaThumbContent({ upload: true })}
+        </div>
+        <figcaption>Add media</figcaption>
+      </figure>
+    ` : '';
+
     const galleryItems = state.images.map((image) => {
-      const caption = this.#imageCaptionFromUrl(image.name);
+      const caption = String(image.title || '').trim() || this.#imageCaptionFromUrl(image.name);
       const removal = pendingDeletes.get(image.name);
+      const kind = peoplePageMediaKind(image.name || image.url, image.mimeType || '');
       return `
         <figure class="people-page__media-item${removal ? ' is-removing' : ''}">
-          <div class="people-page__media-thumb" data-media-view="${peoplePageEscapeHtml(image.name)}" role="button" tabindex="0" aria-label="View ${peoplePageEscapeHtml(caption)}">
-            <img src="${peoplePageEscapeHtml(image.url)}" alt="${peoplePageEscapeHtml(caption)}" loading="lazy">
+          <div class="people-page__media-thumb ${kind === 'image' ? '' : `people-page__media-thumb--file people-page__media-thumb--${kind}`}" data-media-view="${peoplePageEscapeHtml(image.name)}" role="button" tabindex="0" aria-label="Open ${peoplePageEscapeHtml(caption)}">
+            ${peoplePageRenderMediaThumbContent({ kind, url: image.url, caption })}
             ${removal ? '<span class="people-page__media-badge people-page__media-badge--warn">Removal pending</span>' : ''}
             <div class="people-page__media-hover">
-              <button type="button" class="people-page__media-icon" data-media-download="${peoplePageEscapeHtml(image.name)}" title="Download" aria-label="Download image">
+              <button type="button" class="people-page__media-icon" data-media-download="${peoplePageEscapeHtml(image.name)}" title="Download" aria-label="Download media">
                 <i class="bi bi-download" aria-hidden="true"></i>
               </button>
-              ${state.canManage && !removal ? `
-                <button type="button" class="people-page__media-icon people-page__media-icon--danger" data-media-delete="${peoplePageEscapeHtml(image.name)}" title="Remove" aria-label="Remove image">
+              ${state.canManage && !removal && image.sourceType === 'link' ? `
+                <button type="button" class="people-page__media-icon" data-media-localize="${peoplePageEscapeHtml(image.name)}" title="Upload" aria-label="Upload media">
+                  <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
+                </button>
+              ` : ''}
+              ${state.canManage && !removal && image.sourceType !== 'link' ? `
+                <button type="button" class="people-page__media-icon people-page__media-icon--danger" data-media-delete="${peoplePageEscapeHtml(image.name)}" title="Remove" aria-label="Remove media">
                   <i class="bi bi-trash" aria-hidden="true"></i>
                 </button>
               ` : ''}
@@ -2271,21 +2643,23 @@ class PeoplePage extends HTMLElement {
       `;
     }).join('');
 
-    const gallerySection = state.images.length
-      ? `<div class="people-page__gallery">${galleryItems}</div>`
-      : (pendingUploads.length ? '' : '<p class="people-page__gallery-empty">No images have been added to this profile yet.</p>');
+    const gallerySection = (state.images.length || state.canManage)
+      ? `<div class="people-page__gallery">${uploadTile}${galleryItems}</div>`
+      : (pendingUploads.length ? '' : '<p class="people-page__gallery-empty">No media has been added to this profile yet.</p>');
 
     mount.innerHTML = pendingSection + gallerySection;
   }
 
   #findMediaImage(name) {
-    return (this.__mediaState?.images || []).find((image) => image.name === name) || null;
+    return (this.__mediaState?.images || []).find((image) => image.name === name || image.key === name) || null;
   }
 
   #bindMediaUi(contentEl, personId) {
     const manageSection = contentEl.querySelector('.people-page__media-manage');
     const dropzone = contentEl.querySelector('.people-page__dropzone');
     const fileInput = contentEl.querySelector('.people-page__media-file');
+    const linkInput = contentEl.querySelector('.people-page__media-link-input');
+    const linkAddButton = contentEl.querySelector('.people-page__media-link-add');
     const staging = contentEl.querySelector('.people-page__media-staging');
     const queueList = contentEl.querySelector('.people-page__media-queue');
     const submitButton = contentEl.querySelector('.people-page__media-submit');
@@ -2302,7 +2676,7 @@ class PeoplePage extends HTMLElement {
       if (staging) staging.hidden = count === 0;
       if (dropzone) dropzone.hidden = count > 0;
       if (submitLabel) {
-        submitLabel.textContent = count > 1 ? `Upload ${count} images for review` : 'Upload for review';
+        submitLabel.textContent = count > 1 ? `Upload ${count} media files for review` : 'Upload for review';
       }
       if (submitButton) submitButton.disabled = count === 0;
       if (!queueList) {
@@ -2311,7 +2685,7 @@ class PeoplePage extends HTMLElement {
 
       queueList.innerHTML = queue.map((item) => `
         <li class="people-page__media-queue-item" data-queue-id="${peoplePageEscapeHtml(item.id)}">
-          <img class="people-page__media-queue-thumb" src="${peoplePageEscapeHtml(item.dataUrl)}" alt="">
+          ${peoplePageRenderQueueThumb(item)}
           <div class="people-page__media-queue-info">
             <span class="people-page__media-queue-name" title="${peoplePageEscapeHtml(item.filename)}">${peoplePageEscapeHtml(item.filename)}</span>
             <input type="text" class="people-page__media-queue-caption" data-queue-id="${peoplePageEscapeHtml(item.id)}" placeholder="Caption (optional)" autocomplete="off" value="${peoplePageEscapeHtml(item.caption || '')}">
@@ -2349,23 +2723,24 @@ class PeoplePage extends HTMLElement {
     };
 
     const addFiles = async (fileList) => {
-      const images = Array.from(fileList || []).filter((file) => /^image\//.test(file.type));
-      if (!images.length) {
-        this.#setMediaStatus(contentEl, 'Please choose image files.', 'error');
+      const files = Array.from(fileList || []).filter((file) => peoplePageAcceptsUpload(file));
+      if (!files.length) {
+        this.#setMediaStatus(contentEl, 'Please choose image or PDF files.', 'error');
         return;
       }
 
       const slug = this.#resolveProfileSlug();
       const usedStems = collectUsedStems();
-      this.#setMediaStatus(contentEl, images.length > 1 ? `Preparing ${images.length} images…` : 'Preparing image…');
+      this.#setMediaStatus(contentEl, files.length > 1 ? `Preparing ${files.length} files…` : 'Preparing media…');
 
       let added = 0;
       let lastNote = '';
       const errors = [];
-      for (const file of images) {
+      for (const file of files) {
         try {
           const prepared = await this.#prepareImageForUpload(file);
-          const ext = peoplePageImageExtension(prepared.filename) || 'jpg';
+          const kind = prepared.kind || peoplePageMediaKind(prepared.filename || file.name, file.type || '');
+          const ext = peoplePageImageExtension(prepared.filename) || (kind === 'pdf' ? 'pdf' : 'jpg');
           let n = 1;
           while (usedStems.has(`${slug}-${n}`)) {
             n += 1;
@@ -2374,6 +2749,7 @@ class PeoplePage extends HTMLElement {
           usedStems.add(stem);
           queue.push({
             id: peoplePageRandomId(),
+            kind,
             dataUrl: prepared.dataUrl,
             filename: `${stem}.${ext}`,
             note: prepared.note || '',
@@ -2398,11 +2774,41 @@ class PeoplePage extends HTMLElement {
       }
     };
 
+    contentEl.__queueMediaFiles = addFiles;
+
     dropzone?.addEventListener('click', () => fileInput?.click());
     addButton?.addEventListener('click', () => fileInput?.click());
     fileInput?.addEventListener('change', () => {
       void addFiles(fileInput.files);
       fileInput.value = '';
+    });
+
+    linkAddButton?.addEventListener('click', async () => {
+      const raw = String(linkInput?.value || '').trim();
+      if (!raw || !/^https?:\/\//i.test(raw)) {
+        this.#setMediaStatus(contentEl, 'Enter a valid http(s) media link.', 'error');
+        return;
+      }
+
+      linkAddButton.disabled = true;
+      this.#setMediaStatus(contentEl, 'Adding media link…');
+      try {
+        await this.#upsertRecordMediaItem(personId, {
+          local: null,
+          remote: raw,
+          title: this.#imageCaptionFromUrl(raw),
+        }, { setPrimary: false, commitMessage: `Add media link for profile ${personId}` });
+        if (linkInput) {
+          linkInput.value = '';
+        }
+        this.#setMediaStatus(contentEl, 'Media link added.', 'success');
+        await this.#refreshMediaGallery(contentEl, personId);
+      } catch (error) {
+        console.error(error);
+        this.#setMediaStatus(contentEl, error?.message || 'Could not add the media link.', 'error');
+      } finally {
+        linkAddButton.disabled = false;
+      }
     });
 
     // Accept drops anywhere on the manage panel so it works whether the queue
@@ -2450,7 +2856,7 @@ class PeoplePage extends HTMLElement {
 
     submitButton?.addEventListener('click', async () => {
       if (!queue.length) {
-        this.#setMediaStatus(contentEl, 'Choose at least one image first.', 'error');
+        this.#setMediaStatus(contentEl, 'Choose at least one media file first.', 'error');
         return;
       }
 
@@ -2464,7 +2870,7 @@ class PeoplePage extends HTMLElement {
       for (const item of queue) {
         this.#setMediaStatus(
           contentEl,
-          total > 1 ? `Uploading image ${done + 1} of ${total}…` : 'Uploading image…',
+          total > 1 ? `Uploading file ${done + 1} of ${total}…` : 'Uploading media…',
         );
         try {
           const result = await this.#submitMediaAction(personId, {
@@ -2485,18 +2891,18 @@ class PeoplePage extends HTMLElement {
       if (!failures.length) {
         if (reviewPublishes > 0 && directPublishes === 0) {
           this.#setMediaStatus(contentEl, '', 'success', `
-            ${done > 1 ? `${done} images were submitted` : 'Image submitted'} for review.
+            ${done > 1 ? `${done} media files were submitted` : 'Media file submitted'} for review.
             ${done > 1 ? 'They' : 'It'} now ${done > 1 ? 'appear' : 'appears'} under “Pending review” below.
           `);
         } else if (reviewPublishes > 0) {
           this.#setMediaStatus(contentEl, '', 'success', `
-            ${directPublishes} ${directPublishes === 1 ? 'image was uploaded' : 'images were uploaded'}.
-            ${reviewPublishes} ${reviewPublishes === 1 ? 'image was submitted' : 'images were submitted'} for review.
+            ${directPublishes} ${directPublishes === 1 ? 'media file was uploaded' : 'media files were uploaded'}.
+            ${reviewPublishes} ${reviewPublishes === 1 ? 'media file was submitted' : 'media files were submitted'} for review.
           `);
         } else {
           this.#setMediaStatus(
             contentEl,
-            done > 1 ? `${done} images uploaded.` : 'Image uploaded.',
+            done > 1 ? `${done} media files uploaded.` : 'Media file uploaded.',
             'success',
           );
         }
@@ -2524,6 +2930,13 @@ class PeoplePage extends HTMLElement {
     contentEl.__mediaActionsBound = true;
 
     contentEl.addEventListener('click', (event) => {
+      const uploadTile = event.target.closest?.('[data-media-upload]');
+      if (uploadTile && contentEl.contains(uploadTile)) {
+        event.preventDefault();
+        fileInput?.click();
+        return;
+      }
+
       const lightbox = contentEl.querySelector('.people-page__lightbox');
       if (lightbox && !lightbox.hidden
         && (event.target === lightbox || event.target.closest('.people-page__lightbox-close'))) {
@@ -2537,6 +2950,14 @@ class PeoplePage extends HTMLElement {
         event.stopPropagation();
         const image = this.#findMediaImage(downloadButton.dataset.mediaDownload);
         if (image) this.#downloadImage(image.url, image.name);
+        return;
+      }
+
+      const localizeButton = event.target.closest?.('[data-media-localize]');
+      if (localizeButton && contentEl.contains(localizeButton)) {
+        event.preventDefault();
+        event.stopPropagation();
+        void this.#localizeLinkedMedia(contentEl, personId, localizeButton.dataset.mediaLocalize || '');
         return;
       }
 
@@ -2572,11 +2993,45 @@ class PeoplePage extends HTMLElement {
     });
 
     contentEl.addEventListener('keydown', (event) => {
+      const uploadTile = event.target.closest?.('[data-media-upload]');
+      if (uploadTile && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        fileInput?.click();
+        return;
+      }
+
       const view = event.target.closest?.('[data-media-view]');
       if (view && (event.key === 'Enter' || event.key === ' ')) {
         event.preventDefault();
         this.#openMediaLightbox(contentEl, personId, view.dataset.mediaView);
       }
+    });
+
+    contentEl.addEventListener('dragover', (event) => {
+      const uploadTile = event.target.closest?.('[data-media-upload]');
+      if (!uploadTile || !contentEl.contains(uploadTile)) {
+        return;
+      }
+      event.preventDefault();
+      uploadTile.classList.add('is-dragover');
+    });
+
+    contentEl.addEventListener('dragleave', (event) => {
+      const uploadTile = event.target.closest?.('[data-media-upload]');
+      if (!uploadTile || (event.relatedTarget && uploadTile.contains(event.relatedTarget))) {
+        return;
+      }
+      uploadTile.classList.remove('is-dragover');
+    });
+
+    contentEl.addEventListener('drop', (event) => {
+      const uploadTile = event.target.closest?.('[data-media-upload]');
+      if (!uploadTile || !contentEl.contains(uploadTile)) {
+        return;
+      }
+      event.preventDefault();
+      uploadTile.classList.remove('is-dragover');
+      void contentEl.__queueMediaFiles?.(event.dataTransfer?.files || null);
     });
 
     document.addEventListener('keydown', (event) => {
@@ -2593,7 +3048,22 @@ class PeoplePage extends HTMLElement {
       return;
     }
 
-    this.#setMediaStatus(contentEl, 'Removing image…');
+    const existing = this.#findMediaImage(filename);
+    if (existing?.sourceType === 'link') {
+      this.#setMediaStatus(contentEl, 'Removing media link…');
+      try {
+        await this.#removeRecordMediaItem(personId, existing);
+        this.#setMediaStatus(contentEl, 'Media link removed.', 'success');
+        this.#closeMediaLightbox(contentEl);
+        await this.#refreshMediaGallery(contentEl, personId);
+      } catch (error) {
+        console.error(error);
+        this.#setMediaStatus(contentEl, error?.message || 'Could not remove this media link.', 'error');
+      }
+      return;
+    }
+
+    this.#setMediaStatus(contentEl, 'Removing media…');
 
     try {
       const result = await this.#submitMediaAction(personId, { action: 'delete', filename });
@@ -2605,7 +3075,7 @@ class PeoplePage extends HTMLElement {
           The image stays visible until the request is approved.
         `);
       } else {
-        this.#setMediaStatus(contentEl, 'Image removed.', 'success');
+        this.#setMediaStatus(contentEl, 'Media removed.', 'success');
       }
       this.#closeMediaLightbox(contentEl);
       await this.#refreshMediaGallery(contentEl, personId);
@@ -2621,7 +3091,7 @@ class PeoplePage extends HTMLElement {
     }
 
     const verb = action === 'approve' ? 'approve' : 'decline';
-    if (!window.confirm(`Are you sure you want to ${verb} this image change?`)) {
+    if (!window.confirm(`Are you sure you want to ${verb} this media change?`)) {
       return;
     }
 
@@ -2648,6 +3118,11 @@ class PeoplePage extends HTMLElement {
       return;
     }
 
+    if (peoplePageMediaKind(image.name || image.url, image.mimeType || '') !== 'image') {
+      window.open(image.url, '_blank', 'noopener');
+      return;
+    }
+
     const caption = this.#imageCaptionFromUrl(image.name);
     lightbox.querySelector('.people-page__lightbox-img').src = image.url;
     lightbox.querySelector('.people-page__lightbox-img').alt = caption;
@@ -2660,6 +3135,11 @@ class PeoplePage extends HTMLElement {
       <button type="button" class="people-page__button-secondary" data-media-download="${peoplePageEscapeHtml(image.name)}">
         <i class="bi bi-download" aria-hidden="true"></i><span>Download</span>
       </button>
+      ${canManage && image.sourceType === 'link' ? `
+        <button type="button" class="people-page__button-secondary" data-media-localize="${peoplePageEscapeHtml(image.name)}">
+          <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i><span>Upload</span>
+        </button>
+      ` : ''}
       ${canManage && !removalPending ? `
         <button type="button" class="people-page__button-danger" data-media-delete="${peoplePageEscapeHtml(image.name)}">
           <i class="bi bi-trash" aria-hidden="true"></i><span>Remove</span>
@@ -2700,28 +3180,30 @@ class PeoplePage extends HTMLElement {
     }
   }
 
-  // Downscale and re-encode large pictures client-side so the upload stays
-  // well under server request-body limits (base64 inflates payloads by ~33%).
+  // Downscale and re-encode large photos client-side so the upload stays well
+  // under server request-body limits (base64 inflates payloads by ~33%). PDFs
+  // and pass-through image formats keep their original bytes.
   async #prepareImageForUpload(file) {
     const MAX_DIMENSION = 1800;
     const TARGET_BYTES = 900_000;
+    const mediaKind = peoplePageMediaKind(file?.name || '', file?.type || '');
 
     const readAsDataUrl = (blob) => new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || ''));
-      reader.onerror = () => reject(new Error('Could not read this image.'));
+      reader.onerror = () => reject(new Error('Could not read this media file.'));
       reader.readAsDataURL(blob);
     });
 
     const passThrough = async () => {
       if (file.size > PEOPLE_PAGE_MEDIA_MAX_BYTES) {
-        throw new Error('Images must be smaller than 8 MB.');
+        throw new Error('Media files must be smaller than 8 MB.');
       }
-      return { dataUrl: await readAsDataUrl(file), filename: file.name, note: '' };
+      return { dataUrl: await readAsDataUrl(file), filename: file.name, note: '', kind: mediaKind };
     };
 
-    // GIFs (animation) and SVGs are kept as-is; photos get recompressed.
-    if (!/^image\/(jpeg|png|webp|bmp|avif)$/i.test(file.type)) {
+    // PDFs, GIFs (animation), and SVGs are kept as-is; photos get recompressed.
+    if (mediaKind !== 'image' || !/^image\/(jpeg|png|webp|bmp|avif)$/i.test(file.type)) {
       return passThrough();
     }
 
@@ -2761,6 +3243,7 @@ class PeoplePage extends HTMLElement {
       dataUrl,
       filename: `${file.name.replace(/\.[^.]+$/, '')}.jpg`,
       note: 'Large image was resized so it uploads reliably.',
+      kind: 'image',
     };
   }
 
@@ -2796,6 +3279,181 @@ class PeoplePage extends HTMLElement {
     }
 
     return payload;
+  }
+
+  async #submitPageEditFiles(files, { commitMessage, prTitle, prBody = '' } = {}) {
+    const url = this.#resolveGitHubApiUrl('github-submit-page-edit.php');
+    if (!url) {
+      throw new Error('GitHub API base is not configured.');
+    }
+
+    const response = await fetch(url, this.#gitHubFetchInit({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        files,
+        commit_message: commitMessage || 'Update profile media',
+        pr_title: prTitle || commitMessage || 'Update profile media',
+        pr_body: prBody,
+      }),
+    }));
+
+    let payload = null;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      payload = null;
+    }
+
+    if (!response.ok || !payload?.ok) {
+      if (payload?.error === 'authentication_required') {
+        throw new Error('Sign in with GitHub from the site header first.');
+      }
+      throw new Error(payload?.message || `The request failed (${response.status}).`);
+    }
+
+    return payload;
+  }
+
+  async #upsertRecordMediaItem(personId, item, { setPrimary = false, commitMessage = '' } = {}) {
+    await this.#ensurePeopleDb();
+    if (!window.PeopleDB) {
+      throw new Error('People database client is not available.');
+    }
+
+    const record = await window.PeopleDB.loadPerson(personId);
+    if (!record) {
+      throw new Error('Could not load the profile record.');
+    }
+
+    const updated = window.PeopleDB.upsertMediaItem(JSON.parse(JSON.stringify(record)), item, { setPrimary });
+    window.PeopleDB.primePerson(updated);
+
+    await this.#submitPageEditFiles([
+      {
+        path: window.PeopleDB.recordPath(personId),
+        content: `${JSON.stringify(updated, null, 2)}\n`,
+      },
+    ], {
+      commitMessage: commitMessage || `Update media for profile ${personId}`,
+      prTitle: commitMessage || `Update media for profile ${personId}`,
+    });
+
+    return updated;
+  }
+
+  async #replaceRecordMediaItem(personId, currentImage, nextItem, { commitMessage = '' } = {}) {
+    await this.#ensurePeopleDb();
+    if (!window.PeopleDB) {
+      throw new Error('People database client is not available.');
+    }
+
+    const record = await window.PeopleDB.loadPerson(personId);
+    if (!record) {
+      throw new Error('Could not load the profile record.');
+    }
+
+    const updated = JSON.parse(JSON.stringify(record));
+    const currentKey = currentImage?.key || currentImage?.name || currentImage?.remote || currentImage?.local || '';
+    if (currentKey) {
+      window.PeopleDB.removeMediaItem(updated, currentKey);
+    }
+
+    const setPrimary = Boolean(currentImage?.primary);
+    const replacement = { ...nextItem };
+    if (setPrimary && !replacement.alt) {
+      replacement.alt = String(record.names?.display || '').trim();
+    }
+    window.PeopleDB.upsertMediaItem(updated, replacement, { setPrimary });
+    window.PeopleDB.primePerson(updated);
+
+    await this.#submitPageEditFiles([
+      {
+        path: window.PeopleDB.recordPath(personId),
+        content: `${JSON.stringify(updated, null, 2)}\n`,
+      },
+    ], {
+      commitMessage: commitMessage || `Update media for profile ${personId}`,
+      prTitle: commitMessage || `Update media for profile ${personId}`,
+    });
+
+    return updated;
+  }
+
+  async #removeRecordMediaItem(personId, image) {
+    await this.#ensurePeopleDb();
+    if (!window.PeopleDB) {
+      throw new Error('People database client is not available.');
+    }
+
+    const record = await window.PeopleDB.loadPerson(personId);
+    if (!record) {
+      throw new Error('Could not load the profile record.');
+    }
+
+    const updated = window.PeopleDB.removeMediaItem(JSON.parse(JSON.stringify(record)), image.key || image.name || image.remote || image.local);
+    window.PeopleDB.primePerson(updated);
+
+    await this.#submitPageEditFiles([
+      {
+        path: window.PeopleDB.recordPath(personId),
+        content: `${JSON.stringify(updated, null, 2)}\n`,
+      },
+    ], {
+      commitMessage: `Remove media link from profile ${personId}`,
+      prTitle: `Remove media link from profile ${personId}`,
+    });
+
+    return updated;
+  }
+
+  async #localizeLinkedMedia(contentEl, personId, name) {
+    const image = this.#findMediaImage(name);
+    if (!image || image.sourceType !== 'link' || !image.remote) {
+      return;
+    }
+
+    const caption = String(image.title || '').trim() || this.#imageCaptionFromUrl(image.name || image.remote);
+    const requestedName = String(image.name || '').trim()
+      || decodeURIComponent(String(image.remote || '').split('?')[0].split('/').pop() || '').trim();
+
+    if (!requestedName || !peoplePageImageExtension(requestedName || image.remote)) {
+      this.#setMediaStatus(contentEl, 'Could not determine a filename for this media link.', 'error');
+      return;
+    }
+
+    if (!window.confirm(`Upload “${caption}” to local media storage?`)) {
+      return;
+    }
+
+    this.#setMediaStatus(contentEl, 'Uploading media locally…');
+
+    try {
+      const result = await this.#submitMediaAction(personId, {
+        action: 'upload',
+        filename: requestedName,
+        caption,
+        source_url: image.remote,
+        commit_message: `Upload ${requestedName} locally for profile ${personId}`,
+        pr_title: `Upload ${requestedName} locally for profile ${personId}`,
+      });
+
+      const storedFilename = String(result?.filename || requestedName).trim() || requestedName;
+      await this.#replaceRecordMediaItem(personId, image, {
+        local: `images/${storedFilename}`,
+        remote: null,
+        title: caption,
+        form: '',
+      }, {
+        commitMessage: `Make media local for profile ${personId}`,
+      });
+
+      this.#setMediaStatus(contentEl, 'Media uploaded locally.', 'success');
+      await this.#refreshMediaGallery(contentEl, personId);
+    } catch (error) {
+      console.error(error);
+      this.#setMediaStatus(contentEl, error?.message || 'Could not upload this media locally.', 'error');
+    }
   }
 
   // -------------------------------------------------------------------
@@ -2925,49 +3583,25 @@ class PeoplePage extends HTMLElement {
     }
   }
 
-  // Maps GitHub logins to Genepedia people by scanning every profile.json
-  // (creator + maintainers carry their own personId). Cached site-wide.
+  // Maps GitHub logins to Genepedia people via the prebuilt ownership login
+  // index (data/Genepedia-Database/index/ownership-logins.json). Cached site-wide.
   async #loadPeopleLoginDirectory() {
     if (!window.__peopleLoginDirectoryPromise) {
       window.__peopleLoginDirectoryPromise = (async () => {
         const directory = new Map();
         try {
-          let people = [];
-          if (window.PeopleRegistry?.loadPeopleRegistry) {
-            people = await window.PeopleRegistry.loadPeopleRegistry();
-          } else {
-            const response = await fetch(this.#resolvePeopleJsonUrl(), { cache: 'no-store' });
-            if (response.ok) {
-              const data = await response.json();
-              people = Array.isArray(data?.people) ? data.people : [];
+          const payload = window.App?.loadOwnershipLoginIndex
+            ? await window.App.loadOwnershipLoginIndex()
+            : await fetch(this.#resolveSiteUrl(window.App?.resolvePeopleDbPath?.('index/ownership-logins.json') || 'data/Genepedia-Database/index/ownership-logins.json'), { cache: 'no-store' })
+              .then(async (response) => (response.ok ? response.json() : null))
+              .then((data) => data?.logins || {});
+          Object.entries(payload || {}).forEach(([login, personId]) => {
+            const cleanLogin = String(login || '').trim().toLowerCase();
+            const cleanPersonId = String(personId || '').trim();
+            if (cleanLogin && cleanPersonId && !directory.has(cleanLogin)) {
+              directory.set(cleanLogin, cleanPersonId);
             }
-          }
-
-          await Promise.all(people.map(async (person) => {
-            const id = String(person?.id || '').trim();
-            if (!id) {
-              return;
-            }
-
-            try {
-              const response = await fetch(this.#resolveSiteUrl(`people/${id}/profile.json`), { cache: 'no-store' });
-              if (!response.ok) {
-                return;
-              }
-
-              const config = await response.json();
-              const entries = [config?.creator, config?.owner, ...(Array.isArray(config?.maintainers) ? config.maintainers : [])];
-              entries.forEach((entry) => {
-                const login = String(entry?.githubLogin || '').trim().toLowerCase();
-                const personId = String(entry?.personId || '').trim() || id;
-                if (login && !directory.has(login)) {
-                  directory.set(login, personId);
-                }
-              });
-            } catch (error) {
-              // skip unreadable profiles
-            }
-          }));
+          });
         } catch (error) {
           console.warn('Could not build the people login directory', error);
         }
@@ -2989,7 +3623,7 @@ class PeoplePage extends HTMLElement {
     const promise = (async () => {
       const card = {
         personId,
-        profileUrl: this.#resolveSiteUrl(`people/${personId}/profile.html`),
+        profileUrl: this.#resolveSiteUrl(`people/${personId}/`),
         name: '',
         photoUrl: '',
       };
@@ -3011,8 +3645,10 @@ class PeoplePage extends HTMLElement {
         if (response.ok) {
           const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
           const src = doc.querySelector('table-photo img')?.getAttribute('src')?.trim() || '';
-          if (src && !/^https?:\/\//i.test(src)) {
-            card.photoUrl = this.#resolveSiteUrl(`people/${personId}/data/${src.replace(/^\.?\//, '')}`);
+          if (src && !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(src)) {
+            card.photoUrl = src.startsWith('data/')
+              ? this.#resolveSiteUrl(`people/${personId}/${src.replace(/^\.?\//, '')}`)
+              : this.#resolvePersonMediaUrlFor(personId, src);
           } else if (src) {
             card.photoUrl = src;
           }
@@ -3220,37 +3856,67 @@ class PeoplePage extends HTMLElement {
     return payload;
   }
 
+  #resolvePersonMediaUrlFor(personId, path = '') {
+    const id = String(personId || '').trim();
+    const value = path?.trim() || '';
+    if (!id) {
+      return value ? this.#resolveSiteUrl(value.replace(/^\/+/, '')) : '';
+    }
+    if (typeof window.App?.resolvePersonMediaUrl === 'function') {
+      return window.App.resolvePersonMediaUrl(id, value);
+    }
+
+    const normalized = value.replace(/^\.?\//, '').replace(/^\/+/, '');
+    if (!normalized) {
+      return this.#resolveSiteUrl(`data/Genepedia-Media/people/${id}/`);
+    }
+
+    const relative = normalized.startsWith('data/images/')
+      ? normalized.slice('data/images/'.length)
+      : normalized.startsWith('images/')
+        ? normalized.slice('images/'.length)
+        : normalized;
+
+    return this.#resolveSiteUrl(`data/Genepedia-Media/people/${id}/${relative}`);
+  }
+
   #resolveImageUrl(path) {
     const value = path?.trim() || '';
     if (!value) {
       return '';
     }
 
-    if (/^https?:\/\//i.test(value)) {
+    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(value)) {
       return value;
+    }
+
+    if (
+      value.startsWith('data/Genepedia-Media/')
+      || value.startsWith('assets/')
+      || value.startsWith('lib/')
+      || value.startsWith('pages/')
+      || value.startsWith('people/')
+    ) {
+      return this.#resolveSiteUrl(value);
     }
 
     if (value.startsWith('data/')) {
       return new URL(value, window.location.href).href;
     }
 
-    if (value.startsWith('images/')) {
-      return this.#resolveDataUrl(value);
-    }
-
-    return this.#resolveDataUrl(`images/${value.replace(/^\/+/, '')}`);
+    return this.#resolvePersonMediaUrlFor(this.#resolvePersonId(), value);
   }
 
   #imageFilenameFromHref(href) {
     const filename = (href.split('?')[0].split('/').pop() || '').trim();
-    return PEOPLE_PAGE_IMAGE_EXTENSIONS.test(filename) ? filename : '';
+    return PEOPLE_PAGE_MEDIA_EXTENSIONS.test(filename) ? filename : '';
   }
 
   async #listDataImages() {
     const images = new Set();
 
     try {
-      const directoryResponse = await fetch(this.#resolveDataUrl('images/'));
+      const directoryResponse = await fetch(this.#resolvePersonMediaUrlFor(this.#resolvePersonId()));
       if (directoryResponse.ok) {
         const contentType = directoryResponse.headers.get('content-type') || '';
 
@@ -3276,7 +3942,7 @@ class PeoplePage extends HTMLElement {
         }
       }
     } catch (error) {
-      console.warn('Could not read data/images folder', error);
+      console.warn('Could not read the profile media folder', error);
     }
 
     if (images.size === 0) {

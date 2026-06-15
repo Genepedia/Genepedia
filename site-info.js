@@ -18,6 +18,10 @@
         Slogan: 'Free Geneology Encyclopedia',
         PageEditPath: 'pages/edit.html',
     };
+    const PEOPLE_DB_ROOT = 'data/Genepedia-Database';
+    const LEGACY_PEOPLE_DB_ROOT = 'data/people/v1';
+    const PERSON_MEDIA_ROOT = 'data/Genepedia-Media/people';
+    const LOCAL_MEDIA_PROFILE_IDS = new Set(['1', '2', '3', '15']);
 
     function getSiteBaseUrl() {
         if (SITE_INFO_SCRIPT_URL) {
@@ -34,6 +38,111 @@
         } catch (e) {
             return cleanPath;
         }
+    }
+
+    function resolvePeopleDbPath(dbPath = '') {
+        const normalized = normalizeSitePath(dbPath);
+        if (!normalized || normalized === PEOPLE_DB_ROOT || normalized === LEGACY_PEOPLE_DB_ROOT) {
+            return PEOPLE_DB_ROOT;
+        }
+
+        if (normalized.startsWith(`${PEOPLE_DB_ROOT}/`)) {
+            return normalized;
+        }
+
+        if (normalized.startsWith(`${LEGACY_PEOPLE_DB_ROOT}/`)) {
+            return `${PEOPLE_DB_ROOT}/${normalized.slice(`${LEGACY_PEOPLE_DB_ROOT}/`.length)}`;
+        }
+
+        if (/^(manifest\.json|(persons|unions|ownership|graph|index|sources|export|reports)\/)/.test(normalized)) {
+            return `${PEOPLE_DB_ROOT}/${normalized}`;
+        }
+
+        return normalized;
+    }
+
+    function resolvePeopleDbUrl(dbPath = '') {
+        return resolveSiteUrl(resolvePeopleDbPath(dbPath));
+    }
+
+    function hasAbsoluteUrlScheme(value) {
+        return /^[a-z][a-z0-9+.-]*:/i.test(String(value || '').trim()) || String(value || '').trim().startsWith('//');
+    }
+
+    function resolvePersonMediaPath(personId, mediaPath = '') {
+        const id = String(personId || '').trim();
+        const root = `${PERSON_MEDIA_ROOT}/${id}`;
+        const normalized = normalizeSitePath(mediaPath);
+        if (!normalized) {
+            return `${root}/`;
+        }
+
+        if (normalized.startsWith(`${PERSON_MEDIA_ROOT}/`)) {
+            return normalized;
+        }
+
+        if (normalized.startsWith('images/')) {
+            return `${root}/${normalized.slice('images/'.length)}`;
+        }
+
+        if (normalized.startsWith('data/images/')) {
+            return `${root}/${normalized.slice('data/images/'.length)}`;
+        }
+
+        const personMediaPrefixes = [
+            `people/${id}/images/`,
+            `people/${id}/data/images/`,
+        ];
+        for (const prefix of personMediaPrefixes) {
+            if (normalized.startsWith(prefix)) {
+                return `${root}/${normalized.slice(prefix.length)}`;
+            }
+        }
+
+        if (/^(assets|data|lib|pages|people)\//.test(normalized)) {
+            return normalized;
+        }
+
+        return `${root}/${normalized}`;
+    }
+
+    function resolvePersonMediaUrl(personId, mediaPath = '') {
+        const value = String(mediaPath || '').trim();
+        if (hasAbsoluteUrlScheme(value)) {
+            return value;
+        }
+        return resolveSiteUrl(resolvePersonMediaPath(personId, value));
+    }
+
+    function prefersLocalPersonMedia(personId) {
+        return LOCAL_MEDIA_PROFILE_IDS.has(String(personId || '').trim());
+    }
+
+    function resolvePreferredPersonMedia(personId, mediaEntry = null) {
+        const local = String(mediaEntry?.local || '').trim();
+        const remote = String(mediaEntry?.remote || '').trim();
+
+        if (prefersLocalPersonMedia(personId)) {
+            if (local) {
+                return { url: resolvePersonMediaUrl(personId, local), sourceType: 'file', local, remote };
+            }
+            if (remote) {
+                return { url: remote, sourceType: 'link', local, remote };
+            }
+            return { url: '', sourceType: '', local, remote };
+        }
+
+        if (remote) {
+            return { url: remote, sourceType: 'link', local, remote };
+        }
+        if (local) {
+            return { url: resolvePersonMediaUrl(personId, local), sourceType: 'file', local, remote };
+        }
+        return { url: '', sourceType: '', local, remote };
+    }
+
+    function resolvePreferredPersonMediaUrl(personId, mediaEntry = null) {
+        return resolvePreferredPersonMedia(personId, mediaEntry).url;
     }
 
     async function fetchSiteResource(url, init = {}) {
@@ -81,6 +190,7 @@
     }
 
     let peopleRegistryScriptPromise = null;
+    let ownershipLoginIndexPromise = null;
     const selfProfileClaimCache = new Map();
 
     function ensurePeopleRegistryScript() {
@@ -131,7 +241,7 @@
             return;
         }
 
-        const currentProfileMatch = window.location.pathname.match(/\/people\/([^/]+)\/profile\.html$/);
+        const currentProfileMatch = window.location.pathname.match(/\/people\/([^/]+)\/(?:index\.html|profile\.html)?$/);
         const currentProfileId = currentProfileMatch?.[1] || null;
 
         let pool = candidates.filter((id) => id !== currentProfileId);
@@ -184,7 +294,8 @@
         }
 
         try {
-            const response = await fetch(resolveSiteUrl(`people/${id}/profile.json`), { cache: 'no-store' });
+            const bucket = Math.floor((Math.max(1, Number(id.replace(/[^0-9]/g, '')) || 1) - 1) / 1000);
+            const response = await fetch(resolvePeopleDbUrl(`ownership/${bucket}/${id}.json`), { cache: 'no-store' });
             if (!response.ok) {
                 return null;
             }
@@ -196,9 +307,24 @@
         }
     }
 
-    function profileClaimMatchesLogin(profileConfig, login) {
-        const ownerLogin = String(profileConfig?.owner?.githubLogin || '').trim().toLowerCase();
-        return Boolean(login && ownerLogin && ownerLogin === login);
+    async function loadOwnershipLoginIndex({ refresh = false } = {}) {
+        if (ownershipLoginIndexPromise && !refresh) {
+            return ownershipLoginIndexPromise;
+        }
+
+        ownershipLoginIndexPromise = fetch(resolvePeopleDbUrl('index/ownership-logins.json'), { cache: 'no-store' })
+            .then(async (response) => {
+                if (!response.ok) {
+                    return {};
+                }
+                const payload = await response.json();
+                return payload && typeof payload.logins === 'object' && payload.logins
+                    ? payload.logins
+                    : {};
+            })
+            .catch(() => ({}));
+
+        return ownershipLoginIndexPromise;
     }
 
     async function findClaimedProfileForUser(userOrLogin, options = {}) {
@@ -207,33 +333,46 @@
             return null;
         }
 
-        if (!options.refresh && selfProfileClaimCache.has(login)) {
+        if (options.refresh) {
+            selfProfileClaimCache.delete(login);
+        }
+
+        if (selfProfileClaimCache.has(login)) {
             return selfProfileClaimCache.get(login);
         }
 
-        try {
-            await ensurePeopleRegistryScript();
-        } catch (error) {
-            console.warn('Profile lookup failed: could not load people registry.', error);
-            return null;
-        }
+        const lookupPromise = (async () => {
+            try {
+                const loginIndex = await loadOwnershipLoginIndex({ refresh: Boolean(options.refresh) });
+                const claimedId = String(loginIndex?.[login] || '').trim();
+                if (!claimedId) {
+                    return null;
+                }
 
-        const people = await window.PeopleRegistry.loadPeopleRegistry({ refresh: Boolean(options.refresh) });
-        const configs = await Promise.all(people.map(async (person) => {
-            const id = String(person?.id || '').trim();
-            if (!id) {
+                let person = null;
+                try {
+                    await ensurePeopleRegistryScript();
+                    const people = await window.PeopleRegistry.loadPeopleRegistry();
+                    person = people.find((entry) => String(entry?.id || '').trim() === claimedId) || null;
+                } catch (error) {
+                    // registry is optional for this lookup
+                }
+
+                const profileConfig = await loadProfileConfig(claimedId);
+                return {
+                    id: claimedId,
+                    person,
+                    profileConfig: profileConfig || null,
+                    owner: profileConfig?.owner || null,
+                };
+            } catch (error) {
+                console.warn('Profile lookup failed: could not load the ownership login index.', error);
                 return null;
             }
+        })();
 
-            const profileConfig = await loadProfileConfig(id);
-            return profileClaimMatchesLogin(profileConfig, login)
-                ? { id, person, profileConfig, owner: profileConfig.owner || null }
-                : null;
-        }));
-
-        const claimed = configs.find(Boolean) || null;
-        selfProfileClaimCache.set(login, claimed);
-        return claimed;
+        selfProfileClaimCache.set(login, lookupPromise);
+        return lookupPromise;
     }
 
     async function loadPersonCard(personId) {
@@ -248,11 +387,12 @@
         }
 
         const promise = (async () => {
+            const profileUrl = window.PeopleRegistry?.resolvePersonProfileUrl
+                ? window.PeopleRegistry.resolvePersonProfileUrl(id)
+                : resolveSiteUrl(`people/${id}/${window.location.protocol === 'file:' ? 'index.html' : ''}`);
             const card = {
                 personId: id,
-                profileUrl: window.PeopleRegistry?.resolvePersonProfileUrl
-                    ? window.PeopleRegistry.resolvePersonProfileUrl(id)
-                    : resolveSiteUrl(`people/${id}/profile.html`),
+                profileUrl,
                 name: '',
                 photoUrl: '',
             };
@@ -269,14 +409,14 @@
             }
 
             try {
-                const response = await fetch(resolveSiteUrl(`people/${id}/data/profile-table.html`), { cache: 'no-store' });
+                const bucket = Math.floor((Math.max(1, Number(id.replace(/[^0-9]/g, '')) || 1) - 1) / 1000);
+                const response = await fetch(resolvePeopleDbUrl(`persons/${bucket}/${id}.json`), { cache: 'no-store' });
                 if (response.ok) {
-                    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
-                    const src = doc.querySelector('table-photo img')?.getAttribute('src')?.trim() || '';
-                    if (src && !/^https?:\/\//i.test(src)) {
-                        card.photoUrl = resolveSiteUrl(`people/${id}/data/${src.replace(/^\.?\//, '')}`);
-                    } else if (src) {
-                        card.photoUrl = src;
+                    const record = await response.json();
+                    const primary = record?.media?.primary;
+                    card.photoUrl = resolvePreferredPersonMediaUrl(id, primary);
+                    if (!card.name && record?.names?.display) {
+                        card.name = record.names.display;
                     }
                 }
             } catch (error) {
@@ -291,7 +431,10 @@
     }
 
     async function resolveOwnProfilePhotoUrl(userOrLogin = null) {
-        const claimed = await findClaimedProfileForUser(userOrLogin);
+        let claimed = await findClaimedProfileForUser(userOrLogin);
+        if (!claimed?.id && normalizeGitHubLogin(userOrLogin)) {
+            claimed = await findClaimedProfileForUser(userOrLogin, { refresh: true });
+        }
         if (!claimed?.id) {
             return '';
         }
@@ -336,8 +479,12 @@
 
     async function resolveOwnProfileUrl(userOrLogin = null, view = 'profile') {
         const user = userOrLogin || readStoredGitHubUser();
-        const claimed = await findClaimedProfileForUser(user);
+        let claimed = await findClaimedProfileForUser(user);
         const targetView = String(view || 'profile').trim().toLowerCase();
+
+        if (!claimed?.id && normalizeGitHubLogin(user)) {
+            claimed = await findClaimedProfileForUser(user, { refresh: true });
+        }
 
         if (!claimed?.id) {
             return resolveSelfProfileSetupUrl(user, targetView);
@@ -349,7 +496,10 @@
             return url.href;
         }
 
-        const url = new URL(`people/${claimed.id}/profile.html`, getSiteBaseUrl());
+        const href = window.PeopleRegistry?.resolvePersonProfileUrl
+            ? window.PeopleRegistry.resolvePersonProfileUrl(claimed.id)
+            : resolveSiteUrl(`people/${claimed.id}/${window.location.protocol === 'file:' ? 'index.html' : ''}`);
+        const url = new URL(href, window.location.href);
         if (targetView === 'tree') {
             url.hash = 'tree';
         }
@@ -605,13 +755,22 @@
     app.setGitHubAccessToken = setGitHubAccessToken;
     app.getGitHubFetchInit = getGitHubFetchInit;
     app.getSlogan = getSlogan;
+    app.PeopleDbRoot = PEOPLE_DB_ROOT;
     app.resolveSiteUrl = resolveSiteUrl;
+    app.resolvePeopleDbPath = resolvePeopleDbPath;
+    app.resolvePeopleDbUrl = resolvePeopleDbUrl;
+    app.resolvePersonMediaPath = resolvePersonMediaPath;
+    app.resolvePersonMediaUrl = resolvePersonMediaUrl;
+    app.prefersLocalPersonMedia = prefersLocalPersonMedia;
+    app.resolvePreferredPersonMedia = resolvePreferredPersonMedia;
+    app.resolvePreferredPersonMediaUrl = resolvePreferredPersonMediaUrl;
     app.fetchSiteResource = fetchSiteResource;
     app.resolvePageEditUrl = resolvePageEditUrl;
     app.navigateToRandomProfile = navigateToRandomProfile;
     app.navigateToNewTree = navigateToNewTree;
     app.getGitHubUser = readStoredGitHubUser;
     app.findClaimedProfileForUser = findClaimedProfileForUser;
+    app.loadOwnershipLoginIndex = loadOwnershipLoginIndex;
     app.loadPersonCard = loadPersonCard;
     app.resolveOwnProfilePhotoUrl = resolveOwnProfilePhotoUrl;
     app.resolveSelfProfileSetupUrl = resolveSelfProfileSetupUrl;
