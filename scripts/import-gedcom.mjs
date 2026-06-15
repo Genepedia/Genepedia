@@ -2,7 +2,7 @@
  * Genepedia GEDCOM -> file-based JSON people database importer.
  *
  * Transforms data/export-Forest.ged into:
- *   - a canonical, sharded JSON database under data/Genepedia-Database/
+ *   - a canonical, sharded JSON database under data/Genepedia-Database/people/
  *   - SEO-friendly per-person profile folders under people/<id>/
  *   - a compatibility people/people.json registry
  *   - import / media / privacy reports

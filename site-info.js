@@ -18,7 +18,8 @@
         Slogan: 'Free Geneology Encyclopedia',
         PageEditPath: 'pages/edit.html',
     };
-    const PEOPLE_DB_ROOT = 'data/Genepedia-Database';
+    const PEOPLE_DB_SUBMODULE_ROOT = 'data/Genepedia-Database';
+    const PEOPLE_DB_ROOT = `${PEOPLE_DB_SUBMODULE_ROOT}/people`;
     const LEGACY_PEOPLE_DB_ROOT = 'data/people/v1';
     const PERSON_MEDIA_ROOT = 'data/Genepedia-Media/people';
     const LOCAL_MEDIA_PROFILE_IDS = new Set(['1', '2', '3', '15']);
@@ -42,12 +43,19 @@
 
     function resolvePeopleDbPath(dbPath = '') {
         const normalized = normalizeSitePath(dbPath);
-        if (!normalized || normalized === PEOPLE_DB_ROOT || normalized === LEGACY_PEOPLE_DB_ROOT) {
+        if (!normalized
+            || normalized === PEOPLE_DB_ROOT
+            || normalized === PEOPLE_DB_SUBMODULE_ROOT
+            || normalized === LEGACY_PEOPLE_DB_ROOT) {
             return PEOPLE_DB_ROOT;
         }
 
         if (normalized.startsWith(`${PEOPLE_DB_ROOT}/`)) {
             return normalized;
+        }
+
+        if (normalized.startsWith(`${PEOPLE_DB_SUBMODULE_ROOT}/`)) {
+            return `${PEOPLE_DB_ROOT}/${normalized.slice(`${PEOPLE_DB_SUBMODULE_ROOT}/`.length)}`;
         }
 
         if (normalized.startsWith(`${LEGACY_PEOPLE_DB_ROOT}/`)) {

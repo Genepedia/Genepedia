@@ -1,7 +1,7 @@
 /**
  * Shared conventions for the canonical, sharded JSON people database.
  *
- * Layout (under data/Genepedia-Database):
+ * Layout (under data/Genepedia-Database/people):
  *   manifest.json                     - version + counts + shard strategy
  *   persons/<bucket>/<id>.json        - canonical person record
  *   unions/<bucket>/<id>.json         - canonical family/union record
@@ -17,7 +17,7 @@
  * millions of records without unbounded directory growth.
  */
 
-export const DB_ROOT = 'data/Genepedia-Database';
+export const DB_ROOT = 'data/Genepedia-Database/people';
 export const SHARD_SIZE = 1000;
 export const RESERVED_IDS = { 15: 'Nelson Mandela' };
 

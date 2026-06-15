@@ -230,7 +230,7 @@
 	}
 
 	// Lazily load the browser database client so the infobox editor can read and
-	// write the canonical person record (data/Genepedia-Database/persons/<bucket>/<id>.json).
+	// write the canonical person record (data/Genepedia-Database/people/persons/<bucket>/<id>.json).
 	function ensurePeopleDb() {
 		if (window.PeopleDB) return Promise.resolve();
 		window.__peopleDbLoadPromise = window.__peopleDbLoadPromise || new Promise((resolve, reject) => {

@@ -1573,7 +1573,7 @@ class PeoplePage extends HTMLElement {
   }
 
   // Lazily load the browser database client so the profile reads structured
-  // data (identity, relationships, tree) from data/Genepedia-Database at runtime.
+  // data (identity, relationships, tree) from data/Genepedia-Database/people at runtime.
   async #ensurePeopleDb() {
     if (window.PeopleDB) {
       return;
@@ -3584,7 +3584,7 @@ class PeoplePage extends HTMLElement {
   }
 
   // Maps GitHub logins to Genepedia people via the prebuilt ownership login
-  // index (data/Genepedia-Database/index/ownership-logins.json). Cached site-wide.
+  // index (data/Genepedia-Database/people/index/ownership-logins.json). Cached site-wide.
   async #loadPeopleLoginDirectory() {
     if (!window.__peopleLoginDirectoryPromise) {
       window.__peopleLoginDirectoryPromise = (async () => {
@@ -3592,7 +3592,7 @@ class PeoplePage extends HTMLElement {
         try {
           const payload = window.App?.loadOwnershipLoginIndex
             ? await window.App.loadOwnershipLoginIndex()
-            : await fetch(this.#resolveSiteUrl(window.App?.resolvePeopleDbPath?.('index/ownership-logins.json') || 'data/Genepedia-Database/index/ownership-logins.json'), { cache: 'no-store' })
+            : await fetch(this.#resolveSiteUrl(window.App?.resolvePeopleDbPath?.('index/ownership-logins.json') || 'data/Genepedia-Database/people/index/ownership-logins.json'), { cache: 'no-store' })
               .then(async (response) => (response.ok ? response.json() : null))
               .then((data) => data?.logins || {});
           Object.entries(payload || {}).forEach(([login, personId]) => {

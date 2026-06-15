@@ -658,15 +658,21 @@
 			return window.App.resolvePeopleDbPath(clean);
 		}
 		if (!clean) {
-			return "data/Genepedia-Database";
+			return "data/Genepedia-Database/people";
 		}
-		if (clean.startsWith("data/Genepedia-Database/")) {
+		if (clean.startsWith("data/Genepedia-Database/people/")) {
 			return clean;
 		}
-		if (clean.startsWith("data/people/v1/")) {
-			return `data/Genepedia-Database/${clean.slice("data/people/v1/".length)}`;
+		if (clean === "data/Genepedia-Database") {
+			return "data/Genepedia-Database/people";
 		}
-		return `data/Genepedia-Database/${clean}`;
+		if (clean.startsWith("data/Genepedia-Database/")) {
+			return `data/Genepedia-Database/people/${clean.slice("data/Genepedia-Database/".length)}`;
+		}
+		if (clean.startsWith("data/people/v1/")) {
+			return `data/Genepedia-Database/people/${clean.slice("data/people/v1/".length)}`;
+		}
+		return `data/Genepedia-Database/people/${clean}`;
 	}
 
 	async function readPersonPhotoFromDb(id) {
