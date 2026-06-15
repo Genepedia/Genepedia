@@ -50,6 +50,15 @@
   overflow: auto;
 }
 
+/* Reset inherited word-spacing on the dropdown to avoid parent layout rules
+     collapsing spaces (index page layout sets a negative word-spacing). */
+.app-search__dropdown,
+.app-search__option-link,
+.app-search__option-title {
+    word-spacing: normal !important;
+    white-space: normal;
+}
+
 .app-search__dropdown[hidden] {
   display: none !important;
 }
@@ -453,7 +462,7 @@ body.theme-dark .search-page__result-link {
             return window.PeopleRegistry.resolvePersonProfileUrl(personId);
         }
 
-        return new URL(`people/${personId}/profile.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
+        return new URL(`people/${personId}/`, new URL(getSiteRootPrefix(), window.location.href)).href;
     }
 
     function resolveSearchPageUrl(query = '') {

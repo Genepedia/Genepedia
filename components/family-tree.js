@@ -652,31 +652,8 @@
 		return Math.floor((Math.max(1, n) - 1) / 1000);
 	}
 
-	function resolvePeopleDbPath(path = "") {
-		const clean = String(path || "").replace(/^\/+/, "");
-		if (typeof window.App?.resolvePeopleDbPath === "function") {
-			return window.App.resolvePeopleDbPath(clean);
-		}
-		if (!clean) {
-			return "data/Genepedia-Database/people";
-		}
-		if (clean.startsWith("data/Genepedia-Database/people/")) {
-			return clean;
-		}
-		if (clean === "data/Genepedia-Database") {
-			return "data/Genepedia-Database/people";
-		}
-		if (clean.startsWith("data/Genepedia-Database/")) {
-			return `data/Genepedia-Database/people/${clean.slice("data/Genepedia-Database/".length)}`;
-		}
-		if (clean.startsWith("data/people/v1/")) {
-			return `data/Genepedia-Database/people/${clean.slice("data/people/v1/".length)}`;
-		}
-		return `data/Genepedia-Database/people/${clean}`;
-	}
-
 	async function readPersonPhotoFromDb(id) {
-		const url = resolveSitePath(resolvePeopleDbPath(`persons/${personDbBucket(id)}/${encodeURIComponent(id)}.json`));
+		const url = resolveSitePath(`data/people/v1/persons/${personDbBucket(id)}/${encodeURIComponent(id)}.json`);
 		const response = await fetch(url, { cache: "no-store" });
 		if (!response.ok) return "";
 		const record = await response.json();

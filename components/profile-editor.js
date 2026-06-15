@@ -31,29 +31,14 @@
 		return new URL(`../${clean}`, window.location.href).href;
 	}
 
-	// Database paths for a person's ownership record (data/Genepedia-Database/people/ownership/...).
+	// Database paths for a person's ownership record (data/people/v1/ownership/...).
 	function peopleDbBucket(personId) {
 		const n = Number(String(personId).replace(/[^0-9]/g, "")) || 0;
 		return Math.floor((Math.max(1, n) - 1) / 1000);
 	}
 
-	function peopleDbPath(path) {
-		const clean = String(path || "").replace(/^\/+/, "");
-		if (window.App?.resolvePeopleDbPath) return window.App.resolvePeopleDbPath(clean);
-		if (!clean) return "data/Genepedia-Database/people";
-		if (clean.startsWith("data/Genepedia-Database/people/")) return clean;
-		if (clean === "data/Genepedia-Database") return "data/Genepedia-Database/people";
-		if (clean.startsWith("data/Genepedia-Database/")) {
-			return `data/Genepedia-Database/people/${clean.slice("data/Genepedia-Database/".length)}`;
-		}
-		if (clean.startsWith("data/people/v1/")) {
-			return `data/Genepedia-Database/people/${clean.slice("data/people/v1/".length)}`;
-		}
-		return `data/Genepedia-Database/people/${clean}`;
-	}
-
 	function peopleDbOwnershipPath(personId) {
-		return peopleDbPath(`ownership/${peopleDbBucket(personId)}/${personId}.json`);
+		return `data/people/v1/ownership/${peopleDbBucket(personId)}/${personId}.json`;
 	}
 
 	function resolveGitHubApiUrl(fileName) {

@@ -2227,7 +2227,7 @@
 			results.hidden = false;
 			results.querySelectorAll(".ppe__link-result").forEach((btn) => {
 				btn.addEventListener("click", () => {
-					pop.querySelector(".ppe__link-url").value = `../${btn.dataset.id}/profile.html`;
+					pop.querySelector(".ppe__link-url").value = `../${btn.dataset.id}/`;
 					results.hidden = true;
 				});
 			});
@@ -2709,7 +2709,7 @@
 					return (payload.images || [])
 						.map((img) => ({
 							name: String(img?.name || ""),
-							url: String(img?.download_url || "") || this.#resolveImageUrl(`images/${img?.name || ""}`),
+							url: this.#resolveImageUrl(`images/${img?.name || ""}`) || String(img?.download_url || ""),
 						}))
 						.filter((img) => img.name);
 				}
@@ -2788,7 +2788,7 @@
 		#insertImage(src, caption) {
 			const { prose } = this.#els();
 			if (!prose) return;
-			const isRelative = !/^(https?:)?\/\//i.test(src) && !src.startsWith("data:");
+			const isRelative = !isAbsoluteUrl(src);
 			const displaySrc = isRelative ? this.#resolveImageUrl(src) : src;
 			const dataAttr = isRelative ? ` data-ppe-src="${escapeHtml(src)}"` : "";
 			const cap = escapeHtml(caption || "");
@@ -2801,7 +2801,7 @@
 			this.#setStatus("Loading…");
 			let parsed = null;
 			if (!(await isDraftProfile(this.__personId))) {
-				const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/data/profile.html`));
+				const response = await fetchSiteResource(resolveSiteUrl(`people/${this.__personId}/profile.html`));
 				if (response) {
 					parsed = parseProfileFragment(await response.text());
 				}
@@ -2846,8 +2846,25 @@
 		#resolveImageUrl(src) {
 			if (!src || isAbsoluteUrl(src) || src.startsWith("data:")) return src;
 			const normalized = src.replace(/^\.?\//, "");
-			if (normalized.startsWith("assets/")) return resolveSiteUrl(normalized);
-			return resolveSiteUrl(`people/${this.__personId}/data/${normalized}`);
+			if (
+				normalized.startsWith("assets/")
+				|| normalized.startsWith("people/")
+				|| normalized.startsWith("data/Genepedia-Media/")
+			) {
+				return resolveSiteUrl(normalized);
+			}
+			if (normalized.startsWith("data/")) {
+				return resolveSiteUrl(`people/${this.__personId}/${normalized}`);
+			}
+			if (window.App?.resolvePersonMediaUrl) {
+				return window.App.resolvePersonMediaUrl(this.__personId, normalized);
+			}
+			const relative = normalized.startsWith("data/images/")
+				? normalized.slice("data/images/".length)
+				: normalized.startsWith("images/")
+					? normalized.slice("images/".length)
+					: normalized;
+			return resolveSiteUrl(`data/Genepedia-Media/people/${this.__personId}/${relative}`);
 		}
 
 		#rewriteImagesForDisplay(root, { track = false } = {}) {
@@ -3290,31 +3307,24 @@
 			return this.#hasInfobox() && !this.__infoboxCanonical;
 		}
 
-		// When converting a legacy inline identity to the include form, also write
-		// the fragment file so the new <include> resolves. The infobox editor's
-		// richer fragment supersedes this whenever it is the file being saved.
+		// The identity infobox is rendered from the database record, so there is no
+		// longer a profile-table.html fragment to migrate.
 		getInfoboxMigrationFile() {
-			if (this.__infoboxCanonical || !this.__infoboxMarkup || !this.__infoboxMarkup.includes("profile-identity")) {
-				return null;
-			}
-			return {
-				path: `people/${this.__personId}/data/profile-table.html`,
-				content: `<!-- Profile identity table fragment -->\n${this.__infoboxMarkup}\n`,
-			};
+			return null;
 		}
 
-		// Reconstruct the full profile.html fragment for publishing. The infobox is
-		// always written as the canonical <include> so no profile is ever inline.
+		// Reconstruct the full profile.html fragment for publishing. The identity
+		// infobox is rendered from the database record at view time, so the prose
+		// file holds only the title and narrative.
 		getPublishFile() {
 			const prose = this.#getProseHtml() || "<p></p>";
 			const parts = [];
 			if (this.__headerComment) parts.push(this.__headerComment);
 			parts.push(`<h1>${escapeHtml(this.__displayName || "")}</h1>`);
-			if (this.#hasInfobox()) parts.push('<include src="profile-table.html"></include>');
 			parts.push(prose);
 			const content = `${parts.join("\n\n")}\n`;
 			return {
-				path: `people/${this.__personId}/data/profile.html`,
+				path: `people/${this.__personId}/profile.html`,
 				content,
 			};
 		}

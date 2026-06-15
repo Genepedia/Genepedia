@@ -11,19 +11,18 @@
     <style>
         :root {
             font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-            line-height: 1.4
+            line-height: 1.4;
         }
 
         body {
             margin: 0;
-            padding: 24px;
-            background: #f7f7f8;
-            color: #111
+            background: var(--background-color-page, var(--background-color-base, #f7f7f8));
+            color: var(--text-color, #111);
         }
 
         .container {
             max-width: var(--site-content-max-width);
-            margin: 0 auto
+            margin: 0 auto;
         }
 
         header h1 {
@@ -47,8 +46,10 @@
         input[type="text"],
         input[type="search"] {
             padding: 6px 8px;
-            border: 1px solid #ccc;
-			border-radius: 2px
+            border: 1px solid var(--border-color-subtle, #ccc);
+            border-radius: 2px;
+            background: var(--input-bg, transparent);
+            color: inherit;
         }
 
         button {
@@ -60,20 +61,21 @@
         }
 
         #status {
-            Margin-top: 8px;
+            margin-top: 8px;
             margin: 8px 0;
             padding: 8px;
-			border-radius: 2px;
-            background: #fff;
-            border: 1px solid #e6e6e6
+            border-radius: 2px;
+            background: var(--background-color-base, #fff);
+            border: 1px solid var(--border-color-subtle, #e6e6e6);
         }
 
         .card {
-            background: #fff;
-            border: 1px solid #e6e6e6;
-            border-radius: 2px;
+            background: var(--background-color-base, #fff);
+            border: 1px solid var(--border-color-subtle, #e6e6e6);
+            border-radius: var(--border-radius-base, 6px);
             padding: 12px;
-            margin: 10px 0
+            margin: 10px 0;
+            box-shadow: var(--box-shadow-small, none);
         }
 
         .card h3 {
@@ -111,14 +113,40 @@
 
         .bar {
             height: 12px;
-            background: #eee;
-			border-radius: 2px;
-            overflow: hidden
+            background: var(--progress-track, #eee);
+            border-radius: 2px;
+            overflow: hidden;
         }
 
         .fill {
             height: 100%;
-            background: linear-gradient(90deg, #4f46e5, #06b6d4)
+            background: linear-gradient(90deg, var(--color-primary, #4f46e5), var(--color-accent, #06b6d4));
+        }
+
+        /* Site metrics grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .metric {
+            padding: 12px;
+            text-align: center;
+            background: var(--background-color-base, #fff);
+            border: 1px solid var(--border-color-subtle, #e6e6e6);
+            border-radius: var(--border-radius-base, 6px);
+        }
+
+        .metric .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .metric .label {
+            font-size: 0.9rem;
+            color: var(--color-subtle, #666);
         }
 
         pre {
@@ -168,6 +196,12 @@
                 <code>scripts/generate-file-stats.sh</code> at the repository root; output is written to
                 <code>data/file-stats.json</code>.
             </div>
+        </div>
+
+        <div id="site-stats-container" class="card" style="display:none">
+            <h3>Site Summary</h3>
+            <div id="site-summary">Loading site statistics…</div>
+            <div id="metrics" class="metrics-grid" aria-live="polite"></div>
         </div>
 
         <div id="results" aria-live="polite"></div>
@@ -459,6 +493,49 @@
                     const csv = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')).join('\n');
                     const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${ownerInput.value.trim()}-${repoInput.value.trim()}-github-stats.csv`; document.body.appendChild(a); a.click(); a.remove();
                 });
+
+                // --- Site-level metrics (data/site-stats.json) ---
+                async function loadSiteStats() {
+                    const container = document.getElementById('site-stats-container');
+                    const summary = document.getElementById('site-summary');
+                    const metricsEl = document.getElementById('metrics');
+                    try {
+                        const candidates = ['/data/site-stats.json', 'data/site-stats.json', new URL('../data/site-stats.json', location.href).href];
+                        let resp = null;
+                        for (const c of candidates) {
+                            try { resp = await fetch(c, { cache: 'no-store' }); if (resp.ok) break; } catch (e) { resp = null; }
+                        }
+                        if (!resp || !resp.ok) { summary.textContent = 'Site statistics not found. Run scripts/generate-site-stats.mjs to generate /data/site-stats.json'; container.style.display = 'block'; return; }
+                        const data = await resp.json();
+                        container.style.display = 'block';
+                        summary.innerHTML = `<div>Generated: ${data.generatedAt || 'unknown'}</div><div>Host: ${data.site && data.site.host ? data.site.host : '—'}</div>`;
+
+                        const metrics = [
+                            { k: 'profiles.total', label: 'Profiles', value: data.profiles && data.profiles.total },
+                            { k: 'profiles.withNarrative', label: 'With Narrative', value: data.profiles && data.profiles.withNarrative },
+                            { k: 'profiles.withImages', label: 'Profiles w/ Media', value: data.profiles && data.profiles.withImages },
+                            { k: 'people.living', label: 'Living', value: data.profiles && data.profiles.living },
+                            { k: 'people.deceased', label: 'Deceased', value: data.profiles && data.profiles.deceased },
+                            { k: 'media.totalItems', label: 'Media Items', value: data.media && data.media.totalItems },
+                            { k: 'media.downloaded', label: 'Media Downloaded', value: data.media && data.media.downloaded },
+                            { k: 'ownership.uniqueLogins', label: 'Unique Logins', value: data.ownership && data.ownership.loginMappings },
+                        ];
+
+                        metricsEl.innerHTML = '';
+                        metrics.forEach(m => {
+                            const val = m.value === undefined || m.value === null ? '—' : String(m.value);
+                            const node = document.createElement('div'); node.className = 'metric';
+                            node.innerHTML = `<div class="value">${val}</div><div class="label">${m.label}</div>`;
+                            metricsEl.appendChild(node);
+                        });
+                    } catch (err) {
+                        container.style.display = 'block';
+                        summary.textContent = 'Error loading site stats: ' + (err && err.message ? err.message : String(err));
+                    }
+                }
+
+                // Load site stats on page init
+                loadSiteStats();
 
             })();
         </script>
