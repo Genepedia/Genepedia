@@ -88,8 +88,8 @@
 
     function emptyPrivacyState() {
         return {
-            visibility: "public",
-            maintainersOnly: false,
+            visibility: "private",
+            maintainersOnly: true,
         };
     }
 
@@ -102,6 +102,8 @@
             };
         }
 
+        // Living profiles default to public; a maintainer can opt a living profile
+        // into private. (GEDCOM imports set living profiles private explicitly.)
         const rawVisibility = String(source.visibility || source.mode || "public").trim().toLowerCase();
         const visibility = rawVisibility === "private" ? "private" : "public";
         return {

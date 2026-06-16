@@ -237,6 +237,8 @@
 			};
 		}
 
+		// Living profiles default to public; a maintainer can opt a living profile
+		// into private. (GEDCOM imports set living profiles private explicitly.)
 		const source = value && typeof value === "object" ? value : {};
 		const rawVisibility = String(source.visibility || source.mode || "public").trim().toLowerCase();
 		const visibility = rawVisibility === "private" ? "private" : "public";

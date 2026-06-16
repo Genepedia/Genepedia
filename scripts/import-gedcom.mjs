@@ -22,7 +22,7 @@ import { readFile, writeFile, mkdir, rm, readdir, rename as fsRename, stat } fro
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseGedcom, records } from './lib/gedcom-parse.mjs';
+import { decodeGedcomBuffer, parseGedcom, records } from './lib/gedcom-parse.mjs';
 import { extractPerson, extractUnion, aboutMeToHtml } from './lib/gedcom-extract.mjs';
 import { htmlToPlainText } from './lib/geni-notes.mjs';
 import { downloadMedia } from './lib/media-fetch.mjs';
@@ -82,6 +82,22 @@ const RESERVED_PEOPLE = [
     ].join('\n        '),
   },
 ];
+
+function emptyAttributes() {
+  return {
+    hairColor: null,
+    eyeColor: null,
+    height: null,
+    weight: null,
+    ethnicity: null,
+    religion: null,
+    politicalViews: null,
+    languages: [],
+    hobbies: [],
+    shoeSize: null,
+    smoking: null,
+  };
+}
 
 function parseArgs(argv) {
   const args = { dryRun: false, reset: false, media: false, limit: 0, mediaLimit: 0, host: 'www.genepedia.org', concurrency: 48 };
@@ -157,6 +173,41 @@ function sanitizeGedcomLine(value) {
   return String(value || '').replace(/[\r\n]+/g, ' ').trim();
 }
 
+function normalizeRelationshipType(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized || normalized === 'birth' || normalized === 'biological' || normalized === 'natural') {
+    return 'biological';
+  }
+  if (normalized === 'adopted' || normalized === 'foster' || normalized === 'step' || normalized === 'guardian') {
+    return normalized;
+  }
+  return 'other';
+}
+
+function defaultPartnerRoleFor(person, otherPerson, union) {
+  const divorced = Boolean(union?.events?.divorce);
+  const engaged = Boolean(union?.events?.engagement?.date || union?.events?.engagement?.place);
+  const married = Boolean(union?.events?.marriage?.date || union?.events?.marriage?.place);
+
+  if (divorced) {
+    if (person?.sex === 'male' && otherPerson?.sex === 'female') return 'ex-wife';
+    if (person?.sex === 'female' && otherPerson?.sex === 'male') return 'ex-husband';
+    return 'ex-spouse';
+  }
+
+  if (engaged && !married) {
+    return 'fiance';
+  }
+
+  if (married) {
+    if (person?.sex === 'male' && otherPerson?.sex === 'female') return 'wife';
+    if (person?.sex === 'female' && otherPerson?.sex === 'male') return 'husband';
+    return 'spouse';
+  }
+
+  return 'partner';
+}
+
 function emitIndi(lines, person) {
   lines.push(`0 @P${person.id}@ INDI`);
   lines.push(`1 NAME ${sanitizeGedcomLine(gedcomNameValue(person))}`);
@@ -172,7 +223,20 @@ function emitIndi(lines, person) {
   }
   lines.push(`1 REFN ${person.id}`);
   lines.push('2 TYPE genepedia');
-  for (const unionId of person.relationships.parentUnions) lines.push(`1 FAMC @${unionId}@`);
+  for (const unionId of person.relationships.parentUnions) {
+    lines.push(`1 FAMC @${unionId}@`);
+    const parentLinks = Array.isArray(person.relationships?.parentLinks)
+      ? person.relationships.parentLinks.filter((entry) => String(entry?.unionId || '') === String(unionId))
+      : [];
+    const linkTypes = [...new Set(parentLinks.map((entry) => String(entry?.type || '').trim().toLowerCase()).filter(Boolean))];
+    if (linkTypes.length === 1) {
+      if (linkTypes[0] === 'adopted') {
+        lines.push('2 PEDI adopted');
+      } else if (linkTypes[0] === 'foster') {
+        lines.push('2 PEDI foster');
+      }
+    }
+  }
   for (const unionId of person.relationships.spouseUnions) lines.push(`1 FAMS @${unionId}@`);
 }
 
@@ -188,6 +252,11 @@ function emitFam(lines, union, personsById) {
   for (const pid of husbands) lines.push(`1 HUSB @P${pid}@`);
   for (const pid of wives) lines.push(`1 WIFE @P${pid}@`);
   for (const pid of union.children) lines.push(`1 CHIL @P${pid}@`);
+  if (union.events.engagement && (union.events.engagement.date || union.events.engagement.place)) {
+    lines.push('1 ENGA');
+    if (union.events.engagement.date) lines.push(`2 DATE ${sanitizeGedcomLine(union.events.engagement.date)}`);
+    if (union.events.engagement.place) lines.push(`2 PLAC ${sanitizeGedcomLine(union.events.engagement.place)}`);
+  }
   if (union.events.marriage && (union.events.marriage.date || union.events.marriage.place)) {
     lines.push('1 MARR');
     if (union.events.marriage.date) lines.push(`2 DATE ${sanitizeGedcomLine(union.events.marriage.date)}`);
@@ -196,6 +265,7 @@ function emitFam(lines, union, personsById) {
   if (union.events.divorce && (union.events.divorce.date || union.events.divorce.place)) {
     lines.push('1 DIV');
     if (union.events.divorce.date) lines.push(`2 DATE ${sanitizeGedcomLine(union.events.divorce.date)}`);
+    if (union.events.divorce.place) lines.push(`2 PLAC ${sanitizeGedcomLine(union.events.divorce.place)}`);
   }
 }
 
@@ -280,8 +350,10 @@ async function main() {
   const canonicalBase = `https://${args.host}`;
 
   console.log(`Reading GEDCOM: ${path.relative(REPO_ROOT, GEDCOM_FILE)}`);
-  const text = await readFile(GEDCOM_FILE, 'utf8');
+  const sourceBuffer = await readFile(GEDCOM_FILE);
+  const { text, charset } = decodeGedcomBuffer(sourceBuffer);
   const root = parseGedcom(text);
+  console.log(`Detected GEDCOM charset: ${charset}`);
 
   let indiNodes = records(root, 'INDI');
   const famNodes = records(root, 'FAM');
@@ -315,6 +387,15 @@ async function main() {
     extracted.id = `F${unionCounter}`;
     xrefToUnionId.set(extracted.xref, extracted.id);
     extractedUnions.push(extracted);
+  }
+
+  const pedigreeByChildAndUnion = new Map();
+  for (const extracted of extractedPersons) {
+    for (const family of extracted.relationships.parentFamilies || []) {
+      const unionId = xrefToUnionId.get(family.xref);
+      if (!unionId) continue;
+      pedigreeByChildAndUnion.set(`${extracted.id}:${unionId}`, normalizeRelationshipType(family.pedigree));
+    }
   }
 
   // --- Pass 2: build union records with local ids ---
@@ -366,6 +447,7 @@ async function main() {
       parents: new Set(), spouses: new Set(), exSpouses: new Set(),
       children: new Set(), siblings: new Set(),
       parentUnions: new Set(), spouseUnions: new Set(),
+      parentLinks: [], partnerLinks: [], childLinks: [],
     });
 
     personsById.set(id, {
@@ -383,13 +465,16 @@ async function main() {
       sex: extracted.sex,
       living: extracted.living,
       events: extracted.events,
+      lastResidence: extracted.lastResidence,
+      lastResidenceLocation: extracted.lastResidenceLocation,
       occupation: extracted.occupation,
       attributes: extracted.attributes,
+      education: extracted.education,
       media: { primary: null, items: extracted.media },
       about: { hasNarrative: Boolean(aboutHtml) },
       relationships: {
         parents: [], spouses: [], exSpouses: [], children: [], siblings: [],
-        parentUnions: [], spouseUnions: [],
+        parentUnions: [], spouseUnions: [], parentLinks: [], partnerLinks: [], childLinks: [],
       },
       source: {
         gedcomXref: extracted.xref,
@@ -414,18 +499,61 @@ async function main() {
       for (const otherId of union.partners) {
         if (otherId === partnerId) continue;
         (divorced ? rel.exSpouses : rel.spouses).add(otherId);
+        rel.partnerLinks.push({
+          id: otherId,
+          unionId: union.id,
+          role: defaultPartnerRoleFor(personsById.get(partnerId), personsById.get(otherId), union),
+        });
       }
-      for (const childId of union.children) rel.children.add(childId);
+      for (const childId of union.children) {
+        rel.children.add(childId);
+        rel.childLinks.push({
+          id: childId,
+          unionId: union.id,
+          type: pedigreeByChildAndUnion.get(`${childId}:${union.id}`) || 'biological',
+        });
+      }
     }
     for (const childId of union.children) {
       const rel = relsById.get(childId);
       if (!rel) continue;
       rel.parentUnions.add(union.id);
-      for (const parentId of union.partners) rel.parents.add(parentId);
+      for (const parentId of union.partners) {
+        rel.parents.add(parentId);
+        rel.parentLinks.push({
+          id: parentId,
+          unionId: union.id,
+          type: pedigreeByChildAndUnion.get(`${childId}:${union.id}`) || 'biological',
+        });
+      }
       for (const siblingId of union.children) {
         if (siblingId !== childId) rel.siblings.add(siblingId);
       }
     }
+  }
+
+  function dedupeRelationshipEntries(entries, valueKey) {
+    const seen = new Set();
+    return (entries || []).flatMap((entry) => {
+      const id = entry?.id;
+      const unionId = String(entry?.unionId || '').trim();
+      if (id == null || !unionId) {
+        return [];
+      }
+      const key = `${id}|${unionId}`;
+      if (seen.has(key)) {
+        return [];
+      }
+      seen.add(key);
+      const value = String(entry?.[valueKey] || '').trim();
+      const label = String(entry?.label || '').trim();
+      return [{
+        id,
+        unionId,
+        ...(value ? { [valueKey]: value } : {}),
+        ...(label ? { label } : {}),
+      }];
+    });
   }
 
   // Finalize relationship arrays on each person record.
@@ -439,6 +567,9 @@ async function main() {
       siblings: [...rel.siblings],
       parentUnions: [...rel.parentUnions],
       spouseUnions: [...rel.spouseUnions],
+      parentLinks: dedupeRelationshipEntries(rel.parentLinks, 'type'),
+      partnerLinks: dedupeRelationshipEntries(rel.partnerLinks, 'role'),
+      childLinks: dedupeRelationshipEntries(rel.childLinks, 'type'),
     };
   }
 
@@ -541,6 +672,13 @@ async function main() {
       owner: null,
       maintainers: [DEFAULT_CREATOR],
     };
+
+    // Imported living people default to private so their details aren't exposed
+    // until a maintainer reviews them. Deceased profiles are always public and
+    // get no privacy block. (Manually created profiles default to public.)
+    if (person.living) {
+      ownership.privacy = { visibility: 'private', maintainersOnly: true };
+    }
 
     const resolvedMediaItems = await resolveMediaItems(person);
     person.media.items = resolvedMediaItems;
@@ -651,7 +789,10 @@ async function main() {
         burial: null,
       },
       occupation: reserved.occupation || null,
-      attributes: { hairColor: null, eyeColor: null, height: null },
+      lastResidence: null,
+      lastResidenceLocation: null,
+      attributes: emptyAttributes(),
+      education: [],
       media: { primary: reservedImageLocal ? { local: reservedImageLocal, remote: null, alt: reserved.display } : null, items: [] },
       about: { hasNarrative: true },
       relationships: { parents: [], spouses: [], exSpouses: [], children: [], siblings: [], parentUnions: [], spouseUnions: [] },
@@ -766,7 +907,6 @@ async function main() {
 
   await writeJson(path.join(REPO_ROOT, manifestPath()), {
     schema: 'genepedia/people-db@1',
-    version: 'v1',
     generatedAt: new Date().toISOString(),
     host: args.host,
     source: 'data/export-Forest.ged',

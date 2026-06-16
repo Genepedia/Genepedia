@@ -483,56 +483,53 @@ body.theme-dark .ppe-chart-title {
   background: rgba(30, 140, 70, 0.08);
 }
 
-.people-page__privacy {
-  display: grid;
-  gap: 1rem;
+/* Private living profiles: the real content is still rendered, but everything
+   except the overlay is blurred and made non-interactive for visitors who lack
+   access. The name lives outside the content area, so it stays readable. */
+.people-page__content--private {
+  position: relative;
+  min-height: 20rem;
 }
 
-.people-page__privacy-notice {
-  max-width: 56rem;
-  padding: 1rem 1.1rem;
+.people-page__content--private > *:not(.people-page__privacy-overlay) {
+  filter: blur(0.5rem);
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+
+.people-page__privacy-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  box-sizing: border-box;
+  background: rgba(248, 249, 251, 0.55);
+}
+
+.people-page__privacy-overlay-card {
+  position: sticky;
+  top: 2.5rem;
+  max-width: 34rem;
+  width: 100%;
+  padding: 1.4rem 1.5rem;
   border: 1px solid rgba(51, 102, 204, 0.24);
-  border-radius: 0.5rem;
-  background: rgba(51, 102, 204, 0.08);
+  border-radius: 0.6rem;
+  background: var(--page-toolbar-bg, #ffffff);
+  box-shadow: 0 0.5rem 1.75rem rgba(0, 0, 0, 0.16);
+  text-align: center;
   box-sizing: border-box;
 }
 
-.people-page__privacy-title {
-  margin: 0 0 0.45rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.people-page__privacy-copy {
-  margin: 0;
-  color: var(--page-toolbar-muted);
-}
-
-.people-page__privacy-name {
-  margin: 0;
-  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
-  font-size: 1.8rem;
-  font-weight: 400;
-  line-height: 1.2;
-  color: inherit;
-}
-
-.people-page__privacy-detail {
-  position: relative;
-  max-width: 56rem;
-  overflow: hidden;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 0.5rem;
-  background: rgba(0, 0, 0, 0.02);
-}
-
-.people-page__privacy-detail::after {
-  content: "Private profile";
-  position: absolute;
-  inset: auto 1rem 1rem auto;
-  padding: 0.25rem 0.55rem;
+.people-page__privacy-overlay-badge {
+  display: inline-block;
+  margin-bottom: 0.7rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  background: rgba(32, 33, 34, 0.78);
+  background: rgba(32, 33, 34, 0.82);
   color: #ffffff;
   font-size: 0.72rem;
   font-weight: 700;
@@ -540,29 +537,34 @@ body.theme-dark .ppe-chart-title {
   text-transform: uppercase;
 }
 
-.people-page__privacy-detail-inner {
-  padding: 1rem 1.1rem;
-  filter: blur(0.4rem);
-  user-select: none;
-  pointer-events: none;
+.people-page__privacy-overlay-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
-.people-page__privacy-detail-inner > *:last-child {
-  margin-bottom: 0;
+.people-page__privacy-overlay-copy {
+  margin: 0 0 0.5rem;
+  color: var(--page-toolbar-muted);
 }
 
-body.theme-dark .people-page__privacy-notice {
+.people-page__privacy-overlay-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--page-toolbar-muted);
+}
+
+body.theme-dark .people-page__privacy-overlay {
+  background: rgba(16, 17, 19, 0.55);
+}
+
+body.theme-dark .people-page__privacy-overlay-card {
   border-color: rgba(107, 158, 255, 0.28);
-  background: rgba(107, 158, 255, 0.12);
+  background: #1f2125;
 }
 
-body.theme-dark .people-page__privacy-detail {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-}
-
-body.theme-dark .people-page__privacy-detail::after {
-  background: rgba(234, 236, 240, 0.18);
+body.theme-dark .people-page__privacy-overlay-badge {
+  background: rgba(234, 236, 240, 0.2);
   color: #eaecf0;
 }
 
@@ -1478,6 +1480,10 @@ function peoplePageRandomId() {
 class PeoplePage extends HTMLElement {
   #privacyAccessPromise = null;
 
+  // Resolved value of #privacyAccessPromise, cached for synchronous reads when
+  // applying the blur overlay after a tab renders.
+  #privacyAccess = null;
+
   static get observedAttributes() {
     return ['edit-href'];
   }
@@ -1813,6 +1819,10 @@ class PeoplePage extends HTMLElement {
       };
     }
 
+    // Living profiles default to public unless explicitly made private; a
+    // maintainer can switch a living profile to private. Deceased profiles are
+    // forced public above. GEDCOM imports write living profiles as private
+    // explicitly (see scripts/import-gedcom.mjs), so they stay private here.
     const source = value && typeof value === 'object' ? value : {};
     const rawVisibility = String(source.visibility || source.mode || 'public').trim().toLowerCase();
     const visibility = rawVisibility === 'private' ? 'private' : 'public';
@@ -1982,42 +1992,10 @@ class PeoplePage extends HTMLElement {
     return this.#privacyAccessPromise;
   }
 
-  #renderPrivateProfileHtml(access, tab) {
-    const title = peoplePageEscapeHtml(access?.title || this.querySelector('.people-page__title')?.textContent?.trim() || 'Private profile');
-    const tabLabel = tab === 'profile'
-      ? 'Biographical details'
-      : tab === 'tree'
-        ? 'Family tree'
-        : tab === 'media'
-          ? 'Media'
-          : tab === 'talk'
-            ? 'Discussion'
-            : 'Profile details';
-
-    return `
-      <section class="people-page__privacy" aria-label="Private profile notice">
-        <p class="people-page__privacy-name">${title}</p>
-        <div class="people-page__privacy-notice">
-          <h2 class="people-page__privacy-title">This profile is private</h2>
-          <p class="people-page__privacy-copy">Only maintainers, contributors, and close family can view the full details while this person is living.</p>
-        </div>
-        <div class="people-page__privacy-detail" aria-hidden="true">
-          <div class="people-page__privacy-detail-inner">
-            <h3>${peoplePageEscapeHtml(tabLabel)}</h3>
-            <p>Private profile details are hidden from public visitors.</p>
-            <p>Sign in with a linked account if you should have access.</p>
-          </div>
-        </div>
-      </section>
-    `;
-  }
-
   async #prepareContentHtml(html, tab) {
-    const access = await this.#getPrivacyAccess();
-    if (access.isPrivate && !access.canViewDetails) {
-      return this.#renderPrivateProfileHtml(access, tab);
-    }
-
+    // Private living profiles still load their real content so it can be shown
+    // behind a blur for visitors who lack access. The blur and the explanatory
+    // overlay are applied centrally in #applyPrivacyBlur once the tab renders.
     if (tab === 'profile') {
       try {
         await this.#ensureProfileInfoboxRender();
@@ -2529,13 +2507,7 @@ class PeoplePage extends HTMLElement {
         void this.#loadTab(this.#activeTabName);
         return;
       }
-      this.dispatchEvent(
-        new CustomEvent('people-page-tab-loaded', {
-          bubbles: true,
-          composed: true,
-          detail: { tab: 'changes' },
-        }),
-      );
+      this.#notifyTabLoaded('changes');
     } catch (error) {
       if (this.#isStaleTabLoad(token)) {
         return;
@@ -2557,21 +2529,10 @@ class PeoplePage extends HTMLElement {
     this.#activeTabToken = token;
     this.#activeTabName = tab;
 
-    const access = await this.#getPrivacyAccess();
+    // Resolve and cache privacy access up front so #applyPrivacyBlur can decide
+    // synchronously whether the freshly rendered tab needs the blur overlay.
+    this.#privacyAccess = await this.#getPrivacyAccess();
     if (this.#isStaleTabLoad(token)) {
-      return;
-    }
-
-    if (access.isPrivate && !access.canViewDetails) {
-      contentEl.innerHTML = this.#renderPrivateProfileHtml(access, tab);
-      contentEl.removeAttribute('aria-busy');
-      this.dispatchEvent(
-        new CustomEvent('people-page-tab-loaded', {
-          bubbles: true,
-          composed: true,
-          detail: { tab },
-        }),
-      );
       return;
     }
 
@@ -2610,13 +2571,7 @@ class PeoplePage extends HTMLElement {
       }
       contentEl.innerHTML = html;
 
-      this.dispatchEvent(
-        new CustomEvent('people-page-tab-loaded', {
-          bubbles: true,
-          composed: true,
-          detail: { tab, url },
-        }),
-      );
+      this.#notifyTabLoaded(tab, { url });
     } catch (error) {
       if (this.#isStaleTabLoad(token)) {
         return;
@@ -2630,14 +2585,53 @@ class PeoplePage extends HTMLElement {
     }
   }
 
-  #notifyTabLoaded(tab) {
+  #notifyTabLoaded(tab, detail = {}) {
+    // Every tab settles through here, so it is the single chokepoint for the
+    // private-profile blur: re-apply (or clear) the overlay against the freshly
+    // rendered content before announcing that the tab is ready.
+    this.#applyPrivacyBlur();
     this.dispatchEvent(
       new CustomEvent('people-page-tab-loaded', {
         bubbles: true,
         composed: true,
-        detail: { tab },
+        detail: { tab, ...detail },
       }),
     );
+  }
+
+  // Visitors without access to a private living profile still receive the real
+  // content, but it is blurred behind an explanatory overlay so only the name
+  // (rendered outside the content area) stays legible. The content remains in
+  // the DOM exactly as requested; the blur is a presentational deterrent.
+  #applyPrivacyBlur() {
+    const contentEl = this.#getContentElement();
+    if (!contentEl) {
+      return;
+    }
+
+    const access = this.#privacyAccess;
+    const shouldBlur = Boolean(access?.isPrivate && !access?.canViewDetails);
+
+    // Clear any overlay left over from a previous render so toggling tabs (or a
+    // change in access) always starts from a clean slate.
+    contentEl.querySelector(':scope > .people-page__privacy-overlay')?.remove();
+    contentEl.classList.toggle('people-page__content--private', shouldBlur);
+    if (!shouldBlur) {
+      return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'people-page__privacy-overlay';
+    overlay.setAttribute('role', 'note');
+    overlay.innerHTML = `
+      <div class="people-page__privacy-overlay-card">
+        <span class="people-page__privacy-overlay-badge">Private profile</span>
+        <h2 class="people-page__privacy-overlay-title">This profile is private</h2>
+        <p class="people-page__privacy-overlay-copy">Only maintainers, contributors, and close family can view the full details while this person is living.</p>
+        <p class="people-page__privacy-overlay-hint">Sign in with a linked account if you should have access.</p>
+      </div>
+    `;
+    contentEl.appendChild(overlay);
   }
 
   #resolveGitHubApiUrl(fileName) {
