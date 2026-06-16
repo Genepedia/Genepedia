@@ -10,9 +10,11 @@
  * Usage:
  *   node scripts/reindex.mjs                 # rebuild every derived index
  *   node scripts/reindex.mjs --host www.genepedia.org
+ *   node scripts/reindex.mjs --sitemap-only  # only regenerate sitemap.xml
  */
 
 import { readFile, writeFile, mkdir, readdir, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,13 +30,72 @@ const PERSONS_DIR = path.join(REPO_ROOT, DB_ROOT, 'persons');
 const OWNERSHIP_DIR = path.join(REPO_ROOT, DB_ROOT, 'ownership');
 
 function parseArgs(argv) {
-  const args = { host: 'www.genepedia.org' };
+  const args = { host: 'www.genepedia.org', sitemapOnly: false };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--host') {
       args.host = String(argv[++i] || args.host).replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    } else if (argv[i] === '--sitemap-only') {
+      args.sitemapOnly = true;
     }
   }
   return args;
+}
+
+// Public static pages to include in the sitemap, as direct .html paths
+// (repo-relative). Account/app pages (settings, notifications, edit) and error
+// pages (404) are intentionally excluded — they shouldn't be indexed.
+const STATIC_SITEMAP_PAGES = [
+  'index.html',
+  'pages/privacy_policy.html',
+  'pages/terms_of_use.html',
+  'pages/code_of_conduct.html',
+  'pages/cookie_statement.html',
+  'pages/legal_and_safety_contacts.html',
+  'pages/contact.html',
+  'pages/search.html',
+  'pages/statistics.html',
+  'pages/gedcom.html',
+  'pages/gedcom/import.html',
+  'pages/gedcom/export.html',
+  'pages/gedcom/tree-viewer.html',
+];
+
+// Build the ordered list of sitemap URLs: static pages first, then one direct
+// .html URL per person profile. Missing static pages are skipped with a warning
+// so the sitemap never advertises a 404.
+function sitemapUrls(canonicalBase, allIds) {
+  const urls = [];
+  for (const page of STATIC_SITEMAP_PAGES) {
+    if (existsSync(path.join(REPO_ROOT, page))) {
+      urls.push(`${canonicalBase}/${page}`);
+    } else {
+      console.warn(`Sitemap: skipping missing static page ${page}`);
+    }
+  }
+  for (const id of allIds) {
+    urls.push(`${canonicalBase}/people/${id}/index.html`);
+  }
+  return urls;
+}
+
+function sitemapXml(urls) {
+  const body = urls.map((loc) => `  <url><loc>${loc}</loc></url>`).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+}
+
+// Resolve the ordered list of person ids without a full reindex. Prefers the
+// derived all-ids.json; falls back to scanning the canonical person records.
+async function readAllIds() {
+  try {
+    const data = JSON.parse(await readFile(path.join(REPO_ROOT, allIdsPath()), 'utf8'));
+    if (Array.isArray(data?.ids)) {
+      return [...data.ids].map(Number).sort((a, b) => a - b);
+    }
+  } catch {
+    // fall through to scanning person records
+  }
+  const persons = await readAllPersons();
+  return persons.map((p) => Number(p.id)).sort((a, b) => a - b);
 }
 
 async function writeJson(absPath, value) {
@@ -153,6 +214,15 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const canonicalBase = `https://${args.host}`;
 
+  // Fast path: only regenerate sitemap.xml (no submodule index/shard writes).
+  if (args.sitemapOnly) {
+    const allIds = await readAllIds();
+    const urls = sitemapUrls(canonicalBase, allIds);
+    await writeText(path.join(REPO_ROOT, sitemapPath()), sitemapXml(urls));
+    console.log(`Sitemap regenerated: ${urls.length} URL(s) — ${urls.length - allIds.length} static page(s) + ${allIds.length} profile(s).`);
+    return;
+  }
+
   const persons = await readAllPersons();
   const ownershipConfigs = await readAllOwnershipConfigs();
   persons.sort((a, b) => Number(a.id) - Number(b.id));
@@ -212,13 +282,8 @@ async function main() {
     people: registryPeople,
   });
 
-  const sitemapEntries = allIds
-    .map((id) => `  <url><loc>${canonicalBase}/${profileRoute(id)}</loc></url>`)
-    .join('\n');
-  await writeText(
-    path.join(REPO_ROOT, sitemapPath()),
-    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapEntries}\n</urlset>\n`,
-  );
+  const sitemapUrlList = sitemapUrls(canonicalBase, allIds);
+  await writeText(path.join(REPO_ROOT, sitemapPath()), sitemapXml(sitemapUrlList));
 
   // Refresh manifest counts (keep other fields).
   try {
@@ -237,7 +302,7 @@ async function main() {
     console.warn(`Could not refresh manifest counts: ${error.message}`);
   }
 
-  console.log(`Reindex complete: ${summaryByBucket.size} summary shard(s), ${searchByKey.size} search shard(s), people.json (${registryPeople.length}), ownership logins (${Object.keys(ownershipLogins).length}), sitemap (${allIds.length}).`);
+  console.log(`Reindex complete: ${summaryByBucket.size} summary shard(s), ${searchByKey.size} search shard(s), people.json (${registryPeople.length}), ownership logins (${Object.keys(ownershipLogins).length}), sitemap (${sitemapUrlList.length} URLs).`);
   console.log(`Reserved ids preserved if present: ${Object.keys(RESERVED_IDS).join(', ')}.`);
 }
 

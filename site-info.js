@@ -1,4 +1,30 @@
 (function () {
+    // Prevent a flash of unstyled content (FOUC). Pages ship SEO content inside
+    // custom elements (full-header, people-page, full-footer) whose scripts load
+    // with `defer`, so the raw markup would paint with default browser styles
+    // before those elements upgrade and inject their CSS. This script runs
+    // synchronously in <head> (before the body parses), so hiding the elements
+    // until they are :defined means the first paint is never unstyled. The guard
+    // is gated on the `js` class so no-JS visitors still see the fallback
+    // content, and a safety timeout removes it so a failed component script can
+    // never hide content permanently.
+    if (typeof document !== 'undefined' && document.documentElement) {
+        try {
+            const de = document.documentElement;
+            de.classList.add('js');
+            const guard = document.createElement('style');
+            guard.id = 'fouc-guard';
+            guard.textContent = 'html.js full-header:not(:defined),html.js people-page:not(:defined),html.js full-footer:not(:defined),html.js full-page-toolbar:not(:defined){visibility:hidden}';
+            (document.head || de).appendChild(guard);
+            window.setTimeout(function () {
+                const g = document.getElementById('fouc-guard');
+                if (g) { g.remove(); }
+            }, 5000);
+        } catch (e) {
+            // Non-fatal: fall through to normal (unguarded) rendering.
+        }
+    }
+
     const BRANDING_SOURCE_NAME = 'Genepedia';
     const BRAND_TOKEN = '{{APP_NAME}}';
 
