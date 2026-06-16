@@ -55,6 +55,11 @@
 		{ command: "italic", icon: "bi-type-italic", label: "Italic (Ctrl+I)", state: "italic" },
 	];
 
+	const HISTORY_TOOLS = [
+		{ command: "undo", icon: "bi-arrow-counterclockwise", label: "Undo (Ctrl+Z)" },
+		{ command: "redo", icon: "bi-arrow-clockwise", label: "Redo (Ctrl+Shift+Z)" },
+	];
+
 	const SECONDARY_INLINE_TOOLS = [
 		{ command: "strikeThrough", icon: "bi-type-strikethrough", label: "Strikethrough", state: "strikeThrough" },
 		{ command: "subscript", icon: "bi-subscript", label: "Subscript", state: "subscript" },
@@ -745,6 +750,8 @@
 
 	function renderToolbarHtml(options = {}) {
 		const parts = [];
+		parts.push(...HISTORY_TOOLS.map((btn) => renderToolButton(btn)));
+		parts.push('<span class="ppe__toolbar-sep" aria-hidden="true"></span>');
 		parts.push(...PRIMARY_INLINE_TOOLS.map((btn) => renderToolButton(btn)));
 		parts.push(renderUnderlineMenu());
 		parts.push(...SECONDARY_INLINE_TOOLS.map((btn) => renderToolButton(btn)));

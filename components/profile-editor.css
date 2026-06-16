@@ -562,7 +562,7 @@ profile-prose-toolbar.page-editor__format-toolbar .ppe__toolbar {
   overflow: auto;
 }
 
-.ppe__add-block-panel .page-editor__inserter-section + .page-editor__inserter-section {
+.ppe__add-block-panel .page-editor__inserter-section+.page-editor__inserter-section {
   margin-top: 0.65rem;
 }
 
@@ -719,7 +719,7 @@ body.theme-dark .ppe__tool:hover {
   background: rgba(0, 0, 0, 0.12);
 }
 
-.ppe__toolbar-sep + .ppe__toolbar-sep {
+.ppe__toolbar-sep+.ppe__toolbar-sep {
   display: none;
 }
 
@@ -2055,26 +2055,26 @@ body.theme-dark .ppe__table-preview table.ppe-profile-table th {
   min-width: 0;
 }
 
-.people-page__content .ppe-profile-column > :first-child,
-.ppe__table-preview .ppe-profile-column > :first-child {
+.people-page__content .ppe-profile-column> :first-child,
+.ppe__table-preview .ppe-profile-column> :first-child {
   margin-top: 0;
 }
 
-.people-page__content .ppe-profile-column > :last-child,
-.ppe__table-preview .ppe-profile-column > :last-child {
+.people-page__content .ppe-profile-column> :last-child,
+.ppe__table-preview .ppe-profile-column> :last-child {
   margin-bottom: 0;
 }
 
-.people-page__content .ppe-profile-columns--cards > .ppe-profile-column,
-.ppe__table-preview .ppe-profile-columns--cards > .ppe-profile-column {
+.people-page__content .ppe-profile-columns--cards>.ppe-profile-column,
+.ppe__table-preview .ppe-profile-columns--cards>.ppe-profile-column {
   padding: 0.75rem;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 0.25rem;
   background: rgba(0, 0, 0, 0.02);
 }
 
-body.theme-dark .people-page__content .ppe-profile-columns--cards > .ppe-profile-column,
-body.theme-dark .ppe__table-preview .ppe-profile-columns--cards > .ppe-profile-column {
+body.theme-dark .people-page__content .ppe-profile-columns--cards>.ppe-profile-column,
+body.theme-dark .ppe__table-preview .ppe-profile-columns--cards>.ppe-profile-column {
   border-color: rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
 }
@@ -2906,7 +2906,9 @@ body.theme-dark .pie__group {
   align-items: start;
 }
 
-.pie__row--align-top .pie__label {
+.pie__row--align-top .pie__label,
+.pie__row--location .pie__label,
+.pie__row--date .pie__label {
   padding-top: 0.4rem;
 }
 
@@ -3057,6 +3059,7 @@ body.theme-dark .pie__suggestions {
   border-color: rgba(255, 255, 255, 0.06);
 }
 
+.pie__row--align-top,
 .pie__row--location,
 .pie__row--date {
   align-items: start;
@@ -3612,6 +3615,11 @@ body.theme-dark .pie__date-preview {
   margin-inline: 0;
 }
 
+.profile-edit__panel[data-edit-panel="personal"] .pie {
+  max-width: none;
+  margin-inline: 0;
+}
+
 @media (max-width: 600px) {
   .pie__row {
     grid-template-columns: 1fr;
@@ -3632,6 +3640,7 @@ body.theme-dark .pie__date-preview {
 }
 
 @media (max-width: 720px) {
+
   .ppe__canvas aside,
   .people-page__content aside {
     float: none;

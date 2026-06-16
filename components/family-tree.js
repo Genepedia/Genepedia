@@ -28,6 +28,20 @@
 		maxScale: 2.8,
 	};
 
+	// Distinct connector/accent colours used to tell apart the different
+	// marriages of a person who had children with more than one partner. Picked
+	// to read clearly on both the dark (default) and light tree themes.
+	const LINK_COLORS = [
+		"#4c9aff", // blue
+		"#f06292", // pink
+		"#66bb6a", // green
+		"#ffa726", // orange
+		"#ab47bc", // purple
+		"#26c6da", // cyan
+		"#d4e157", // lime
+		"#8d6e63", // brown
+	];
+
 	// Sizing used to pick the Tree tab's initial zoom: a node's Edit/Add buttons
 	// (.node__actions .icon-button, 28px in tree space) should open at the same
 	// on-screen size as the standard site buttons — footer social icons are 36px
@@ -332,6 +346,57 @@
 			id: gedcomRecordId(record),
 			partners: [...new Set(partnerIds)],
 		};
+	}
+
+	// Map each of a person's parent-union ids to the pedigree (PEDI) recorded on
+	// that person's FAMC link: "" / "birth" / "biological" → biological, plus
+	// "adopted", "foster", "sealing". Lets the tree label and switch between a
+	// person's biological and adopted (etc.) parent branches.
+	function gedcomParentPediByUnion(person) {
+		const map = new Map();
+		if (!person?.gedcom) return map;
+		for (const famc of children(person.gedcom, "FAMC")) {
+			const unionId = gedcomPointerId(famc.value);
+			if (!unionId) continue;
+			const pedi = String(childValue(famc, "PEDI") || "").trim().toLowerCase();
+			map.set(unionId, pedi);
+		}
+		return map;
+	}
+
+	function pediBranchLabel(pedi) {
+		switch (String(pedi || "").trim().toLowerCase()) {
+			case "adopted":
+				return "Adopted";
+			case "foster":
+				return "Foster";
+			case "sealing":
+				return "Sealed";
+			case "step":
+				return "Step";
+			case "":
+			case "birth":
+			case "biological":
+			case "natural":
+				return "Biological";
+			default:
+				return pedi.charAt(0).toUpperCase() + pedi.slice(1);
+		}
+	}
+
+	function pediBranchIcon(pedi) {
+		switch (String(pedi || "").trim().toLowerCase()) {
+			case "adopted":
+				return "heart-fill";
+			case "foster":
+				return "house-heart-fill";
+			case "sealing":
+				return "link-45deg";
+			case "step":
+				return "diagram-2";
+			default:
+				return "droplet-fill";
+		}
 	}
 
 	function gedcomGenepediaId(record) {
@@ -652,8 +717,31 @@
 		return Math.floor((Math.max(1, n) - 1) / 1000);
 	}
 
+	function resolvePeopleDbPath(path = "") {
+		const clean = String(path || "").replace(/^\/+/, "");
+		if (typeof window.App?.resolvePeopleDbPath === "function") {
+			return window.App.resolvePeopleDbPath(clean);
+		}
+		if (!clean) {
+			return "data/Genepedia-Database/people";
+		}
+		if (clean.startsWith("data/Genepedia-Database/people/")) {
+			return clean;
+		}
+		if (clean === "data/Genepedia-Database") {
+			return "data/Genepedia-Database/people";
+		}
+		if (clean.startsWith("data/Genepedia-Database/")) {
+			return `data/Genepedia-Database/people/${clean.slice("data/Genepedia-Database/".length)}`;
+		}
+		if (clean.startsWith("data/people/")) {
+			return `data/Genepedia-Database/people/${clean.slice("data/people/".length)}`;
+		}
+		return `data/Genepedia-Database/people/${clean}`;
+	}
+
 	async function readPersonPhotoFromDb(id) {
-		const url = resolveSitePath(`data/people/v1/persons/${personDbBucket(id)}/${encodeURIComponent(id)}.json`);
+		const url = resolveSitePath(resolvePeopleDbPath(`persons/${personDbBucket(id)}/${encodeURIComponent(id)}.json`));
 		const response = await fetch(url, { cache: "no-store" });
 		if (!response.ok) return "";
 		const record = await response.json();
@@ -779,25 +867,20 @@
 		return { peopleById, unionsById, unionsByPartner, parentUnionsByChild };
 	}
 
-	function pickSingleUnionForPerson(personId, indexes, opts = {}) {
-		const excludeUnionId = opts.excludeUnionId;
-		const unionIds = indexes.unionsByPartner.get(personId) ?? [];
-
-		// If a person has multiple unions (e.g. multiple marriages), prefer the most
-		// recently-added union. This keeps spouse selection stable when re-rooting.
-		for (let i = unionIds.length - 1; i >= 0; i -= 1) {
-			const id = unionIds[i];
-			if (id !== excludeUnionId) return id;
-		}
-		return null;
-	}
-
 	function createLayoutEngine(data, indexes) {
-		const widthMemo = new Map();
 		const clusterMemo = new Map();
 
-		function getUnionCluster(primaryUnionId) {
-			if (clusterMemo.has(primaryUnionId)) return clusterMemo.get(primaryUnionId);
+		// A union "cluster" groups a union with related unions so multi-partner
+		// families render together. When `expand` is true (used only for the rooted
+		// union) it also pulls in each partner's OTHER unions — this is what surfaces
+		// the focus person's half-siblings (their parents' children with other
+		// partners) and step-parents. Child/descendant unions are built WITHOUT
+		// expansion so a relative who married into two generations (e.g. a partner
+		// shared between a parent and a sibling) can't drag a parent down into a
+		// lower row.
+		function getUnionCluster(primaryUnionId, expand = true) {
+			const memoKey = `${primaryUnionId}|${expand ? 1 : 0}`;
+			if (clusterMemo.has(memoKey)) return clusterMemo.get(memoKey);
 			const primary = indexes.unionsById.get(primaryUnionId);
 			if (!primary) {
 				const empty = {
@@ -805,8 +888,18 @@
 					partnerIds: [],
 					childIds: [],
 				};
-				clusterMemo.set(primaryUnionId, empty);
+				clusterMemo.set(memoKey, empty);
 				return empty;
+			}
+
+			if (!expand) {
+				const cluster = {
+					unionIds: [primaryUnionId],
+					partnerIds: [...new Set((primary.partners ?? []).filter(Boolean))],
+					childIds: [...new Set((primary.children ?? []).filter(Boolean))],
+				};
+				clusterMemo.set(memoKey, cluster);
+				return cluster;
 			}
 
 			// Cluster = primary union plus any unions for the primary union's partners.
@@ -852,69 +945,102 @@
 			}
 
 			const cluster = { unionIds, partnerIds, childIds };
-			clusterMemo.set(primaryUnionId, cluster);
+			clusterMemo.set(memoKey, cluster);
 			return cluster;
 		}
 
-		function measureUnion(unionId, stack = new Set()) {
-			if (widthMemo.has(unionId)) return widthMemo.get(unionId);
-			const union = indexes.unionsById.get(unionId);
-			if (!union) return CONFIG.nodeWidth;
-			const cluster = getUnionCluster(unionId);
+		// A person's "hub" cluster: ALL the marriages they are a partner in, so the
+		// focus person (and every relative below the root) shows every spouse and
+		// every child — e.g. Dirk's kids with three different women all appear, not
+		// just one. `stack` holds the union ids already open in the ancestor chain;
+		// unions already on it are skipped so a person who married across
+		// generations doesn't recurse forever (they're simply drawn again — the
+		// duplication model lets people appear in more than one place).
+		function getPersonHubCluster(personId, stack) {
+			const all = indexes.unionsByPartner.get(personId) ?? [];
+			const unionIds = stack ? all.filter((u) => !stack.has(u)) : all.slice();
 
+			const partnerIds = [];
+			const seenP = new Set();
+			const pushP = (id) => {
+				if (id && !seenP.has(id)) {
+					seenP.add(id);
+					partnerIds.push(id);
+				}
+			};
+			pushP(personId);
+			for (const uid of unionIds) {
+				for (const pid of indexes.unionsById.get(uid)?.partners ?? []) pushP(pid);
+			}
+
+			const childIds = [];
+			const seenC = new Set();
+			for (const uid of unionIds) {
+				for (const cid of indexes.unionsById.get(uid)?.children ?? []) {
+					if (cid && !seenC.has(cid)) {
+						seenC.add(cid);
+						childIds.push(cid);
+					}
+				}
+			}
+
+			return { unionIds, partnerIds, childIds };
+		}
+
+		// Width a cluster (root union cluster OR a person hub) needs, including all
+		// its descendants. Mirrors layoutCluster exactly so centring lines up.
+		function measureCluster(cluster, stack) {
 			const partnersWidth =
 				cluster.partnerIds.length * CONFIG.nodeWidth +
 				Math.max(0, cluster.partnerIds.length - 1) * CONFIG.partnerGap;
 
-			if (stack.has(unionId)) {
-				return partnersWidth;
-			}
+			for (const uid of cluster.unionIds) stack.add(uid);
+			const childWidths = cluster.childIds.map((cid) =>
+				measureCluster(getPersonHubCluster(cid, stack), stack),
+			);
+			for (const uid of cluster.unionIds) stack.delete(uid);
 
-			stack.add(unionId);
+			const childrenWidth = childWidths.length
+				? childWidths.reduce((sum, w) => sum + w, 0) +
+				Math.max(0, childWidths.length - 1) * CONFIG.siblingGap
+				: 0;
 
-			const childIds = cluster.childIds;
-			const childGroups = childIds.map((childId) => {
-				const childUnionId = pickSingleUnionForPerson(childId, indexes);
-				if (childUnionId) {
-					return {
-						type: "union",
-						id: childUnionId,
-						width: measureUnion(childUnionId, stack),
-					};
-				}
-				return { type: "person", id: childId, width: CONFIG.nodeWidth };
-			});
-
-			const childrenWidth =
-				childGroups.length === 0
-					? 0
-					: childGroups.reduce((sum, g) => sum + g.width, 0) +
-					Math.max(0, childGroups.length - 1) * CONFIG.siblingGap;
-
-			const unionWidth = Math.max(partnersWidth, childrenWidth);
-			widthMemo.set(unionId, unionWidth);
-			stack.delete(unionId);
-			return unionWidth;
+			return Math.max(CONFIG.nodeWidth, partnersWidth, childrenWidth);
 		}
 
 		function layout(rootUnionId, opts = {}) {
+			// `positions` keep a single FIRST-WINS coordinate per person/union — used
+			// by focus-centring, the branch switcher, the sidebar and visibility
+			// checks. `placements` are the actual draw instances: a person can be
+			// drawn more than once (once per marriage, plus once as a child) so that
+			// someone who married across generations — e.g. a partner shared by a
+			// parent and a sibling — renders cleanly in each spot instead of being
+			// dragged into one row with a long connector. The user explicitly wants
+			// people to be allowed to appear in more than one place.
 			const positions = {
 				people: new Map(),
 				unions: new Map(),
 			};
+			const placements = {
+				people: [],
+				unions: [],
+			};
 
-			const edges = [];
+			const recordPerson = (personId, x, y) => {
+				const duplicate = positions.people.has(personId);
+				if (!duplicate) positions.people.set(personId, { x, y });
+				const rec = { personId, x, y, duplicate };
+				placements.people.push(rec);
+				return rec;
+			};
 
-			function layoutUnion(unionId, xLeft, depth, stack = new Set()) {
-				if (stack.has(unionId)) return;
-				const union = indexes.unionsById.get(unionId);
-				if (!union) return;
-				const cluster = getUnionCluster(unionId);
-
-				stack.add(unionId);
-
-				const unionWidth = measureUnion(unionId);
-				const centerX = xLeft + unionWidth / 2;
+			// Lay out a cluster (the rooted union cluster, or a person hub) at xLeft
+			// and recurse each child as its OWN hub so every person shows all their
+			// marriages and children. Returns the placement rec of `anchorPersonId`
+			// (used to connect a parent union down to this child).
+			function layoutCluster(cluster, xLeft, depth, stack, anchorPersonId = null) {
+				const clusterWidth = measureCluster(cluster, stack);
+				const centerX = xLeft + clusterWidth / 2;
 				const y = CONFIG.padding + depth * CONFIG.generationGap;
 
 				const partnersWidth =
@@ -922,83 +1048,121 @@
 					Math.max(0, cluster.partnerIds.length - 1) * CONFIG.partnerGap;
 				const partnersLeft = centerX - partnersWidth / 2;
 
+				const localPos = new Map();
+				const anchorRecs = new Map();
 				for (let idx = 0; idx < cluster.partnerIds.length; idx += 1) {
 					const personId = cluster.partnerIds[idx];
 					const x =
 						partnersLeft + idx * (CONFIG.nodeWidth + CONFIG.partnerGap) + CONFIG.nodeWidth / 2;
-					positions.people.set(personId, { x, y });
+					localPos.set(personId, { x, y });
+					anchorRecs.set(personId, recordPerson(personId, x, y));
 				}
 
 				const unionLineY = y + CONFIG.nodeHeight / 2 + 18;
-				for (const clusterUnionId of cluster.unionIds) {
-					const u = indexes.unionsById.get(clusterUnionId);
+				const childTopY = y + CONFIG.generationGap - CONFIG.nodeHeight / 2;
+
+				// Group children by the union (marriage) they came from, so each set
+				// of children can be drawn hanging from its own parent couple.
+				const childToParentUnionIds = new Map();
+				for (const uid of cluster.unionIds) {
+					for (const cid of indexes.unionsById.get(uid)?.children ?? []) {
+						if (!childToParentUnionIds.has(cid)) childToParentUnionIds.set(cid, []);
+						childToParentUnionIds.get(cid).push(uid);
+					}
+				}
+
+				// Lay the children out (each as its own hub) and remember where each
+				// landed, grouped by the union it belongs to.
+				const unionChildRecs = new Map();
+				if (cluster.childIds.length > 0) {
+					for (const uid of cluster.unionIds) stack.add(uid);
+					const childGroups = cluster.childIds.map((cid) => {
+						const hub = getPersonHubCluster(cid, stack);
+						return { childId: cid, hub, width: measureCluster(hub, stack) };
+					});
+					const totalChildrenWidth =
+						childGroups.reduce((sum, g) => sum + g.width, 0) +
+						Math.max(0, childGroups.length - 1) * CONFIG.siblingGap;
+					let cursorX = centerX - totalChildrenWidth / 2;
+					for (const group of childGroups) {
+						const childRec = layoutCluster(group.hub, cursorX, depth + 1, stack, group.childId);
+						for (const parentUnionId of childToParentUnionIds.get(group.childId) ?? []) {
+							if (!unionChildRecs.has(parentUnionId)) unionChildRecs.set(parentUnionId, []);
+							if (childRec) unionChildRecs.get(parentUnionId).push(childRec);
+						}
+						cursorX += group.width + CONFIG.siblingGap;
+					}
+					for (const uid of cluster.unionIds) stack.delete(uid);
+				}
+
+				// Colour-code only when this person/couple has children with more than
+				// one partner — ordinary single-family branches stay neutral.
+				const childBearingUnionIds = cluster.unionIds.filter(
+					(uid) => (unionChildRecs.get(uid)?.length ?? 0) > 0,
+				);
+				const useColor = childBearingUnionIds.length >= 2;
+				const colorIndexOf = new Map();
+				childBearingUnionIds.forEach((uid, i) => colorIndexOf.set(uid, i));
+
+				// Stagger the marriage "bus" levels so different marriages' connectors
+				// never sit on top of each other, while staying above the child fork.
+				const forkY = childTopY - 18;
+				const busStagger = childBearingUnionIds.length > 1
+					? Math.min(18, Math.max(0, forkY - 6 - unionLineY) / (childBearingUnionIds.length - 1))
+					: 0;
+
+				// How many of THIS cluster's unions each partner belongs to, so the
+				// shared central person (someone with several spouses) stays neutral
+				// while each unique spouse takes their own marriage's colour.
+				const unionCountByPartner = new Map();
+				for (const uid of cluster.unionIds) {
+					for (const pid of indexes.unionsById.get(uid)?.partners ?? []) {
+						if (localPos.has(pid)) {
+							unionCountByPartner.set(pid, (unionCountByPartner.get(pid) ?? 0) + 1);
+						}
+					}
+				}
+
+				for (const uid of cluster.unionIds) {
+					const u = indexes.unionsById.get(uid);
 					if (!u) continue;
 					const partnerXs = (u.partners ?? [])
-						.filter((pid) => positions.people.has(pid))
-						.map((pid) => positions.people.get(pid).x);
+						.filter((pid) => localPos.has(pid))
+						.map((pid) => localPos.get(pid).x);
 					if (partnerXs.length === 0) continue;
-					const minX = Math.min(...partnerXs);
-					const maxX = Math.max(...partnerXs);
-					positions.unions.set(clusterUnionId, { x: (minX + maxX) / 2, y: unionLineY });
-				}
+					const childRecs = unionChildRecs.get(uid) ?? [];
+					const childXs = childRecs.map((r) => r.x);
+					const ci = colorIndexOf.has(uid) ? colorIndexOf.get(uid) : null;
+					const busY = ci != null ? unionLineY + ci * busStagger : unionLineY;
+					const anchorX = childXs.length
+						? (Math.min(...childXs) + Math.max(...childXs)) / 2
+						: (Math.min(...partnerXs) + Math.max(...partnerXs)) / 2;
+					if (!positions.unions.has(uid)) positions.unions.set(uid, { x: anchorX, y: busY });
+					placements.unions.push({
+						unionId: uid,
+						x: anchorX,
+						y: busY,
+						partnerXs: partnerXs.slice().sort((a, b) => a - b),
+						partnerBottomY: y + CONFIG.nodeHeight / 2,
+						childXs: childXs.slice().sort((a, b) => a - b),
+						childTopY,
+						colorIndex: useColor ? ci : null,
+					});
 
-				const childIds = cluster.childIds;
-				if (childIds.length === 0) {
-					stack.delete(unionId);
-					return;
-				}
-
-				const childToParentUnionIds = new Map();
-				for (const clusterUnionId of cluster.unionIds) {
-					const u = indexes.unionsById.get(clusterUnionId);
-					if (!u) continue;
-					for (const childId of u.children ?? []) {
-						if (!childToParentUnionIds.has(childId)) childToParentUnionIds.set(childId, []);
-						childToParentUnionIds.get(childId).push(clusterUnionId);
+					if (useColor && ci != null) {
+						// Tint each unique spouse and the children of this marriage so a
+						// glance shows "this partner → these children".
+						for (const pid of u.partners ?? []) {
+							if (localPos.has(pid) && unionCountByPartner.get(pid) === 1) {
+								const rec = anchorRecs.get(pid);
+								if (rec) rec.colorIndex = ci;
+							}
+						}
+						for (const r of childRecs) r.colorIndex = ci;
 					}
 				}
-				const edgeKeys = new Set();
-				const pushEdge = (fromUnionId, toPersonId) => {
-					const key = `${fromUnionId}|${toPersonId}`;
-					if (edgeKeys.has(key)) return;
-					edgeKeys.add(key);
-					edges.push({ fromUnionId, toPersonId });
-				};
 
-				const childGroups = childIds.map((childId) => {
-					const childUnionId = pickSingleUnionForPerson(childId, indexes);
-					if (childUnionId) {
-						return {
-							type: "union",
-							childId,
-							id: childUnionId,
-							width: measureUnion(childUnionId),
-						};
-					}
-					return { type: "person", childId, id: childId, width: CONFIG.nodeWidth };
-				});
-
-				const totalChildrenWidth =
-					childGroups.reduce((sum, g) => sum + g.width, 0) +
-					Math.max(0, childGroups.length - 1) * CONFIG.siblingGap;
-
-				let cursorX = centerX - totalChildrenWidth / 2;
-				for (const group of childGroups) {
-					if (group.type === "person") {
-						const childCenterX = cursorX + group.width / 2;
-						positions.people.set(group.id, { x: childCenterX, y: y + CONFIG.generationGap });
-					} else {
-						layoutUnion(group.id, cursorX, depth + 1, stack);
-					}
-
-					const parentUnionIds = childToParentUnionIds.get(group.childId) ?? [];
-					for (const parentUnionId of parentUnionIds) {
-						pushEdge(parentUnionId, group.childId);
-					}
-					cursorX += group.width + CONFIG.siblingGap;
-				}
-
-				stack.delete(unionId);
+				return anchorPersonId ? anchorRecs.get(anchorPersonId) ?? null : null;
 			}
 
 			const rootUnion = indexes.unionsById.get(rootUnionId);
@@ -1022,9 +1186,9 @@
 						continue;
 					}
 
-					const width = measureUnion(unionId);
+					const width = measureCluster(getUnionCluster(unionId, true), new Set());
 					const beforeCount = positions.people.size;
-					layoutUnion(unionId, cursorX, 0, new Set());
+					layoutCluster(getUnionCluster(unionId, true), cursorX, 0, new Set());
 					if (positions.people.size > beforeCount) {
 						cursorX += width + CONFIG.padding;
 					}
@@ -1032,17 +1196,15 @@
 
 				for (const person of data.people) {
 					if (positions.people.has(person.id)) continue;
-					positions.people.set(person.id, {
-						x: cursorX + CONFIG.nodeWidth / 2,
-						y: CONFIG.padding,
-					});
+					recordPerson(person.id, cursorX + CONFIG.nodeWidth / 2, CONFIG.padding);
 					cursorX += CONFIG.nodeWidth + CONFIG.partnerGap;
 				}
 
 				rootWidth = Math.max(CONFIG.nodeWidth, cursorX);
 			} else if (rootUnion) {
-				rootWidth = measureUnion(rootUnionId);
-				layoutUnion(rootUnionId, CONFIG.padding, 0, new Set());
+				const rootCluster = getUnionCluster(rootUnionId, true);
+				rootWidth = measureCluster(rootCluster, new Set());
+				layoutCluster(rootCluster, CONFIG.padding, 0, new Set());
 			} else {
 				// No valid union to root on — e.g. a lone individual whose GEDCOM has
 				// no family records yet. Still place the focused person's own node so
@@ -1053,17 +1215,32 @@
 						? opts.fallbackPersonId
 						: data.people[0]?.id ?? null;
 				if (fallbackId) {
-					positions.people.set(fallbackId, {
-						x: CONFIG.padding + CONFIG.nodeWidth / 2,
-						y: CONFIG.padding + CONFIG.nodeHeight / 2,
-					});
+					recordPerson(
+						fallbackId,
+						CONFIG.padding + CONFIG.nodeWidth / 2,
+						CONFIG.padding + CONFIG.nodeHeight / 2,
+					);
 				}
 			}
 
-			// Normalize all positions into a positive coordinate space with padding.
-			const bbox = computeBBox(positions.people);
+			// Normalize every coordinate into a positive space with padding. Offsets
+			// apply to the draw instances (placements) and the first-wins position
+			// maps alike.
+			const bbox = computeBBox(placements.people);
 			const offsetX = CONFIG.padding - bbox.minX;
 			const offsetY = CONFIG.padding - bbox.minY;
+			for (const rec of placements.people) {
+				rec.x += offsetX;
+				rec.y += offsetY;
+			}
+			for (const rec of placements.unions) {
+				rec.x += offsetX;
+				rec.y += offsetY;
+				rec.partnerXs = rec.partnerXs.map((px) => px + offsetX);
+				rec.partnerBottomY += offsetY;
+				rec.childXs = rec.childXs.map((px) => px + offsetX);
+				rec.childTopY += offsetY;
+			}
 			for (const [id, pos] of positions.people.entries()) {
 				positions.people.set(id, { x: pos.x + offsetX, y: pos.y + offsetY });
 			}
@@ -1071,13 +1248,13 @@
 				positions.unions.set(id, { x: pos.x + offsetX, y: pos.y + offsetY });
 			}
 
-			const bbox2 = computeBBox(positions.people);
+			const bbox2 = computeBBox(placements.people);
 			const sceneWidth = Math.max(rootWidth + CONFIG.padding * 2, bbox2.maxX + CONFIG.padding);
 			const sceneHeight = bbox2.maxY + CONFIG.padding;
 
 			return {
 				positions,
-				edges,
+				placements,
 				sceneSize: { width: sceneWidth, height: sceneHeight },
 			};
 		}
@@ -1085,13 +1262,13 @@
 		return { layout };
 	}
 
-	function computeBBox(peoplePositions) {
+	function computeBBox(peoplePlacements) {
 		let minX = Infinity;
 		let minY = Infinity;
 		let maxX = -Infinity;
 		let maxY = -Infinity;
 
-		for (const pos of peoplePositions.values()) {
+		for (const pos of peoplePlacements.values()) {
 			minX = Math.min(minX, pos.x - CONFIG.nodeWidth / 2);
 			maxX = Math.max(maxX, pos.x + CONFIG.nodeWidth / 2);
 			minY = Math.min(minY, pos.y - CONFIG.nodeHeight / 2);
@@ -1146,7 +1323,7 @@
 		readOnly = false,
 	}) {
 		const { peopleById } = indexes;
-		const { positions, edges, sceneSize } = layoutResult;
+		const { positions, placements, sceneSize } = layoutResult;
 
 		// Size the scene and SVG.
 		scene.style.width = `${sceneSize.width}px`;
@@ -1170,8 +1347,11 @@
 
 		const visiblePersonIds = new Set(positions.people.keys());
 
-		// Render nodes.
-		for (const [personId, pos] of positions.people.entries()) {
+		// Render nodes — one DOM node per placement instance (a person may appear in
+		// more than one place, e.g. once per marriage and once as a child).
+		for (const placement of placements.people) {
+			const personId = placement.personId;
+			const pos = placement;
 			const person = peopleById.get(personId) ?? { id: personId, name: personId };
 			const gender = normalizeGender(person.gender);
 			const displayName = formatDisplayName(person) || personId;
@@ -1205,6 +1385,18 @@
 			node.tabIndex = 0;
 			node.setAttribute("role", "button");
 			node.setAttribute("aria-label", displayName);
+			// A duplicate instance is a second drawing of someone already shown
+			// elsewhere; mark it so it reads as the same person, not a clone.
+			if (placement.duplicate) {
+				node.classList.add("node--duplicate");
+				node.dataset.duplicate = "true";
+			}
+			// Tint a spouse / child node to match its marriage's connector colour so
+			// it's obvious at a glance which partner each child belongs to.
+			if (placement.colorIndex != null) {
+				node.classList.add("node--union");
+				node.style.setProperty("--union-color", LINK_COLORS[placement.colorIndex % LINK_COLORS.length]);
+			}
 
 			const avatar = el("div", "node__avatar");
 			if (person.photoUrl) {
@@ -1217,6 +1409,13 @@
 			} else {
 				avatar.appendChild(createBiIcon("person-circle", "node__avatar-icon"));
 			}
+			if (placement.duplicate) {
+				const dupBadge = el("span", "node__duplicate-badge");
+				dupBadge.setAttribute("aria-hidden", "true");
+				dupBadge.setAttribute("data-tooltip", "Shown in more than one place");
+				dupBadge.appendChild(createBiIcon("arrow-repeat"));
+				avatar.appendChild(dupBadge);
+			}
 
 			const content = el("div", "node__content");
 			// When the person has a Genepedia profile, their name is a link to it;
@@ -1226,7 +1425,9 @@
 			if (genepediaId) {
 				name = document.createElement("a");
 				name.className = "node__name";
-				name.href = resolveSitePath(`people/${encodeURIComponent(genepediaId)}/`);
+				// Link straight to the person's index.html so the name works on
+				// file:// (no directory index) and on the live site alike.
+				name.href = resolveSitePath(`people/${encodeURIComponent(genepediaId)}/index.html`);
 				name.addEventListener("click", (e) => {
 					// Let the link navigate; don't also trigger node selection.
 					e.stopPropagation();
@@ -1307,49 +1508,55 @@
 			nodesRoot.append(node);
 		}
 
-		const makePath = (d) => {
+		const makePath = (d, color) => {
 			const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
 			p.setAttribute("d", d);
+			if (color) {
+				// Inline style (not a presentation attribute) so it beats the
+				// `.links path { stroke: currentColor }` rule.
+				p.style.stroke = color;
+				p.classList.add("link--colored");
+			}
 			return p;
 		};
 
-		// Spouse/union lines.
-		for (const union of data.unions) {
-			const anchor = positions.unions.get(union.id);
-			if (!anchor) continue;
+		// One self-contained connector per marriage: a couple bar joining the
+		// partners (staggered to its own level so marriages never overlap) and a
+		// fork hanging that marriage's children, all in the marriage's colour.
+		for (const u of placements.unions) {
+			const color = u.colorIndex != null ? LINK_COLORS[u.colorIndex % LINK_COLORS.length] : null;
+			const xs = u.partnerXs ?? [];
+			const childXs = u.childXs ?? [];
+			const stemX = childXs.length ? (childXs[0] + childXs[childXs.length - 1]) / 2 : null;
 
-			const partners = union.partners.filter((pid) => positions.people.has(pid));
-			if (partners.length === 0) continue;
-
-			const xs = partners
-				.map((pid) => positions.people.get(pid).x)
-				.slice()
-				.sort((a, b) => a - b);
-
-			for (const pid of partners) {
-				const pPos = positions.people.get(pid);
-				const bottomY = pPos.y + CONFIG.nodeHeight / 2;
-				svg.appendChild(makePath(`M ${pPos.x} ${bottomY} L ${pPos.x} ${anchor.y}`));
+			if (xs.length) {
+				for (const px of xs) {
+					svg.appendChild(makePath(`M ${px} ${u.partnerBottomY} L ${px} ${u.y}`, color));
+				}
+				const left = Math.min(xs[0], stemX != null ? stemX : xs[0]);
+				const right = Math.max(xs[xs.length - 1], stemX != null ? stemX : xs[xs.length - 1]);
+				if (right > left) {
+					svg.appendChild(makePath(`M ${left} ${u.y} L ${right} ${u.y}`, color));
+				}
 			}
 
-			if (xs.length > 1) {
-				svg.appendChild(makePath(`M ${xs[0]} ${anchor.y} L ${xs[xs.length - 1]} ${anchor.y}`));
+			if (childXs.length) {
+				const forkY = u.childTopY - 18;
+				if (stemX != null) {
+					svg.appendChild(makePath(`M ${stemX} ${u.y} L ${stemX} ${forkY}`, color));
+				}
+				const cl = childXs[0];
+				const cr = childXs[childXs.length - 1];
+				if (cr > cl) {
+					svg.appendChild(makePath(`M ${cl} ${forkY} L ${cr} ${forkY}`, color));
+				}
+				for (const cx of childXs) {
+					svg.appendChild(makePath(`M ${cx} ${forkY} L ${cx} ${u.childTopY}`, color));
+				}
 			}
 		}
 
-		// Parent->child connectors.
-		for (const edge of edges) {
-			const from = positions.unions.get(edge.fromUnionId);
-			const to = positions.people.get(edge.toPersonId);
-			if (!from || !to) continue;
-
-			const endY = to.y - CONFIG.nodeHeight / 2;
-			const midY = from.y + (endY - from.y) * 0.5;
-			const d = `M ${from.x} ${from.y} L ${from.x} ${midY} L ${to.x} ${midY} L ${to.x} ${endY}`;
-			svg.appendChild(makePath(d));
-		}
-
-		const contentBbox = computeBBox(positions.people);
+		const contentBbox = computeBBox(placements.people);
 		return { setSelected, getContentBbox: () => contentBbox };
 	}
 
@@ -1512,7 +1719,7 @@
 
 	function buildExportSvg({ data, indexes, layoutResult }) {
 		const { peopleById } = indexes;
-		const { positions, edges, sceneSize } = layoutResult;
+		const { placements, sceneSize } = layoutResult;
 
 		const width = Math.max(1, Math.ceil(sceneSize.width));
 		const height = Math.max(1, Math.ceil(sceneSize.height));
@@ -1528,6 +1735,7 @@
 		parts.push(
 			"<style><![CDATA[" +
 			`.link{stroke:#000;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.45}` +
+			`.link--colored{opacity:.95;stroke-width:2.5}` +
 			`.node-rect{stroke:#666}` +
 			`.node-rect--M{fill:#e8f1ff}` +
 			`.node-rect--F{fill:#ffe8f3}` +
@@ -1540,46 +1748,50 @@
 		);
 		parts.push('<rect width="100%" height="100%" fill="#fff"/>');
 
-		const linkPath = (d) => `<path class="link" d="${d}"/>`;
+		const linkPath = (d, color) =>
+			color
+				? `<path class="link link--colored" style="stroke:${color}" d="${d}"/>`
+				: `<path class="link" d="${d}"/>`;
 
-		// Spouse/union lines.
-		for (const union of data.unions) {
-			const anchor = positions.unions.get(union.id);
-			if (!anchor) continue;
+		// One self-contained connector per marriage (couple bar + child fork),
+		// staggered and coloured so different marriages never overlap.
+		for (const u of placements.unions) {
+			const color = u.colorIndex != null ? LINK_COLORS[u.colorIndex % LINK_COLORS.length] : null;
+			const xs = u.partnerXs ?? [];
+			const childXs = u.childXs ?? [];
+			const stemX = childXs.length ? (childXs[0] + childXs[childXs.length - 1]) / 2 : null;
 
-			const partners = union.partners.filter((pid) => positions.people.has(pid));
-			if (partners.length === 0) continue;
-
-			const xs = partners
-				.map((pid) => positions.people.get(pid).x)
-				.slice()
-				.sort((a, b) => a - b);
-
-			for (const pid of partners) {
-				const pPos = positions.people.get(pid);
-				const bottomY = pPos.y + CONFIG.nodeHeight / 2;
-				parts.push(linkPath(`M ${pPos.x} ${bottomY} L ${pPos.x} ${anchor.y}`));
+			if (xs.length) {
+				for (const px of xs) {
+					parts.push(linkPath(`M ${px} ${u.partnerBottomY} L ${px} ${u.y}`, color));
+				}
+				const left = Math.min(xs[0], stemX != null ? stemX : xs[0]);
+				const right = Math.max(xs[xs.length - 1], stemX != null ? stemX : xs[xs.length - 1]);
+				if (right > left) {
+					parts.push(linkPath(`M ${left} ${u.y} L ${right} ${u.y}`, color));
+				}
 			}
 
-			if (xs.length > 1) {
-				parts.push(linkPath(`M ${xs[0]} ${anchor.y} L ${xs[xs.length - 1]} ${anchor.y}`));
+			if (childXs.length) {
+				const forkY = u.childTopY - 18;
+				if (stemX != null) {
+					parts.push(linkPath(`M ${stemX} ${u.y} L ${stemX} ${forkY}`, color));
+				}
+				const cl = childXs[0];
+				const cr = childXs[childXs.length - 1];
+				if (cr > cl) {
+					parts.push(linkPath(`M ${cl} ${forkY} L ${cr} ${forkY}`, color));
+				}
+				for (const cx of childXs) {
+					parts.push(linkPath(`M ${cx} ${forkY} L ${cx} ${u.childTopY}`, color));
+				}
 			}
-		}
-
-		// Parent->child connectors.
-		for (const edge of edges) {
-			const from = positions.unions.get(edge.fromUnionId);
-			const to = positions.people.get(edge.toPersonId);
-			if (!from || !to) continue;
-
-			const endY = to.y - CONFIG.nodeHeight / 2;
-			const midY = from.y + (endY - from.y) * 0.5;
-			const d = `M ${from.x} ${from.y} L ${from.x} ${midY} L ${to.x} ${midY} L ${to.x} ${endY}`;
-			parts.push(linkPath(d));
 		}
 
 		// Nodes.
-		for (const [personId, pos] of positions.people.entries()) {
+		for (const placement of placements.people) {
+			const personId = placement.personId;
+			const pos = placement;
 			const person = peopleById.get(personId) ?? { id: personId, name: personId };
 			const gender = normalizeGender(person.gender);
 			const metaText = formatDates(person);
@@ -1599,6 +1811,13 @@
 			parts.push(
 				`<rect class="node-rect node-rect--${gender}" x="${rectX}" y="${rectY}" width="${CONFIG.nodeWidth}" height="${CONFIG.nodeHeight}" rx="0" ry="0"/>`,
 			);
+			// Colour bar across the top to match the marriage connector colour.
+			if (placement.colorIndex != null) {
+				const color = LINK_COLORS[placement.colorIndex % LINK_COLORS.length];
+				parts.push(
+					`<rect x="${rectX}" y="${rectY}" width="${CONFIG.nodeWidth}" height="4" fill="${color}"/>`,
+				);
+			}
 			parts.push(
 				`<line class="avatar-divider" x1="${dividerX}" y1="${rectY}" x2="${dividerX}" y2="${rectY + CONFIG.nodeHeight}"/>`,
 			);
@@ -1961,6 +2180,12 @@ button:focus-visible {
 	opacity: 0.45;
 }
 
+/* Coloured connectors single out one marriage of a multi-partner parent. */
+.links path.link--colored {
+	opacity: 0.95;
+	stroke-width: 2.5;
+}
+
 .nodes {
 	position: absolute;
 	left: 0;
@@ -2084,6 +2309,114 @@ button:focus-visible {
 	border-color: Highlight;
 	outline: 2px solid Highlight;
 	outline-offset: 2px;
+}
+
+/* A duplicate instance: the same person drawn a second time (e.g. once per
+   marriage). Slightly muted, with a small repeat badge so it's clear it's the
+   same person shown in another place, not a different individual. */
+.node--duplicate {
+	border-style: dashed;
+}
+
+/* A spouse/child tinted to match its marriage's connector colour, so it's
+   obvious which partner each child belongs to. The bar sits on the top edge. */
+.node--union {
+	box-shadow: inset 0 4px 0 0 var(--union-color);
+}
+
+.node__duplicate-badge {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 18px;
+	height: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: color-mix(in srgb, Canvas 70%, GrayText 30%);
+	color: CanvasText;
+	font-size: 11px;
+	line-height: 1;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* Parent-branch switcher: sits on the connector between the focus person and
+   their parents, like Geni's small family badge but clearly labelled so you can
+   tell — and switch — whether you're viewing the biological or adopted branch. */
+.branch-switch {
+	position: absolute;
+	transform: translate(-50%, -50%);
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 5px 8px;
+	border: 1px solid color-mix(in srgb, Canvas 40%, GrayText 60%);
+	border-radius: 999px;
+	background: Canvas;
+	color: CanvasText;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+	white-space: nowrap;
+	cursor: default;
+}
+
+.branch-switch__label {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	opacity: 0.8;
+	padding-left: 3px;
+}
+
+.branch-switch__label-icon {
+	font-size: 14px;
+}
+
+.branch-switch__chips {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.branch-switch__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 5px 11px;
+	border: 1px solid color-mix(in srgb, Canvas 45%, GrayText 55%);
+	border-radius: 999px;
+	background: color-mix(in srgb, Canvas 88%, GrayText 12%);
+	color: CanvasText;
+	font-size: 13px;
+	font-weight: 650;
+	line-height: 1;
+	cursor: pointer;
+	transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.branch-switch__chip:hover {
+	background: color-mix(in srgb, Canvas 75%, GrayText 25%);
+}
+
+.branch-switch__chip-icon {
+	font-size: 13px;
+	opacity: 0.85;
+}
+
+.branch-switch__chip.is-active {
+	background: #1a7f37;
+	border-color: #1a7f37;
+	color: #fff;
+	box-shadow: 0 0 0 2px color-mix(in srgb, #1a7f37 35%, transparent);
+}
+
+.branch-switch__chip.is-active .branch-switch__chip-icon {
+	opacity: 1;
 }
 
 .menu {
@@ -2609,6 +2942,9 @@ a.node__name:focus-visible {
 			let indexes = buildIndexes(data);
 			let engine = createLayoutEngine(data, indexes);
 			let currentRootUnionId = data.rootUnionId;
+			// The person the tree is currently built around. Drives the parent-branch
+			// switcher (biological / adopted) shown between them and their parents.
+			let currentFocusPersonId = null;
 			let layoutResult = null;
 			let rendered = null;
 			let contentBbox = null;
@@ -3053,7 +3389,7 @@ a.node__name:focus-visible {
 				if (person.genepediaId) {
 					const profileLink = document.createElement("a");
 					profileLink.className = "sidebar__profile-link";
-					profileLink.href = resolveSitePath(`people/${encodeURIComponent(person.genepediaId)}/`);
+					profileLink.href = resolveSitePath(`people/${encodeURIComponent(person.genepediaId)}/index.html`);
 					profileLink.append(createBiIcon("person-badge", "sidebar__profile-link-icon"));
 					const linkText = document.createElement("span");
 					linkText.textContent = "View Genepedia profile";
@@ -3230,6 +3566,93 @@ a.node__name:focus-visible {
 				return currentRootUnionId;
 			};
 
+			// The set of parent branches (biological / adopted / foster …) the focus
+			// person belongs to, with the pedigree label read from their FAMC links.
+			const focusParentBranches = (personId) => {
+				const person = personById(personId);
+				const unionIds = indexes.parentUnionsByChild.get(personId) ?? [];
+				const pediByUnion = gedcomParentPediByUnion(person);
+				return unionIds
+					.map((unionId) => {
+						const union = indexes.unionsById.get(unionId);
+						if (!union) return null;
+						const parentNames = (union.partners ?? [])
+							.filter(Boolean)
+							.map((pid) => displayPersonName(pid));
+						const pedi = pediByUnion.get(unionId) ?? "";
+						return {
+							unionId,
+							pedi,
+							label: pediBranchLabel(pedi),
+							icon: pediBranchIcon(pedi),
+							parentNames,
+						};
+					})
+					.filter(Boolean);
+			};
+
+			// A clear, on-canvas segmented control that sits on the connector between
+			// the focus person and their parents, letting you see at a glance — and
+			// instantly switch — which parent branch (biological vs adopted, etc.)
+			// the tree is showing. Only appears when the focus has more than one.
+			const renderBranchSwitcher = () => {
+				nodesRoot.querySelector(".branch-switch")?.remove();
+				const focusId = currentFocusPersonId;
+				if (!focusId) return;
+				const branches = focusParentBranches(focusId);
+				if (branches.length < 2) return;
+				const focusPos = layoutResult?.positions?.people?.get(focusId);
+				if (!focusPos) return;
+
+				const anchor = layoutResult?.positions?.unions?.get(currentRootUnionId);
+				const focusTop = focusPos.y - CONFIG.nodeHeight / 2;
+				const anchorY = anchor ? anchor.y : focusPos.y - CONFIG.generationGap * 0.5;
+
+				const switcher = el("div", "branch-switch");
+				switcher.style.left = `${focusPos.x}px`;
+				switcher.style.top = `${(anchorY + focusTop) / 2}px`;
+				switcher.addEventListener("click", (e) => e.stopPropagation());
+				switcher.addEventListener("pointerdown", (e) => e.stopPropagation());
+
+				const label = el("div", "branch-switch__label");
+				label.append(createBiIcon("signpost-split-fill", "branch-switch__label-icon"));
+				const labelText = document.createElement("span");
+				labelText.textContent = "Parents";
+				label.append(labelText);
+				switcher.append(label);
+
+				const chipsWrap = el("div", "branch-switch__chips");
+				for (const branch of branches) {
+					const isActive = branch.unionId === currentRootUnionId;
+					const chip = document.createElement("button");
+					chip.type = "button";
+					chip.className = "branch-switch__chip";
+					chip.classList.toggle("is-active", isActive);
+					chip.dataset.pedi = String(branch.pedi || "biological").toLowerCase();
+					chip.append(createBiIcon(branch.icon, "branch-switch__chip-icon"));
+					const chipText = document.createElement("span");
+					chipText.className = "branch-switch__chip-label";
+					chipText.textContent = branch.label;
+					chip.append(chipText);
+					const tip = branch.parentNames.length
+						? `${branch.label} parents: ${branch.parentNames.join(" & ")}`
+						: `${branch.label} parents`;
+					chip.title = tip;
+					chip.setAttribute("aria-label", tip);
+					chip.setAttribute("aria-pressed", isActive ? "true" : "false");
+					chip.addEventListener("click", (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						if (branch.unionId === currentRootUnionId) return;
+						currentRootUnionId = branch.unionId;
+						renderTree({ selectPersonId: focusId, source: "branch-switch", transformMode: "pan" });
+					});
+					chipsWrap.append(chip);
+				}
+				switcher.append(chipsWrap);
+				nodesRoot.append(switcher);
+			};
+
 			const renderTree = (opts = {}) => {
 				closeTreeSearch();
 				const prevTransform = panZoom.get();
@@ -3292,12 +3715,14 @@ a.node__name:focus-visible {
 					rendered.setSelected(opts.selectPersonId, { source: opts.source ?? "tree" });
 				}
 
+				renderBranchSwitcher();
 				updateTreeStatsNow();
 			};
 
 			function openTreeForPerson(personId, opts = {}) {
 				if (!personId) return;
 				closeRelationMenu();
+				currentFocusPersonId = personId;
 				currentRootUnionId = getPreferredRootUnionIdForPerson(personId);
 				renderTree({ selectPersonId: personId, source: opts.source ?? "tree", transformMode: "pan" });
 			}
@@ -3320,6 +3745,7 @@ a.node__name:focus-visible {
 			const initialPersonId = findPersonIdByRef(personRef) ||
 				(shouldFocusFirstPerson ? data.people[0]?.id ?? null : null);
 			if (initialPersonId) {
+				currentFocusPersonId = initialPersonId;
 				currentRootUnionId = getPreferredRootUnionIdForPerson(initialPersonId);
 				// Open zoomed in on the selected person so the node's Edit/Add
 				// buttons render at the same size as the standard site buttons

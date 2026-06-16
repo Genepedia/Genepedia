@@ -18,6 +18,9 @@
         Slogan: 'Free Geneology Encyclopedia',
         PageEditPath: 'pages/edit.html',
     };
+    const PEOPLE_DB_SUBMODULE_ROOT = 'data/Genepedia-Database';
+    const PEOPLE_DB_ROOT = `${PEOPLE_DB_SUBMODULE_ROOT}/people`;
+    const LEGACY_PEOPLE_DB_ROOT = 'data/people';
     const PERSON_MEDIA_ROOT = 'data/Genepedia-Media/people';
     const LOCAL_MEDIA_PROFILE_IDS = new Set(['1', '2', '3', '15']);
 
@@ -36,6 +39,38 @@
         } catch (e) {
             return cleanPath;
         }
+    }
+
+    function resolvePeopleDbPath(dbPath = '') {
+        const normalized = normalizeSitePath(dbPath);
+        if (!normalized
+            || normalized === PEOPLE_DB_ROOT
+            || normalized === PEOPLE_DB_SUBMODULE_ROOT
+            || normalized === LEGACY_PEOPLE_DB_ROOT) {
+            return PEOPLE_DB_ROOT;
+        }
+
+        if (normalized.startsWith(`${PEOPLE_DB_ROOT}/`)) {
+            return normalized;
+        }
+
+        if (normalized.startsWith(`${PEOPLE_DB_SUBMODULE_ROOT}/`)) {
+            return `${PEOPLE_DB_ROOT}/${normalized.slice(`${PEOPLE_DB_SUBMODULE_ROOT}/`.length)}`;
+        }
+
+        if (normalized.startsWith(`${LEGACY_PEOPLE_DB_ROOT}/`)) {
+            return `${PEOPLE_DB_ROOT}/${normalized.slice(`${LEGACY_PEOPLE_DB_ROOT}/`.length)}`;
+        }
+
+        if (/^(manifest\.json|(persons|unions|ownership|graph|index|sources|export|reports)\/)/.test(normalized)) {
+            return `${PEOPLE_DB_ROOT}/${normalized}`;
+        }
+
+        return normalized;
+    }
+
+    function resolvePeopleDbUrl(dbPath = '') {
+        return resolveSiteUrl(resolvePeopleDbPath(dbPath));
     }
 
     function hasAbsoluteUrlScheme(value) {
@@ -268,7 +303,7 @@
 
         try {
             const bucket = Math.floor((Math.max(1, Number(id.replace(/[^0-9]/g, '')) || 1) - 1) / 1000);
-            const response = await fetch(resolveSiteUrl(`data/people/v1/ownership/${bucket}/${id}.json`), { cache: 'no-store' });
+            const response = await fetch(resolvePeopleDbUrl(`ownership/${bucket}/${id}.json`), { cache: 'no-store' });
             if (!response.ok) {
                 return null;
             }
@@ -285,7 +320,7 @@
             return ownershipLoginIndexPromise;
         }
 
-        ownershipLoginIndexPromise = fetch(resolveSiteUrl('data/people/v1/index/ownership-logins.json'), { cache: 'no-store' })
+        ownershipLoginIndexPromise = fetch(resolvePeopleDbUrl('index/ownership-logins.json'), { cache: 'no-store' })
             .then(async (response) => {
                 if (!response.ok) {
                     return {};
@@ -383,7 +418,7 @@
 
             try {
                 const bucket = Math.floor((Math.max(1, Number(id.replace(/[^0-9]/g, '')) || 1) - 1) / 1000);
-                const response = await fetch(resolveSiteUrl(`data/people/v1/persons/${bucket}/${id}.json`), { cache: 'no-store' });
+                const response = await fetch(resolvePeopleDbUrl(`persons/${bucket}/${id}.json`), { cache: 'no-store' });
                 if (response.ok) {
                     const record = await response.json();
                     const primary = record?.media?.primary;
@@ -728,7 +763,10 @@
     app.setGitHubAccessToken = setGitHubAccessToken;
     app.getGitHubFetchInit = getGitHubFetchInit;
     app.getSlogan = getSlogan;
+    app.PeopleDbRoot = PEOPLE_DB_ROOT;
     app.resolveSiteUrl = resolveSiteUrl;
+    app.resolvePeopleDbPath = resolvePeopleDbPath;
+    app.resolvePeopleDbUrl = resolvePeopleDbUrl;
     app.resolvePersonMediaPath = resolvePersonMediaPath;
     app.resolvePersonMediaUrl = resolvePersonMediaUrl;
     app.prefersLocalPersonMedia = prefersLocalPersonMedia;

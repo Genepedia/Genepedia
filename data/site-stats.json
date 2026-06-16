@@ -1,0 +1,49 @@
+{
+  "generatedAt": "2026-06-14T19:02:26.968Z",
+  "site": {
+    "appName": "Genepedia",
+    "host": "www.genepedia.org",
+    "version": "v1",
+    "profileDirectoryCount": 5001
+  },
+  "profiles": {
+    "total": 5001,
+    "living": 1920,
+    "deceased": 3081,
+    "withNarrative": 1256,
+    "withImages": 1594,
+    "withBirth": 3550,
+    "withDeath": 2132,
+    "withOccupation": 272,
+    "withRelationships": 4998,
+    "claimedProfiles": 0,
+    "uniqueLoginMappings": 1,
+    "maintainerAssignments": 5000
+  },
+  "families": {
+    "unions": 1922
+  },
+  "media": {
+    "downloaded": 3035,
+    "skipped": 0,
+    "failed": 0,
+    "totalItems": 3035,
+    "profilesWithMedia": 1594,
+    "averageItemsPerProfileWithMedia": 1.9,
+    "medianItemsPerProfile": 0
+  },
+  "privacy": {
+    "emailsRedacted": 12
+  },
+  "content": {
+    "fileStatsEntries": 173,
+    "latestImportAt": "2026-06-14T19:02:20.228Z",
+    "latestMediaSyncAt": "2026-06-14T19:02:20.229Z"
+  },
+  "ownership": {
+    "creatorProfiles": 5000,
+    "ownerProfiles": 0,
+    "maintainerAssignments": 5000,
+    "loginMappings": 1
+  }
+}

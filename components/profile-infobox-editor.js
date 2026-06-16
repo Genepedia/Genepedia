@@ -48,6 +48,19 @@
 		return normalizeStoredDate(value);
 	}
 
+	function buildInfoboxDatePreview(value) {
+		const precision = String(value?.precision || "exact").trim() || "exact";
+		if (precision === "between") {
+			const from = String(value?.date || "").trim();
+			const to = String(value?.dateTo || "").trim();
+			const fromText = from ? friendlyDate(from, { precision: "exact", circa: Boolean(value?.circa) }) : "";
+			const toText = to ? friendlyDate(to, { precision: "exact", circa: Boolean(value?.circaTo) }) : "";
+			return fromText && toText ? `${fromText} and ${toText}` : (fromText || toText || "");
+		}
+		const date = String(value?.date || "").trim();
+		return date ? friendlyDate(date, { precision, circa: Boolean(value?.circa) }) : "";
+	}
+
 	const DATE_PRECISIONS = [
 		{ value: "exact", label: "Exact" },
 		{ value: "before", label: "Before" },
@@ -230,7 +243,7 @@
 	}
 
 	// Lazily load the browser database client so the infobox editor can read and
-	// write the canonical person record (data/people/v1/persons/<bucket>/<id>.json).
+	// write the canonical person record (data/Genepedia-Database/people/persons/<bucket>/<id>.json).
 	function ensurePeopleDb() {
 		if (window.PeopleDB) return Promise.resolve();
 		window.__peopleDbLoadPromise = window.__peopleDbLoadPromise || new Promise((resolve, reject) => {
@@ -312,52 +325,15 @@
 	}
 
 	function renderDateInput(dataDate) {
-		return `<span class="pie__date-input-wrap">
-			<input type="date" data-date="${dataDate}" class="pie__date-input">
-			<button type="button" class="pie__date-picker-button" aria-label="Choose date">
-				<i class="bi bi-calendar3" aria-hidden="true"></i>
-			</button>
-		</span>`;
+		return `<date-field-editor data-date-group="${dataDate}" input-id="pie-${dataDate.replace(/\./g, "-")}-date" precisions="exact,before,after,between" layout="inline" show-preview></date-field-editor>`;
 	}
 
 	function renderDateRange(group) {
-		return `<div class="pie__date-range">
-			<div class="pie__date-range-row pie__date-range-row--from">
-				${renderDateInput(`${group}.date`)}
-				<label class="pie__circa"><input type="checkbox" data-date="${group}.circa"> Circa</label>
-			</div>
-			<div class="pie__date-range-row pie__date-range-row--divider">
-				<span class="pie__date-and">and</span>
-			</div>
-			<div class="pie__date-range-row pie__date-range-row--to">
-				${renderDateInput(`${group}.dateTo`)}
-				<label class="pie__circa"><input type="checkbox" data-date="${group}.circaTo"> Circa</label>
-			</div>
-		</div>`;
+		return renderDateInput(group);
 	}
 
 	function renderLocationField({ path, id, placeholder }) {
-		const resultsId = `${id}-results`;
-		const detailsId = `${id}-details`;
-		const detailRows = LOCATION_DETAIL_FIELDS.map((field) => `
-							<div class="pie__location-detail-row">
-								<label class="pie__location-detail-label" for="${id}-${field.key}">${field.label}:</label>
-								<input id="${id}-${field.key}" type="text" data-location-field="${path}.${field.key}">
-							</div>`).join("");
-
-		return `
-					<div class="pie__field pie__field--location" data-location="${path}">
-						<div class="pie__location-search-wrap">
-							<input id="${id}" class="pie__location-search" type="search" data-location-search="${path}" placeholder="${placeholder}" autocomplete="off" spellcheck="false" aria-autocomplete="list" aria-expanded="false" aria-controls="${resultsId}">
-							<ul class="pie__location-results" id="${resultsId}" role="listbox" hidden></ul>
-						</div>
-						<div class="pie__location-details" id="${detailsId}" hidden>${detailRows}
-						</div>
-						<button type="button" class="pie__location-toggle" data-location-toggle="${path}" aria-expanded="false" aria-controls="${detailsId}">
-							<span class="pie__location-toggle-icon" aria-hidden="true">▾</span>
-							<span>Show and Edit Location Details</span>
-						</button>
-					</div>`;
+		return `<location-field-editor data-location-path="${path}" input-id="${id}" placeholder="${escapeHtml(placeholder)}" toggle-label="Show and Edit Location Details"></location-field-editor>`;
 	}
 
 	function createManualLocationMatch(query) {
@@ -498,9 +474,7 @@
 				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date of birth</span>
 					<div class="pie__field pie__field--date">
-						<select data-date="birth.precision"></select>
 						${renderDateRange("birth")}
-						<span class="pie__date-preview" data-preview="birth"></span>
 					</div>
 				</div>
 				<div class="pie__row pie__row--location">
@@ -515,9 +489,7 @@
 				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date of baptism</span>
 					<div class="pie__field pie__field--date">
-						<select data-date="baptism.precision"></select>
 						${renderDateRange("baptism")}
-						<span class="pie__date-preview" data-preview="baptism"></span>
 					</div>
 				</div>
 				<div class="pie__row pie__row--location">
@@ -531,9 +503,7 @@
 				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date of death</span>
 					<div class="pie__field pie__field--date">
-						<select data-date="death.precision"></select>
 						${renderDateRange("death")}
-						<span class="pie__date-preview" data-preview="death"></span>
 					</div>
 				</div>
 				<div class="pie__row pie__row--location">
@@ -558,9 +528,7 @@
 				<div class="pie__row pie__row--date">
 					<span class="pie__label">Date</span>
 					<div class="pie__field pie__field--date">
-						<select data-date="burial.precision"></select>
 						${renderDateRange("burial")}
-						<span class="pie__date-preview" data-preview="burial"></span>
 					</div>
 				</div>
 				<div class="pie__row pie__row--location">
@@ -628,17 +596,21 @@
 			this.__formReady = false;
 			this.__locationFields = new Map();
 			this.__savedSnapshot = "";
+			this.__history = [];
+			this.__historyIndex = -1;
+			this.__historyRestoring = false;
+			this.__historyDebounceTimer = 0;
 			this.__establishingBaseline = false;
 			this.__gedcomExists = false;
 			this.__pendingPhotoFile = null;
 			this.__pendingPhotoPreviewUrl = "";
 
 			this.innerHTML = TEMPLATE;
+			this.#configureFieldComponents();
 			this.__photoModalEl = this.querySelector(".pie__media-modal");
 			this.__photoModalHome = this.querySelector(".pie");
 			this.__photoModalRestoreParent = null;
 			this.__photoFileInputHome = null;
-			this.#populateSelects();
 			this.#bind();
 			this.#syncStatusSections();
 			void loadOccupationsList();
@@ -686,6 +658,56 @@
 				status: this.querySelector(".pie__status"),
 				save: this.querySelector(".pie__save"),
 			};
+		}
+
+		#configureFieldComponents() {
+			this.querySelectorAll("date-field-editor").forEach((field) => {
+				field.previewFormatter = buildInfoboxDatePreview;
+			});
+			this.querySelectorAll("location-field-editor[data-location-path]").forEach((field) => {
+				field.detailFields = LOCATION_DETAIL_FIELDS;
+				field.searchProvider = searchLocationMatches;
+				field.formatSummary = formatLocationSummary;
+				field.normalizeValue = normalizeLocationData;
+				field.ensureDetails = ensureLocationDetailsFromSummary;
+				field.hasDetails = hasLocationDetails;
+				field.emptyValueFactory = emptyLocationData;
+			});
+		}
+
+		#dateField(group) {
+			return this.querySelector(`date-field-editor[data-date-group="${group}"]`);
+		}
+
+		#setDateFieldValue(group) {
+			const field = this.#dateField(group);
+			if (!field) return;
+			const precision = String(getPathValue(this.__data, `${group}.precision`) || "exact").trim() || "exact";
+			const raw = String(getPathValue(this.__data, `${group}.date`) || "").trim();
+			const parts = precision === "between" ? raw.split("|") : [raw, ""];
+			field.setValue({
+				precision,
+				date: storedToDateInputValue(parts[0] ? parts[0].trim() : "") || "",
+				dateTo: storedToDateInputValue(parts[1] ? parts[1].trim() : "") || "",
+				circa: Boolean(getPathValue(this.__data, `${group}.circa`)),
+				circaTo: precision === "between"
+					? Boolean(getPathValue(this.__data, `${group}.circaTo`) || getPathValue(this.__data, `${group}.circa`))
+					: Boolean(getPathValue(this.__data, `${group}.circaTo`)),
+			});
+		}
+
+		#getDateFieldValue(group) {
+			return this.#dateField(group)?.getValue?.() || {
+				precision: "exact",
+				date: "",
+				dateTo: "",
+				circa: false,
+				circaTo: false,
+			};
+		}
+
+		#locationField(path) {
+			return this.querySelector(`location-field-editor[data-location-path="${path}"]`);
 		}
 
 		#setStatus(message, type = "info") {
@@ -748,7 +770,6 @@
 			this.#bindCauseSuggestionFields();
 			this.#bindOccupationSuggestionFields();
 			this.#bindPhotoFields();
-			this.#bindDatePickers();
 
 			form.addEventListener("submit", (event) => {
 				event.preventDefault();
@@ -782,6 +803,7 @@
 				if (this.__establishingBaseline) {
 					return;
 				}
+				this.#scheduleHistoryCapture();
 				this.#notifyDirtyState();
 			};
 			form.addEventListener("input", notifyDirty, true);
@@ -817,9 +839,66 @@
 				this.__data = this.#collect();
 			}
 			this.__establishingBaseline = false;
+			this.#replaceHistoryWithCurrentState();
 			if (!quiet) {
 				this.#notifyDirtyState();
 			}
+		}
+
+		#replaceHistoryWithCurrentState() {
+			this.__history = [this.__savedSnapshot || this.#snapshotFormState()];
+			this.__historyIndex = this.__history.length - 1;
+		}
+
+		#scheduleHistoryCapture() {
+			if (this.__historyRestoring || this.__establishingBaseline) {
+				return;
+			}
+			window.clearTimeout(this.__historyDebounceTimer);
+			this.__historyDebounceTimer = window.setTimeout(() => this.#pushHistorySnapshot(), 120);
+		}
+
+		#pushHistorySnapshot() {
+			if (this.__historyRestoring || this.__establishingBaseline) {
+				return;
+			}
+			const snapshot = this.#snapshotFormState();
+			if (!snapshot) {
+				return;
+			}
+			if (this.__historyIndex >= 0 && this.__history[this.__historyIndex] === snapshot) {
+				return;
+			}
+			this.__history = this.__history.slice(0, this.__historyIndex + 1);
+			this.__history.push(snapshot);
+			this.__historyIndex = this.__history.length - 1;
+		}
+
+		#applyHistorySnapshot(snapshot) {
+			if (!snapshot) return;
+			this.__historyRestoring = true;
+			try {
+				this.__data = normalizeData(JSON.parse(snapshot));
+				this.#fillForm();
+				this.#syncPageTitle();
+			} catch (error) {
+				// ignore malformed history entries
+			} finally {
+				this.__historyRestoring = false;
+			}
+			this.#notifyDirtyState();
+		}
+
+		undo() {
+			if (this.__historyIndex <= 0) return;
+			this.__historyIndex -= 1;
+			this.#applyHistorySnapshot(this.__history[this.__historyIndex]);
+		}
+
+		redo() {
+			if (this.__historyIndex >= this.__history.length - 1) return;
+			this.__historyIndex += 1;
+			this.#applyHistorySnapshot(this.__history[this.__historyIndex]);
 		}
 
 		#isDirty() {
@@ -919,7 +998,11 @@
 			}
 			record = record || window.PeopleDB.emptyRecord(this.__personId);
 
-			const updated = window.PeopleDB.applyInfoboxToRecord(record, collected);
+			let updated = window.PeopleDB.applyInfoboxToRecord(record, collected);
+			const personalData = document.querySelector("profile-personal-editor")?.getPersonalData?.();
+			if (personalData) {
+				updated = window.PeopleDB.applyPersonalToRecord(updated, personalData);
+			}
 			this.__record = updated;
 
 			return [
@@ -966,6 +1049,7 @@
 			requestAnimationFrame(() => {
 				requestAnimationFrame(() => {
 					this.#setSavedBaseline({ quiet: true });
+					document.querySelector("profile-editor")?.refreshDirtyState?.();
 					this.#notifyDirtyState();
 					this.#setStatus("");
 				});
@@ -1005,11 +1089,8 @@
 				}
 			});
 
-			this.querySelectorAll("[data-date]").forEach((input) => {
-				const value = getPathValue(data, input.dataset.date);
-				if (input.type === "checkbox") input.checked = Boolean(value);
-				else if (input.type === "date") input.value = storedToDateInputValue(value);
-				else input.value = value ?? "";
+			["birth", "baptism", "death", "burial"].forEach((group) => {
+				this.#setDateFieldValue(group);
 			});
 
 			this.#fillLocationFields();
@@ -1020,30 +1101,6 @@
 			this.#syncStatusSections();
 			this.#syncPhotoState();
 
-			// If any group uses the 'between' precision, populate the secondary
-			// date input (dateTo) from the stored value which may be encoded as
-			// "start|end". Also ensure circa flags for the second input reflect
-			// existing stored circa where appropriate.
-			["birth", "baptism", "death", "burial"].forEach((group) => {
-				const precision = getPathValue(data, `${group}.precision`) || "exact";
-				if (precision === "between") {
-					const raw = String(getPathValue(data, `${group}.date`) || "").trim();
-					const parts = raw.includes("|") ? raw.split("|") : [raw, ""];
-					const from = parts[0] ? parts[0].trim() : "";
-					const to = parts[1] ? parts[1].trim() : "";
-					const fromInput = this.querySelector(`[data-date="${group}.date"]`);
-					const toInput = this.querySelector(`[data-date="${group}.dateTo"]`);
-					if (fromInput) fromInput.value = storedToDateInputValue(from);
-					if (toInput) toInput.value = storedToDateInputValue(to);
-					// Mirror existing single circa flag into the secondary circa checkbox
-					const circa = Boolean(getPathValue(data, `${group}.circa`));
-					const toCirca = this.querySelector(`[data-date="${group}.circaTo"]`);
-					if (toCirca) toCirca.checked = circa;
-				}
-			});
-
-			this.#updateDateVisibility();
-			this.#updatePreviews();
 			this.__formReady = true;
 		}
 
@@ -1100,85 +1157,12 @@
 
 		#bindLocationFields() {
 			this.__locationFields = new Map();
-			this.querySelectorAll("[data-location]").forEach((root) => {
-				const path = String(root.getAttribute("data-location") || "").trim();
+			this.querySelectorAll("location-field-editor[data-location-path]").forEach((field) => {
+				const path = String(field.getAttribute("data-location-path") || "").trim();
 				if (!path) return;
-
-				const state = {
-					path,
-					root,
-					searchInput: root.querySelector(`[data-location-search="${path}"]`),
-					dropdown: root.querySelector(".pie__location-results"),
-					details: root.querySelector(".pie__location-details"),
-					toggle: root.querySelector(`[data-location-toggle="${path}"]`),
-					matches: [],
-					activeIndex: -1,
-					debounceTimer: 0,
-					abortController: null,
-				};
-				this.__locationFields.set(path, state);
-				this.#setLocationDetailsExpanded(path, false);
-
-				state.searchInput?.addEventListener("input", () => {
-					this.#scheduleLocationSearch(path);
-				});
-
-				state.searchInput?.addEventListener("focus", () => {
-					if (state.searchInput.value.trim()) {
-						this.#scheduleLocationSearch(path);
-					}
-				});
-
-				state.searchInput?.addEventListener("blur", () => {
-					window.setTimeout(() => {
-						this.#closeLocationDropdown(path);
-						this.#syncLocationSearchFromDetails(path);
-					}, 120);
-				});
-
-				state.searchInput?.addEventListener("keydown", (event) => {
-					this.#handleLocationKeydown(path, event);
-				});
-
-				state.dropdown?.addEventListener("mousedown", (event) => {
-					event.preventDefault();
-				});
-
-				state.dropdown?.addEventListener("click", (event) => {
-					const option = event.target.closest("[data-location-result-index]");
-					if (!option) return;
-					const index = Number(option.dataset.locationResultIndex);
-					const match = state.matches[index];
-					if (!match) return;
-					this.#selectLocationMatch(path, match);
-				});
-
-				root.querySelectorAll("[data-location-field]").forEach((input) => {
-					input.addEventListener("input", () => {
-						this.#setLocationDetailsExpanded(path, true);
-						this.#syncLocationSearchFromDetails(path);
-					});
-				});
-
-				state.toggle?.addEventListener("click", () => {
-					const nextExpanded = state.details ? state.details.hidden : false;
-					this.#setLocationDetailsExpanded(path, nextExpanded);
-					if (nextExpanded) {
-						state.details?.querySelector("input")?.focus();
-					}
-				});
+				this.__locationFields.set(path, { field });
+				field.setExpanded(false);
 			});
-
-			if (!this.__locationDocumentClickHandler) {
-				this.__locationDocumentClickHandler = (event) => {
-					this.__locationFields?.forEach((state) => {
-						if (!state.root.contains(event.target)) {
-							this.#closeLocationDropdown(state.path);
-						}
-					});
-				};
-				document.addEventListener("click", this.__locationDocumentClickHandler);
-			}
 		}
 
 		#fillLocationFields() {
@@ -1190,39 +1174,14 @@
 		}
 
 		#applyLocationValue(path, value, { expanded = false } = {}) {
-			const state = this.__locationFields?.get(path);
-			if (!state) return;
+			const field = this.#locationField(path);
+			if (!field) return;
 
-			const location = ensureLocationDetailsFromSummary(value);
-			if (state.searchInput) {
-				state.searchInput.value = formatLocationSummary(location, "");
-			}
-
-			state.root.querySelectorAll("[data-location-field]").forEach((input) => {
-				const fullPath = String(input.dataset.locationField || "");
-				const key = fullPath.startsWith(`${path}.`) ? fullPath.slice(path.length + 1) : fullPath;
-				input.value = location[key] ?? "";
-			});
-
-			this.#setLocationDetailsExpanded(path, expanded);
-			this.#closeLocationDropdown(path);
+			field.setValue(value, { expanded });
 		}
 
 		#collectLocationValue(path) {
-			const state = this.__locationFields?.get(path);
-			const location = emptyLocationData();
-			if (!state) return location;
-
-			state.root.querySelectorAll("[data-location-field]").forEach((input) => {
-				const fullPath = String(input.dataset.locationField || "");
-				const key = fullPath.startsWith(`${path}.`) ? fullPath.slice(path.length + 1) : fullPath;
-				if (Object.prototype.hasOwnProperty.call(location, key)) {
-					location[key] = input.value.trim();
-				}
-			});
-
-			location.label = formatLocationSummary(location, "");
-			return normalizeLocationData(location, location.label);
+			return this.#locationField(path)?.getValue?.() || emptyLocationData();
 		}
 
 		#collectLocationFields(data) {
@@ -1237,34 +1196,15 @@
 		}
 
 		#syncLocationSearchFromDetails(path) {
-			const state = this.__locationFields?.get(path);
-			if (!state?.searchInput) return;
-
-			const location = this.#collectLocationValue(path);
-			state.searchInput.value = formatLocationSummary(location, "");
+			this.#locationField(path)?.syncSearchFromValue?.();
 		}
 
 		#setLocationDetailsExpanded(path, expanded) {
-			const state = this.__locationFields?.get(path);
-			if (!state) return;
-
-			if (state.details) {
-				state.details.hidden = !expanded;
-			}
-			state.toggle?.setAttribute("aria-expanded", expanded ? "true" : "false");
-			const icon = state.toggle?.querySelector(".pie__location-toggle-icon");
-			if (icon) {
-				icon.textContent = expanded ? "▴" : "▾";
-			}
+			this.#locationField(path)?.setExpanded?.(expanded);
 		}
 
 		#closeLocationDropdown(path) {
-			const state = this.__locationFields?.get(path);
-			if (!state?.dropdown) return;
-
-			state.dropdown.hidden = true;
-			state.activeIndex = -1;
-			state.searchInput?.setAttribute("aria-expanded", "false");
+			this.#locationField(path)?.closeDropdown?.();
 		}
 
 		/* ------------------------------------------------------------------ */
@@ -1795,25 +1735,29 @@
 		}
 
 		#quickDateValue(group) {
-			const entry = getPathValue(this.#collect(), group) || {};
-			let raw = String(entry.date || "").trim();
-			if (entry.precision === "between" && raw.includes("|")) {
-				raw = raw.split("|")[0].trim();
-			}
-			return storedToDateInputValue(raw) || "";
+			return storedToDateInputValue(this.#getDateFieldValue(group).date) || "";
 		}
 
 		#applyQuickDate(group, rawValue) {
-			const dateInput = this.querySelector(`[data-date="${group}.date"]`);
-			if (!dateInput) {
+			const field = this.#dateField(group);
+			if (!field) {
 				return;
 			}
 
 			const trimmed = String(rawValue || "").trim();
 			const stored = trimmed ? (normalizeStoredDate(trimmed) || trimmed) : "";
-			dateInput.value = trimmed ? (storedToDateInputValue(stored) || trimmed) : "";
-			dateInput.dispatchEvent(new Event("input", { bubbles: true }));
-			this.#updatePreviews();
+			const current = field.getValue();
+			field.setValue({
+				...current,
+				date: trimmed ? (storedToDateInputValue(stored) || trimmed) : "",
+			});
+			field.dispatchEvent(new CustomEvent("input", {
+				bubbles: true,
+				detail: {
+					field: "date",
+					value: field.getValue(),
+				},
+			}));
 		}
 
 		#setFieldValue(field, value) {
@@ -2313,29 +2257,20 @@
 
 			data.photo.alt = String(this.__data?.photo?.alt || "");
 
-			this.querySelectorAll("[data-date]").forEach((input) => {
-				setPathValue(data, input.dataset.date, input.type === "checkbox" ? input.checked : input.value.trim());
-			});
-
-			// If a group used the 'between' precision, assemble the stored value
-			// as "start|end" and normalise any circa flags. Remove temporary
-			// helper keys (dateTo / circaTo) afterwards.
 			["birth", "baptism", "death", "burial"].forEach((group) => {
-				const precision = getPathValue(data, `${group}.precision`) || "exact";
+				const value = this.#getDateFieldValue(group);
+				const precision = String(value.precision || "exact").trim() || "exact";
 				const groupObj = getPathValue(data, group) || {};
-				if (precision === "between") {
-					const from = getPathValue(data, `${group}.date`) || "";
-					const to = getPathValue(data, `${group}.dateTo`) || "";
-					setPathValue(data, `${group}.date`, `${from}|${to}`);
-					const circaFrom = getPathValue(data, `${group}.circa`) || false;
-					const circaTo = getPathValue(data, `${group}.circaTo`) || false;
-					setPathValue(data, `${group}.circa`, Boolean(circaFrom || circaTo));
-					if (groupObj && Object.prototype.hasOwnProperty.call(groupObj, 'dateTo')) delete groupObj.dateTo;
-					if (groupObj && Object.prototype.hasOwnProperty.call(groupObj, 'circaTo')) delete groupObj.circaTo;
-				} else {
-					if (groupObj && Object.prototype.hasOwnProperty.call(groupObj, 'dateTo')) delete groupObj.dateTo;
-					if (groupObj && Object.prototype.hasOwnProperty.call(groupObj, 'circaTo')) delete groupObj.circaTo;
-				}
+				const from = normalizeStoredDate(value.date) || String(value.date || "").trim();
+				const to = normalizeStoredDate(value.dateTo) || String(value.dateTo || "").trim();
+				const stored = precision === "between"
+					? (from && to ? `${from}|${to}` : (from || to || ""))
+					: from;
+				setPathValue(data, `${group}.precision`, precision);
+				setPathValue(data, `${group}.date`, stored);
+				setPathValue(data, `${group}.circa`, precision === "between" ? Boolean(value.circa || value.circaTo) : Boolean(value.circa));
+				if (groupObj && Object.prototype.hasOwnProperty.call(groupObj, "dateTo")) delete groupObj.dateTo;
+				if (groupObj && Object.prototype.hasOwnProperty.call(groupObj, "circaTo")) delete groupObj.circaTo;
 			});
 
 			data.status = this.#getRadio("status") || "unknown";

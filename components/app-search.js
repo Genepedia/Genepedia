@@ -89,6 +89,35 @@
   font-weight: 600;
 }
 
+.app-search__option-content {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.app-search__option-avatar {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--avatar-bg, #dfe3e6);
+    color: var(--avatar-fg, #fff);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+}
+
+.app-search__option-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
 .app-search__option-description {
   display: block;
   margin-top: 0.15rem;
@@ -297,6 +326,22 @@ body.theme-dark .search-page__bar:focus-within {
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+.search-page__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.search-page__chip-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.search-page__chip-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .search-page__results-root {
   min-height: 0;
@@ -518,6 +563,26 @@ body.theme-dark .search-page__result-link {
         return '';
     }
 
+    function defaultProfileImageUrl() {
+        try {
+            if (window.App && typeof window.App.resolveSiteUrl === 'function') {
+                return window.App.resolveSiteUrl('assets/default-profile-photo.svg');
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        try {
+            if (location && location.protocol === 'file:') {
+                return new URL('../../assets/default-profile-photo.svg', location.href).href;
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        return '/assets/default-profile-photo.svg';
+    }
+
     function scorePersonEntry(query, entry) {
         const normalizedQuery = normalizeSearchText(query);
         if (!normalizedQuery) {
@@ -617,21 +682,84 @@ body.theme-dark .search-page__result-link {
             link.className = 'app-search__option-link';
             link.href = match.url;
 
+            const content = document.createElement('span');
+            content.className = 'app-search__option-content';
+
+            const avatar = document.createElement('span');
+            avatar.className = 'app-search__option-avatar';
+            avatar.setAttribute('aria-hidden', 'true');
+            const displayName = getPersonDisplayName(match.entry) || '';
+            // default image placeholder
+            const avatarImg = document.createElement('img');
+            avatarImg.alt = '';
+            avatarImg.loading = 'lazy';
+            avatarImg.src = defaultProfileImageUrl();
+            avatar.append(avatarImg);
+
             const title = document.createElement('span');
             title.className = 'app-search__option-title';
-            title.textContent = getPersonDisplayName(match.entry);
-            link.append(title);
+            title.textContent = displayName;
+
+            content.append(avatar, title);
 
             const lifespan = formatPersonLifespan(match.entry);
             if (lifespan) {
                 const description = document.createElement('span');
                 description.className = 'app-search__option-description';
                 description.textContent = lifespan;
-                link.append(description);
+                content.append(description);
             }
 
+            link.append(content);
             item.append(link);
             dropdown.append(item);
+
+            // Fill avatar asynchronously when person card is available.
+            (async () => {
+                try {
+                    const pid = String(match.entry?.id || '').trim();
+                    let card = null;
+                    if (window.App && typeof window.App.loadPersonCard === 'function') {
+                        card = await window.App.loadPersonCard(pid);
+                    } else if (window.PeopleRegistry && typeof window.PeopleRegistry.loadPeopleRegistry === 'function') {
+                        const people = await window.PeopleRegistry.loadPeopleRegistry();
+                        const entry = people.find((p) => String(p?.id) === pid);
+                        if (entry) {
+                            card = { name: getPersonDisplayName(entry), photoUrl: String(entry.photoUrl || '').trim() };
+                        }
+                    }
+
+                    if (card && card.photoUrl) {
+                        const existing = avatar.querySelector('img');
+                        if (existing) existing.src = card.photoUrl;
+                        else {
+                            const img = document.createElement('img');
+                            img.src = card.photoUrl;
+                            img.alt = '';
+                            img.loading = 'lazy';
+                            avatar.textContent = '';
+                            avatar.append(img);
+                        }
+                        if (card.name) {
+                            // ensure title updated if needed
+                            title.textContent = card.name;
+                        }
+                    } else {
+                        // keep default image; if we have a resolved name, keep that
+                        const existing = avatar.querySelector('img');
+                        if (!existing) {
+                            const img = document.createElement('img');
+                            img.alt = '';
+                            img.loading = 'lazy';
+                            img.src = defaultProfileImageUrl();
+                            avatar.textContent = '';
+                            avatar.append(img);
+                        }
+                    }
+                } catch (e) {
+                    // ignore avatar failures
+                }
+            })();
         });
 
         const footer = document.createElement('li');
@@ -862,7 +990,44 @@ body.theme-dark .search-page__result-link {
                             chip.href = match.url || resolvePersonProfileUrl(match.entry.id);
                             const name = getPersonDisplayName(match.entry);
                             if (name) {
-                                chip.textContent = name;
+                                // replace text with a small chip that includes avatar
+                                chip.textContent = '';
+                                const avatarWrap = document.createElement('span');
+                                avatarWrap.className = 'search-page__chip-avatar';
+                                const avatarImg = document.createElement('img');
+                                avatarImg.alt = '';
+                                avatarImg.loading = 'lazy';
+                                avatarWrap.append(avatarImg);
+
+                                const label = document.createElement('span');
+                                label.textContent = name;
+
+                                chip.append(avatarWrap, label);
+
+                                // async populate avatar
+                                (async () => {
+                                    try {
+                                        const pid = String(match.entry?.id || '').trim();
+                                        let card = null;
+                                        if (window.App && typeof window.App.loadPersonCard === 'function') {
+                                            card = await window.App.loadPersonCard(pid);
+                                        } else if (window.PeopleRegistry && typeof window.PeopleRegistry.loadPeopleRegistry === 'function') {
+                                            const people = await window.PeopleRegistry.loadPeopleRegistry();
+                                            const entry = people.find((p) => String(p?.id) === pid);
+                                            if (entry) {
+                                                card = { name: getPersonDisplayName(entry), photoUrl: String(entry.photoUrl || '').trim() };
+                                            }
+                                        }
+
+                                        if (card && card.photoUrl) {
+                                            avatarImg.src = card.photoUrl;
+                                        } else {
+                                            avatarWrap.textContent = (name || '').trim().slice(0, 1).toUpperCase();
+                                        }
+                                    } catch (e) {
+                                        // ignore
+                                    }
+                                })();
                             }
                         }
                     } catch (err) {
@@ -948,18 +1113,62 @@ body.theme-dark .search-page__result-link {
             link.className = 'search-page__result-link';
             link.href = match.url;
 
+
+            // result content with avatar
+            const resultContent = document.createElement('div');
+            resultContent.className = 'app-search__option-content';
+
+            const resultAvatar = document.createElement('span');
+            resultAvatar.className = 'app-search__option-avatar';
+            resultAvatar.setAttribute('aria-hidden', 'true');
+            const displayName = getPersonDisplayName(match.entry) || '';
+            resultAvatar.textContent = (displayName.trim().slice(0, 1) || '').toUpperCase();
+
             const title = document.createElement('span');
             title.className = 'search-page__result-title';
-            title.textContent = getPersonDisplayName(match.entry);
-            link.append(title);
+            title.textContent = displayName;
+
+            resultContent.append(resultAvatar, title);
 
             const lifespan = formatPersonLifespan(match.entry);
             if (lifespan) {
                 const description = document.createElement('span');
                 description.className = 'search-page__result-description';
                 description.textContent = lifespan;
-                link.append(description);
+                resultContent.append(description);
             }
+
+            link.append(resultContent);
+
+            // populate avatar async
+            (async () => {
+                try {
+                    const pid = String(match.entry?.id || '').trim();
+                    let card = null;
+                    if (window.App && typeof window.App.loadPersonCard === 'function') {
+                        card = await window.App.loadPersonCard(pid);
+                    } else if (window.PeopleRegistry && typeof window.PeopleRegistry.loadPeopleRegistry === 'function') {
+                        const people = await window.PeopleRegistry.loadPeopleRegistry();
+                        const entry = people.find((p) => String(p?.id) === pid);
+                        if (entry) {
+                            card = { name: getPersonDisplayName(entry), photoUrl: String(entry.photoUrl || '').trim() };
+                        }
+                    }
+
+                    if (card && card.photoUrl) {
+                        const img = document.createElement('img');
+                        img.src = card.photoUrl;
+                        img.alt = '';
+                        img.loading = 'lazy';
+                        resultAvatar.textContent = '';
+                        resultAvatar.append(img);
+                    } else if (card && card.name) {
+                        resultAvatar.textContent = (String(card.name || '').trim().slice(0, 1) || '').toUpperCase();
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            })();
 
             item.append(link);
             list.append(item);

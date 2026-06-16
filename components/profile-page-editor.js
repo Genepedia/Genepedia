@@ -2814,7 +2814,7 @@
 			this.__headerComment = parsed.headerComment;
 			this.__infoboxMarkup = parsed.infoboxMarkup;
 			this.__infoboxIsInclude = parsed.infoboxIsInclude;
-			this.__infoboxCanonical = parsed.infoboxCanonical;
+			this.__infoboxCanonical = parsed.infoboxCanonical || !parsed.infoboxMarkup;
 			this.__hadInfoboxNode = Boolean(parsed.infoboxMarkup);
 			this.__displayName = parsed.title;
 			this.__savedDisplayName = parsed.title;
@@ -2841,6 +2841,8 @@
 			await this.#renderInfobox();
 			this.#updateToolbarState();
 			this.#setStatus("");
+			document.querySelector("profile-editor")?.refreshDirtyState?.();
+			this.dispatchEvent(new CustomEvent("profile-page-dirty-change", { bubbles: true }));
 		}
 
 		#resolveImageUrl(src) {
@@ -3250,6 +3252,18 @@
 			const clean = String(name || "").trim();
 			if (!clean) return;
 			this.__displayName = clean;
+		}
+
+		undo() {
+			const toolbar = this.#els().toolbar;
+			const button = toolbar?.querySelector?.('[data-command="undo"]');
+			button?.click();
+		}
+
+		redo() {
+			const toolbar = this.#els().toolbar;
+			const button = toolbar?.querySelector?.('[data-command="redo"]');
+			button?.click();
 		}
 
 		#getProseHtml() {

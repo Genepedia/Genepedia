@@ -2,12 +2,15 @@
  * <profile-editor> — the people/edit.html shell.
  *
  * Replaces the generic block-based <page-editor> for profiles with a focused,
- * two-tab experience:
+ * four-tab experience:
  *   • Identity — the structured <profile-infobox-editor> for the identity table
  *     (saved to profile-table.html + family-tree.ged).
- *   • Page — a WYSIWYG <profile-page-editor> that edits the prose of
+ *   • Personal — a structured <profile-personal-editor> for personal
+ *     attributes stored on the canonical person record.
+ *   • Profile — a WYSIWYG <profile-page-editor> that edits the prose of
  *     people/<id>/data/profile.html with the identity infobox floated in place,
  *     exactly as it looks live, so text wraps around it while you type.
+ *   • Relationships — a structured editor for unions and family links.
  *
  * It owns the toolbar (breadcrumb, tabs, Save) and the publish flow: one Save
  * collects the profile fragment plus any extra files (the infobox). Existing
@@ -24,6 +27,7 @@
 	const SELF_PROFILE_MODE = params.get("self") === "1";
 	const SELF_RETURN_TARGET = (params.get("return") || "profile").trim().toLowerCase();
 	const SELF_PROFILE_MATCH_LIMIT = 8;
+	const EDIT_TAB_NAMES = new Set(["profile", "infobox", "personal", "education", "career", "relationships", "privacy"]);
 
 	function resolveSiteUrl(path) {
 		const clean = String(path || "").replace(/^\/+/, "");
@@ -31,14 +35,29 @@
 		return new URL(`../${clean}`, window.location.href).href;
 	}
 
-	// Database paths for a person's ownership record (data/people/v1/ownership/...).
+	// Database paths for a person's ownership record (data/Genepedia-Database/people/ownership/...).
 	function peopleDbBucket(personId) {
 		const n = Number(String(personId).replace(/[^0-9]/g, "")) || 0;
 		return Math.floor((Math.max(1, n) - 1) / 1000);
 	}
 
+	function peopleDbPath(path) {
+		const clean = String(path || "").replace(/^\/+/, "");
+		if (window.App?.resolvePeopleDbPath) return window.App.resolvePeopleDbPath(clean);
+		if (!clean) return "data/Genepedia-Database/people";
+		if (clean.startsWith("data/Genepedia-Database/people/")) return clean;
+		if (clean === "data/Genepedia-Database") return "data/Genepedia-Database/people";
+		if (clean.startsWith("data/Genepedia-Database/")) {
+			return `data/Genepedia-Database/people/${clean.slice("data/Genepedia-Database/".length)}`;
+		}
+		if (clean.startsWith("data/people/")) {
+			return `data/Genepedia-Database/people/${clean.slice("data/people/".length)}`;
+		}
+		return `data/Genepedia-Database/people/${clean}`;
+	}
+
 	function peopleDbOwnershipPath(personId) {
-		return `data/people/v1/ownership/${peopleDbBucket(personId)}/${personId}.json`;
+		return peopleDbPath(`ownership/${peopleDbBucket(personId)}/${personId}.json`);
 	}
 
 	function resolveGitHubApiUrl(fileName) {
@@ -167,13 +186,78 @@
 		};
 	}
 
-	function buildProfileConfig(personId, data, user, { claimSelf = true } = {}) {
+	function identityLogin(identity) {
+		if (typeof identity === "string") {
+			return identity.trim().toLowerCase();
+		}
+
+		if (!identity || typeof identity !== "object") {
+			return "";
+		}
+
+		return String(identity.githubLogin || identity.github_login || identity.login || "").trim().toLowerCase();
+	}
+
+	function profileManagerLogins(config = {}) {
+		const logins = new Set();
+		const add = (identity) => {
+			const login = identityLogin(identity);
+			if (login) logins.add(login);
+		};
+
+		const ownerLogin = identityLogin(config?.owner);
+		if (ownerLogin) {
+			logins.add(ownerLogin);
+		}
+
+		(Array.isArray(config?.maintainers) ? config.maintainers : []).forEach(add);
+
+		if (!ownerLogin) {
+			add(config?.creator);
+		}
+
+		return logins;
+	}
+
+	function canManageProfileConfig(config, user) {
+		const login = String(user?.login || user?.githubLogin || "").trim().toLowerCase();
+		return Boolean(login) && profileManagerLogins(config).has(login);
+	}
+
+	function isDeceasedProfileData(data = {}) {
+		return String(data.status || "").trim().toLowerCase() === "deceased"
+			|| Boolean(compactText(data.death?.date));
+	}
+
+	function normalizePrivacyData(value, { deceased = false } = {}) {
+		if (deceased) {
+			return {
+				visibility: "public",
+				maintainersOnly: false,
+			};
+		}
+
+		const source = value && typeof value === "object" ? value : {};
+		const rawVisibility = String(source.visibility || source.mode || "public").trim().toLowerCase();
+		const visibility = rawVisibility === "private" ? "private" : "public";
+		return {
+			visibility,
+			maintainersOnly: visibility === "private",
+		};
+	}
+
+	function createProfileConfig(personId, data, user, { claimSelf = true, privacy = null } = {}) {
 		const identity = claimIdentity(personId, user, displayNameFromProfileData(data));
-		return `${JSON.stringify({
+		return {
 			creator: identity,
 			owner: claimSelf ? identity : null,
 			maintainers: [identity],
-		}, null, 2)}\n`;
+			privacy: normalizePrivacyData(privacy, { deceased: isDeceasedProfileData(data) }),
+		};
+	}
+
+	function buildProfileConfig(personId, data, user, { claimSelf = true, privacy = null } = {}) {
+		return `${JSON.stringify(createProfileConfig(personId, data, user, { claimSelf, privacy }), null, 2)}\n`;
 	}
 
 	function buildProfileShell(personId) {
@@ -262,12 +346,22 @@
 				<ol class="profile-edit__breadcrumb-list">
 					<li><a class="profile-edit__breadcrumb-home" href="#">People</a></li>
 					<li class="profile-edit__breadcrumb-sep" aria-hidden="true">›</li>
-					<li><a class="profile-edit__breadcrumb-current" href="#">Profile</a></li>
+					<li>
+						<a class="profile-edit__breadcrumb-current" href="#">
+							<span class="profile-edit__breadcrumb-avatar" aria-hidden="true"></span>
+							<span class="profile-edit__breadcrumb-name">Profile</span>
+						</a>
+					</li>
 				</ol>
 			</nav>
 			<div class="profile-edit__tabs" role="tablist" aria-label="Profile editor sections">
-				<button type="button" class="profile-edit__tab is-active" data-edit-tab="profile" role="tab" aria-selected="true">Page</button>
+				<button type="button" class="profile-edit__tab is-active" data-edit-tab="profile" role="tab" aria-selected="true">Profile</button>
 				<button type="button" class="profile-edit__tab" data-edit-tab="infobox" role="tab" aria-selected="false">Identity</button>
+				<button type="button" class="profile-edit__tab" data-edit-tab="personal" role="tab" aria-selected="false">Personal</button>
+				<button type="button" class="profile-edit__tab" data-edit-tab="education" role="tab" aria-selected="false">Education</button>
+				<button type="button" class="profile-edit__tab" data-edit-tab="career" role="tab" aria-selected="false">Career</button>
+				<button type="button" class="profile-edit__tab" data-edit-tab="relationships" role="tab" aria-selected="false">Relationships</button>
+				<button type="button" class="profile-edit__tab" data-edit-tab="privacy" role="tab" aria-selected="false" hidden>Privacy</button>
 			</div>
 			<div class="profile-edit__actions">
 				<span class="profile-edit__status" role="status" aria-live="polite" hidden></span>
@@ -279,7 +373,128 @@
 		</div>
 		<div class="profile-edit__panels">
 			<div class="profile-edit__panel" data-edit-panel="profile"></div>
-			<div class="profile-edit__panel" data-edit-panel="infobox" hidden></div>
+			<div class="profile-edit__panel" data-edit-panel="infobox" hidden>
+				<div class="ppe__toolbar prel__mini-toolbar" role="toolbar" aria-label="Identity tools">
+					<button type="button" class="ppe__tool" data-mini-action="undo" data-mini-target="infobox" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
+					<button type="button" class="ppe__tool" data-mini-action="redo" data-mini-target="infobox" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+				</div>
+			</div>
+			<div class="profile-edit__panel" data-edit-panel="personal" hidden>
+				<div class="ppe__toolbar prel__mini-toolbar" role="toolbar" aria-label="Personal tools">
+					<button type="button" class="ppe__tool" data-mini-action="undo" data-mini-target="personal" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
+					<button type="button" class="ppe__tool" data-mini-action="redo" data-mini-target="personal" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+				</div>
+			</div>
+			<div class="profile-edit__panel" data-edit-panel="education" hidden>
+				<div class="ppe__toolbar prel__mini-toolbar" role="toolbar" aria-label="Education tools">
+					<button type="button" class="ppe__tool" data-mini-action="undo" data-mini-target="education" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
+					<button type="button" class="ppe__tool" data-mini-action="redo" data-mini-target="education" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+						<span class="ppe__toolbar-sep" aria-hidden="true"></span>
+						<div class="ppe__menu">
+							<button type="button" class="ppe__tool ppe__menu-toggle" data-mini-menu-toggle="education-add" aria-haspopup="menu" aria-expanded="false" title="Add education">
+								<i class="bi bi-mortarboard" aria-hidden="true"></i>
+								<span class="ppe__menu-toggle-label">Add education</span>
+								<i class="bi bi-chevron-down ppe__menu-caret" aria-hidden="true"></i>
+							</button>
+							<div class="ppe__menu-panel ppe__add-block-panel prel__add-education-panel" data-mini-menu="education-add" role="menu" hidden>
+								<section class="page-editor__inserter-section">
+									<h3 class="page-editor__inserter-section-title">Education type</h3>
+									<div class="page-editor__inserter-list page-editor__inserter-list--compact">
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="college"><span class="page-editor__inserter-item-label">College/University</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="elementary"><span class="page-editor__inserter-item-label">Elementary School</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="graduate"><span class="page-editor__inserter-item-label">Graduate Education</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="highschool"><span class="page-editor__inserter-item-label">High School</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="junior_high"><span class="page-editor__inserter-item-label">Junior High</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="middle_school"><span class="page-editor__inserter-item-label">Middle School</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="preschool"><span class="page-editor__inserter-item-label">Preschool</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="primary"><span class="page-editor__inserter-item-label">Primary School</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="secondary"><span class="page-editor__inserter-item-label">Secondary School</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="vocational"><span class="page-editor__inserter-item-label">Vocational School</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="other"><span class="page-editor__inserter-item-label">Other</span></button>
+									</div>
+								</section>
+							</div>
+						</div>
+				</div>
+			</div>
+			<div class="profile-edit__panel" data-edit-panel="career" hidden>
+				<div class="ppe__toolbar prel__mini-toolbar" role="toolbar" aria-label="Career tools">
+					<button type="button" class="ppe__tool" data-mini-action="undo" data-mini-target="career" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
+					<button type="button" class="ppe__tool" data-mini-action="redo" data-mini-target="career" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+						<span class="ppe__toolbar-sep" aria-hidden="true"></span>
+						<div class="ppe__menu">
+							<button type="button" class="ppe__tool ppe__menu-toggle" data-mini-menu-toggle="career-add" aria-haspopup="menu" aria-expanded="false" title="Add career entry">
+								<i class="bi bi-buildings" aria-hidden="true"></i>
+								<span class="ppe__menu-toggle-label">Add career</span>
+								<i class="bi bi-chevron-down ppe__menu-caret" aria-hidden="true"></i>
+							</button>
+							<div class="ppe__menu-panel ppe__add-block-panel prel__add-education-panel" data-mini-menu="career-add" role="menu" hidden>
+								<section class="page-editor__inserter-section">
+									<h3 class="page-editor__inserter-section-title">Career type</h3>
+									<div class="page-editor__inserter-list page-editor__inserter-list--compact">
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="company"><span class="page-editor__inserter-item-label">Company</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="government"><span class="page-editor__inserter-item-label">Government</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="military"><span class="page-editor__inserter-item-label">Military</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="nonprofit"><span class="page-editor__inserter-item-label">Non-profit</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="self_employed"><span class="page-editor__inserter-item-label">Self-employed</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="internship"><span class="page-editor__inserter-item-label">Internship</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="contract"><span class="page-editor__inserter-item-label">Contract / freelance</span></button>
+										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="other"><span class="page-editor__inserter-item-label">Other</span></button>
+									</div>
+								</section>
+							</div>
+						</div>
+				</div>
+			</div>
+			<div class="profile-edit__panel" data-edit-panel="relationships" hidden>
+				<div class="ppe__toolbar prel__mini-toolbar" role="toolbar" aria-label="Relationship tools">
+					<button type="button" class="ppe__tool" data-mini-action="undo" data-mini-target="relationships" aria-label="Undo (Ctrl+Z)" title="Undo (Ctrl+Z)"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></button>
+					<button type="button" class="ppe__tool" data-mini-action="redo" data-mini-target="relationships" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
+					<span class="ppe__toolbar-sep" aria-hidden="true"></span>
+					<div class="ppe__menu">
+						<button type="button" class="ppe__tool ppe__menu-toggle" data-mini-menu-toggle="relationship-add" aria-haspopup="menu" aria-expanded="false" title="Add relationship">
+							<span class="ppe__menu-toggle-label">Add relationship</span>
+							<i class="bi bi-chevron-down ppe__menu-caret" aria-hidden="true"></i>
+						</button>
+						<div class="ppe__menu-panel ppe__add-block-panel prel__add-relationship-panel" data-mini-menu="relationship-add" role="menu" hidden>
+							<section class="page-editor__inserter-section">
+								<h3 class="page-editor__inserter-section-title">Parent</h3>
+								<div class="page-editor__inserter-grid page-editor__inserter-grid--compact prel__add-relationship-grid">
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-parent" data-mini-target="relationships" data-parent-type="biological"><span class="page-editor__inserter-item-label">Biological</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-parent" data-mini-target="relationships" data-parent-type="adopted"><span class="page-editor__inserter-item-label">Adoptive</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-parent" data-mini-target="relationships" data-parent-type="foster"><span class="page-editor__inserter-item-label">Foster</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-parent" data-mini-target="relationships" data-parent-type="step"><span class="page-editor__inserter-item-label">Step</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-parent" data-mini-target="relationships" data-parent-type="guardian"><span class="page-editor__inserter-item-label">Guardian</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-parent" data-mini-target="relationships" data-parent-type="other"><span class="page-editor__inserter-item-label">Other</span></button>
+								</div>
+							</section>
+							<section class="page-editor__inserter-section">
+								<h3 class="page-editor__inserter-section-title">Partner</h3>
+								<div class="page-editor__inserter-grid page-editor__inserter-grid--compact prel__add-relationship-grid">
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-partner" data-mini-target="relationships" data-partner-kind="spouse"><span class="page-editor__inserter-item-label">Spouse</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-partner" data-mini-target="relationships" data-partner-kind="fiance"><span class="page-editor__inserter-item-label">Fiance</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-partner" data-mini-target="relationships" data-partner-kind="partner"><span class="page-editor__inserter-item-label">Partner</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-partner" data-mini-target="relationships" data-partner-kind="ex-spouse"><span class="page-editor__inserter-item-label">Ex spouse</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-partner" data-mini-target="relationships" data-partner-kind="ex-partner"><span class="page-editor__inserter-item-label">Ex partner</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-partner" data-mini-target="relationships" data-partner-kind="other"><span class="page-editor__inserter-item-label">Other</span></button>
+								</div>
+							</section>
+							<section class="page-editor__inserter-section">
+								<h3 class="page-editor__inserter-section-title">Child</h3>
+								<div class="page-editor__inserter-grid page-editor__inserter-grid--compact prel__add-relationship-grid">
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-child" data-mini-target="relationships" data-child-type="biological"><span class="page-editor__inserter-item-label">Biological</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-child" data-mini-target="relationships" data-child-type="adopted"><span class="page-editor__inserter-item-label">Adoptive</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-child" data-mini-target="relationships" data-child-type="foster"><span class="page-editor__inserter-item-label">Foster</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-child" data-mini-target="relationships" data-child-type="step"><span class="page-editor__inserter-item-label">Step</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-child" data-mini-target="relationships" data-child-type="guardian"><span class="page-editor__inserter-item-label">Guardian</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-child" data-mini-target="relationships" data-child-type="other"><span class="page-editor__inserter-item-label">Other</span></button>
+								</div>
+							</section>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="profile-edit__panel" data-edit-panel="privacy" hidden></div>
 		</div>
 	`;
 
@@ -287,10 +502,23 @@
 		connectedCallback() {
 			if (this.__rendered) return;
 			this.__rendered = true;
-			this.__activeTab = "profile";
+			this.__activeTab = this.#readStoredTab() || "profile";
 			this.__isDraftProfile = SELF_PROFILE_MODE || params.get("new") === "1";
 
 			this.innerHTML = TEMPLATE;
+
+			// Inject breadcrumb avatar styles once.
+			if (!document.getElementById('profile-editor-breadcrumb-styles')) {
+				const style = document.createElement('style');
+				style.id = 'profile-editor-breadcrumb-styles';
+				style.textContent = `
+				.profile-edit__breadcrumb-current { display: inline-flex; align-items: center; gap: 0.5rem; }
+				.profile-edit__breadcrumb-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: var(--avatar-bg, #dfe3e6); color: var(--avatar-fg, #fff); flex: 0 0 28px; }
+				.profile-edit__breadcrumb-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+				.profile-edit__breadcrumb-name { vertical-align: middle; }
+				`;
+				document.head.append(style);
+			}
 			this.classList.toggle("profile-edit--self", SELF_PROFILE_MODE);
 
 			if (!VALID_ID) {
@@ -307,22 +535,48 @@
 			}
 
 			this.#mountChildren();
+			void this.#initPrivacyAccess();
 			void this.#initBreadcrumb();
 			this.#bindTabs();
+			this.#activate(this.__activeTab, { persist: false });
 			this.#bindSave();
 			this.#bindEvents();
 			this.#refreshDirtyState();
+			this.#schedulePostMountDirtySync();
 
 			window.addEventListener("beforeunload", this.#onBeforeUnload);
 		}
 
 		disconnectedCallback() {
 			window.removeEventListener("beforeunload", this.#onBeforeUnload);
+			if (Array.isArray(this.__dirtySyncTimers)) {
+				this.__dirtySyncTimers.forEach((timerId) => window.clearTimeout(timerId));
+				this.__dirtySyncTimers = [];
+			}
+			if (this.__onMiniToolbarOutside) {
+				document.removeEventListener("mousedown", this.__onMiniToolbarOutside);
+				this.__onMiniToolbarOutside = null;
+			}
+		}
+
+		#schedulePostMountDirtySync() {
+			this.__dirtySyncTimers = Array.isArray(this.__dirtySyncTimers) ? this.__dirtySyncTimers : [];
+			this.__dirtySyncTimers.forEach((timerId) => window.clearTimeout(timerId));
+			this.__dirtySyncTimers = [
+				window.setTimeout(() => this.#refreshDirtyState(), 0),
+				window.setTimeout(() => this.#refreshDirtyState(), 250),
+				window.setTimeout(() => this.#refreshDirtyState(), 750),
+			];
 		}
 
 		#mountChildren() {
 			const profilePanel = this.querySelector('[data-edit-panel="profile"]');
 			const infoboxPanel = this.querySelector('[data-edit-panel="infobox"]');
+			const personalPanel = this.querySelector('[data-edit-panel="personal"]');
+			const educationPanel = this.querySelector('[data-edit-panel="education"]');
+			const careerPanel = this.querySelector('[data-edit-panel="career"]');
+			const relationshipsPanel = this.querySelector('[data-edit-panel="relationships"]');
+			const privacyPanel = this.querySelector('[data-edit-panel="privacy"]');
 
 			const pageEditor = document.createElement("profile-page-editor");
 			pageEditor.setAttribute("person", PERSON_ID);
@@ -332,8 +586,146 @@
 			infobox.setAttribute("person", PERSON_ID);
 			infoboxPanel.append(infobox);
 
+			const personal = document.createElement("profile-personal-editor");
+			personal.setAttribute("person", PERSON_ID);
+			personalPanel.append(personal);
+
+			const education = document.createElement("profile-education-editor");
+			education.setAttribute("person", PERSON_ID);
+			educationPanel.append(education);
+
+			const career = document.createElement("profile-career-editor");
+			career.setAttribute("person", PERSON_ID);
+			careerPanel.append(career);
+
+			const relationships = document.createElement("profile-relationships-editor");
+			relationships.setAttribute("person", PERSON_ID);
+			relationshipsPanel.append(relationships);
+
+			const privacy = document.createElement("profile-privacy-editor");
+			privacy.setAttribute("person", PERSON_ID);
+			privacyPanel.append(privacy);
+
 			this.__pageEditor = pageEditor;
 			this.__infobox = infobox;
+			this.__personal = personal;
+			this.__education = education;
+			this.__career = career;
+			this.__relationships = relationships;
+			this.__privacy = privacy;
+			this.#bindMiniToolbars();
+		}
+
+		async #initPrivacyAccess() {
+			const privacyTab = this.querySelector('[data-edit-tab="privacy"]');
+			if (!privacyTab) return;
+
+			if (!PERSON_ID || SELF_PROFILE_MODE || params.get("new") === "1") {
+				privacyTab.hidden = true;
+				if (this.__activeTab === "privacy") {
+					this.#activate("profile");
+				}
+				return;
+			}
+
+			const [user, config] = await Promise.all([
+				this.#getCurrentUser(),
+				this.#loadProfileConfig(PERSON_ID),
+			]);
+
+			const canManagePrivacy = canManageProfileConfig(config || {}, user);
+			privacyTab.hidden = !canManagePrivacy;
+
+			if (!canManagePrivacy && this.__activeTab === "privacy") {
+				this.#activate("profile");
+			}
+		}
+
+		#bindMiniToolbars() {
+			this.querySelectorAll("[data-mini-menu-toggle]").forEach((button) => {
+				button.addEventListener("click", (event) => {
+					event.preventDefault();
+					event.stopPropagation();
+					const menuName = button.dataset.miniMenuToggle;
+					const panel = this.querySelector(`[data-mini-menu="${menuName}"]`);
+					const expanded = button.getAttribute("aria-expanded") === "true";
+					this.#closeMiniMenus();
+					if (!expanded && panel) {
+						panel.hidden = false;
+						button.setAttribute("aria-expanded", "true");
+					}
+				});
+			});
+
+			this.querySelectorAll("[data-mini-action]").forEach((button) => {
+				button.addEventListener("click", (event) => {
+					event.preventDefault();
+					event.stopPropagation();
+					const action = button.dataset.miniAction;
+					const target = button.dataset.miniTarget;
+					const detail = {
+						parentType: button.dataset.parentType || "",
+						partnerKind: button.dataset.partnerKind || "",
+						childType: button.dataset.childType || "",
+						eduType: button.dataset.eduType || "",
+						careerType: button.dataset.careerType || "",
+					};
+					this.#runMiniAction(action, target, detail);
+					if (action !== "undo" && action !== "redo") {
+						this.#closeMiniMenus();
+					}
+				});
+			});
+
+			if (!this.__onMiniToolbarOutside) {
+				this.__onMiniToolbarOutside = (event) => {
+					if (!event.target.closest(".prel__mini-toolbar")) {
+						this.#closeMiniMenus();
+					}
+				};
+				document.addEventListener("mousedown", this.__onMiniToolbarOutside);
+			}
+		}
+
+		#closeMiniMenus() {
+			this.querySelectorAll("[data-mini-menu]").forEach((panel) => {
+				panel.hidden = true;
+			});
+			this.querySelectorAll("[data-mini-menu-toggle]").forEach((button) => {
+				button.setAttribute("aria-expanded", "false");
+			});
+		}
+
+		#runMiniAction(action, target, detail = {}) {
+			const destination = target === "relationships"
+				? this.__relationships
+				: target === "education"
+					? this.__education
+					: target === "career"
+						? this.__career
+						: target === "personal"
+							? this.__personal
+							: this.__infobox;
+			if (!destination) return;
+
+			if (action === "undo") {
+				destination.undo?.();
+				return;
+			}
+			if (action === "redo") {
+				destination.redo?.();
+				return;
+			}
+
+			// If this is an add-* action, make the related panel active so the
+			// newly-created entry is visible immediately (e.g. Add education).
+			if (action && String(action).startsWith("add-") && (target === "relationships" || target === "education" || target === "career" || target === "personal")) {
+				this.#activate(target);
+			}
+
+			if (target === "relationships" || target === "education" || target === "career" || target === "personal") {
+				destination.triggerToolbarAction?.(action, detail);
+			}
 		}
 
 		#setBreadcrumbCurrent(text, { href = null } = {}) {
@@ -341,30 +733,101 @@
 			if (!current) return;
 
 			const wantsLink = Boolean(href);
-			if (wantsLink && current.tagName !== "A") {
-				const link = document.createElement("a");
-				link.className = "profile-edit__breadcrumb-current";
+			// Helper to build inner nodes (avatar + name)
+			const buildInner = (txt) => {
+				const avatar = document.createElement('span');
+				avatar.className = 'profile-edit__breadcrumb-avatar';
+				avatar.setAttribute('aria-hidden', 'true');
+				const name = document.createElement('span');
+				name.className = 'profile-edit__breadcrumb-name';
+				name.textContent = txt;
+				return [avatar, name];
+			};
+
+			if (wantsLink && current.tagName !== 'A') {
+				const link = document.createElement('a');
+				link.className = 'profile-edit__breadcrumb-current';
 				link.href = href;
-				link.textContent = text;
+				const [avatar, nameEl] = buildInner(text);
+				link.append(avatar, nameEl);
 				current.replaceWith(link);
+				void this.#populateBreadcrumbAvatar();
 				return;
 			}
 
-			if (!wantsLink && current.tagName === "A") {
-				const label = document.createElement("span");
-				label.className = "profile-edit__breadcrumb-current";
-				label.setAttribute("aria-current", "page");
-				label.textContent = text;
+			if (!wantsLink && current.tagName === 'A') {
+				const label = document.createElement('span');
+				label.className = 'profile-edit__breadcrumb-current';
+				label.setAttribute('aria-current', 'page');
+				const [avatar, nameEl] = buildInner(text);
+				label.append(avatar, nameEl);
 				current.replaceWith(label);
+				void this.#populateBreadcrumbAvatar();
 				return;
 			}
 
-			current.textContent = text;
-			if (wantsLink && current.tagName === "A") {
+			// Update existing element's name without removing avatar.
+			const nameNode = current.querySelector('.profile-edit__breadcrumb-name');
+			if (nameNode) {
+				nameNode.textContent = text;
+			} else {
+				current.textContent = text;
+			}
+
+			if (wantsLink && current.tagName === 'A') {
 				current.href = href;
-				current.removeAttribute("aria-current");
-			} else if (!wantsLink && current.tagName === "SPAN") {
-				current.setAttribute("aria-current", "page");
+				current.removeAttribute('aria-current');
+			} else if (!wantsLink && current.tagName === 'SPAN') {
+				current.setAttribute('aria-current', 'page');
+			}
+			void this.#populateBreadcrumbAvatar();
+		}
+
+		async #populateBreadcrumbAvatar() {
+			const anchor = this.querySelector('.profile-edit__breadcrumb-current');
+			if (!anchor) return;
+			const avatarEl = anchor.querySelector('.profile-edit__breadcrumb-avatar');
+			const nameEl = anchor.querySelector('.profile-edit__breadcrumb-name');
+			if (!avatarEl) return;
+
+			// Resolve person card and populate avatar img or default image
+			try {
+				let card = null;
+				if (window.App && typeof window.App.loadPersonCard === 'function') {
+					card = await window.App.loadPersonCard(String(PERSON_ID));
+				} else {
+					const people = await this.#loadPeopleRegistry();
+					const entry = people.find((p) => String(p?.id) === String(PERSON_ID));
+					if (entry) card = { name: [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim(), photoUrl: String(entry.photoUrl || '').trim() };
+				}
+
+				const defaultImg = (typeof window.App?.resolveSiteUrl === 'function')
+					? window.App.resolveSiteUrl('assets/default-profile-photo.svg')
+					: (location.protocol === 'file:' ? new URL('../../assets/default-profile-photo.svg', location.href).href : '/assets/default-profile-photo.svg');
+
+				if (card && card.photoUrl) {
+					avatarEl.textContent = '';
+					const img = document.createElement('img');
+					img.src = card.photoUrl;
+					img.alt = '';
+					img.loading = 'lazy';
+					avatarEl.append(img);
+					if (nameEl && !nameEl.textContent) nameEl.textContent = card.name || nameEl.textContent;
+				} else {
+					avatarEl.textContent = '';
+					const img = document.createElement('img');
+					img.src = defaultImg;
+					img.alt = '';
+					img.loading = 'lazy';
+					avatarEl.append(img);
+					if (card && card.name && nameEl && !nameEl.textContent) nameEl.textContent = card.name;
+				}
+			} catch (e) {
+				// fallback: show initial
+				try {
+					const name = nameEl?.textContent?.trim() || '';
+					avatarEl.textContent = (name ? name.slice(0, 1).toUpperCase() : '?');
+				} catch (err) { /* ignore */ }
 			}
 		}
 
@@ -387,7 +850,7 @@
 			}
 
 			this.#setBreadcrumbCurrent("Profile", {
-				href: resolveSiteUrl(`people/${PERSON_ID}/`),
+				href: resolveSiteUrl(`people/${PERSON_ID}/index.html`),
 			});
 		}
 
@@ -397,8 +860,39 @@
 			});
 		}
 
-		#activate(name) {
+		#tabStorageKey() {
+			const scope = SELF_PROFILE_MODE
+				? `self:${PERSON_ID || "new"}`
+				: params.get("new") === "1"
+					? `new:${PERSON_ID || "new"}`
+					: PERSON_ID || "unknown";
+			return `genepedia:profile-editor:tab:${scope}`;
+		}
+
+		#readStoredTab() {
+			try {
+				const stored = String(sessionStorage.getItem(this.#tabStorageKey()) || "").trim();
+				return EDIT_TAB_NAMES.has(stored) ? stored : "";
+			} catch (error) {
+				return "";
+			}
+		}
+
+		#storeActiveTab(name) {
+			if (!EDIT_TAB_NAMES.has(name)) return;
+			try {
+				sessionStorage.setItem(this.#tabStorageKey(), name);
+			} catch (error) {
+				// Ignore storage failures so tab switching keeps working.
+			}
+		}
+
+		#activate(name, { persist = true } = {}) {
+			name = EDIT_TAB_NAMES.has(name) ? name : "profile";
 			this.__activeTab = name;
+			if (persist) {
+				this.#storeActiveTab(name);
+			}
 			this.querySelectorAll(".profile-edit__tab").forEach((tab) => {
 				const active = tab.dataset.editTab === name;
 				tab.classList.toggle("is-active", active);
@@ -457,7 +951,7 @@
 				if (!name) return;
 				this.#setBreadcrumbCurrent(name, this.__isDraftProfile
 					? {}
-					: { href: resolveSiteUrl(`people/${PERSON_ID}/profile.html`) });
+					: { href: resolveSiteUrl(`people/${PERSON_ID}/index.html`) });
 			});
 		}
 
@@ -510,20 +1004,19 @@
 			if (!Array.isArray(window.__extraPublishFileProviders) || !window.__extraPublishFileProviders.length) {
 				return [];
 			}
-			try {
-				const arrays = await Promise.all(window.__extraPublishFileProviders.map((fn) => {
-					try {
-						return fn();
-					} catch (error) {
-						return [];
-					}
-				}));
-				return arrays.flat().filter(Boolean)
+
+			const byPath = new Map();
+			for (const fn of window.__extraPublishFileProviders) {
+				const provided = await fn();
+				const files = Array.isArray(provided) ? provided : [];
+				files
+					.filter(Boolean)
 					.map((file) => ({ path: String(file.path || ""), content: String(file.content || "") }))
-					.filter((file) => file.path && file.content);
-			} catch (error) {
-				return [];
+					.filter((file) => file.path && file.content)
+					.forEach((file) => byPath.set(file.path, file));
 			}
+
+			return Array.from(byPath.values());
 		}
 
 		async #getCurrentUser() {
@@ -714,9 +1207,25 @@
 			// canonical record (persons/<id>.json) come from the infobox editor, and
 			// the prose (data/profile.html) from the page editor.
 			const ownershipPath = peopleDbOwnershipPath(PERSON_ID);
+			let existingOwnership = {};
+			const existingOwnershipFile = byPath.get(ownershipPath);
+			if (existingOwnershipFile?.content) {
+				try {
+					const parsed = JSON.parse(existingOwnershipFile.content);
+					existingOwnership = parsed && typeof parsed === "object" ? parsed : {};
+				} catch (error) {
+					existingOwnership = {};
+				}
+			}
 			byPath.set(ownershipPath, {
 				path: ownershipPath,
-				content: buildProfileConfig(PERSON_ID, profileData, user, { claimSelf }),
+				content: `${JSON.stringify({
+					...existingOwnership,
+					...createProfileConfig(PERSON_ID, profileData, user, {
+						claimSelf,
+						privacy: existingOwnership?.privacy,
+					}),
+				}, null, 2)}\n`,
 			});
 
 			const peopleRegistryFile = await this.#buildPeopleRegistryFile(profileData);
@@ -986,7 +1495,7 @@
 				this.__pageEditor?.setDisplayName?.(displayName);
 				this.#setBreadcrumbCurrent(displayName, this.__isDraftProfile
 					? {}
-					: { href: resolveSiteUrl(`people/${PERSON_ID}/profile.html`) });
+					: { href: resolveSiteUrl(`people/${PERSON_ID}/`) });
 			}
 
 			const endpoint = SELF_PROFILE_MODE ? "" : resolveGitHubApiUrl("github-submit-page-edit.php");
@@ -1014,7 +1523,14 @@
 
 			// The infobox editor's fragment takes precedence for profile-table.html.
 			if (this.#isInfoboxDirty() || SELF_PROFILE_MODE) {
-				const extras = await this.#collectExtraFiles();
+				let extras = [];
+				try {
+					extras = await this.#collectExtraFiles();
+				} catch (error) {
+					console.error(error);
+					this.#setStatus(error?.message || "Could not prepare the profile changes.", "error");
+					return;
+				}
 				extras.forEach((file) => {
 					if (!files.some((existing) => existing.path === file.path)) files.push(file);
 				});

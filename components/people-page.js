@@ -483,6 +483,89 @@ body.theme-dark .ppe-chart-title {
   background: rgba(30, 140, 70, 0.08);
 }
 
+.people-page__privacy {
+  display: grid;
+  gap: 1rem;
+}
+
+.people-page__privacy-notice {
+  max-width: 56rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(51, 102, 204, 0.24);
+  border-radius: 0.5rem;
+  background: rgba(51, 102, 204, 0.08);
+  box-sizing: border-box;
+}
+
+.people-page__privacy-title {
+  margin: 0 0 0.45rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.people-page__privacy-copy {
+  margin: 0;
+  color: var(--page-toolbar-muted);
+}
+
+.people-page__privacy-name {
+  margin: 0;
+  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
+  font-size: 1.8rem;
+  font-weight: 400;
+  line-height: 1.2;
+  color: inherit;
+}
+
+.people-page__privacy-detail {
+  position: relative;
+  max-width: 56rem;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.people-page__privacy-detail::after {
+  content: "Private profile";
+  position: absolute;
+  inset: auto 1rem 1rem auto;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(32, 33, 34, 0.78);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.people-page__privacy-detail-inner {
+  padding: 1rem 1.1rem;
+  filter: blur(0.4rem);
+  user-select: none;
+  pointer-events: none;
+}
+
+.people-page__privacy-detail-inner > *:last-child {
+  margin-bottom: 0;
+}
+
+body.theme-dark .people-page__privacy-notice {
+  border-color: rgba(107, 158, 255, 0.28);
+  background: rgba(107, 158, 255, 0.12);
+}
+
+body.theme-dark .people-page__privacy-detail {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+body.theme-dark .people-page__privacy-detail::after {
+  background: rgba(234, 236, 240, 0.18);
+  color: #eaecf0;
+}
+
 .people-page__media-manage {
   margin: 1rem 0 1.5rem;
   padding: 0.85rem 1rem 1rem;
@@ -1272,6 +1355,26 @@ function peoplePageFormatDate(value) {
   }
 }
 
+function peoplePageNormalizeLogin(userOrLogin) {
+  if (typeof userOrLogin === 'string') {
+    return userOrLogin.trim().toLowerCase();
+  }
+
+  return String(userOrLogin?.login || userOrLogin?.githubLogin || '').trim().toLowerCase();
+}
+
+function peoplePageIdentityLogin(identity) {
+  if (typeof identity === 'string') {
+    return peoplePageNormalizeLogin(identity);
+  }
+
+  if (!identity || typeof identity !== 'object') {
+    return '';
+  }
+
+  return peoplePageNormalizeLogin(identity.githubLogin || identity.github_login || identity.login || '');
+}
+
 // The filename without its directory or extension, lowercased — used to find
 // the next free numeric suffix when auto-naming uploads.
 function peoplePageImageStem(name) {
@@ -1373,6 +1476,8 @@ function peoplePageRandomId() {
 }
 
 class PeoplePage extends HTMLElement {
+  #privacyAccessPromise = null;
+
   static get observedAttributes() {
     return ['edit-href'];
   }
@@ -1430,6 +1535,7 @@ class PeoplePage extends HTMLElement {
 
   async #init() {
     await this.__titleLoadPromise;
+    this.#privacyAccessPromise = this.#loadPrivacyAccess();
     const initialTab = this.#getInitialTab();
     this.#selectTab(initialTab, { updateHash: Boolean(this.#getTabFromHash()) });
     await this.#loadTab(initialTab);
@@ -1573,7 +1679,7 @@ class PeoplePage extends HTMLElement {
   }
 
   // Lazily load the browser database client so the profile reads structured
-  // data (identity, relationships, tree) from data/people/v1 at runtime.
+  // data (identity, relationships, tree) from data/Genepedia-Database/people at runtime.
   async #ensurePeopleDb() {
     if (window.PeopleDB) {
       return;
@@ -1618,7 +1724,300 @@ class PeoplePage extends HTMLElement {
     }
   }
 
+  #readStoredGitHubUser() {
+    try {
+      const user = window.App?.getGitHubUser?.();
+      if (user && typeof user === 'object') {
+        return user;
+      }
+    } catch (error) {
+      // fall through
+    }
+
+    try {
+      const raw = localStorage.getItem('app-header-session');
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async #getCurrentViewerLogin() {
+    const storedLogin = peoplePageNormalizeLogin(this.#readStoredGitHubUser());
+    if (storedLogin) {
+      return storedLogin;
+    }
+
+    const endpoint = this.#resolveGitHubApiUrl('github-session.php');
+    if (!endpoint) {
+      return '';
+    }
+
+    try {
+      const response = await fetch(endpoint, this.#gitHubFetchInit({ cache: 'no-store' }));
+      const payload = await response.json().catch(() => null);
+      if (response.ok && payload?.authenticated && payload.user) {
+        return peoplePageNormalizeLogin(payload.user);
+      }
+    } catch (error) {
+      return '';
+    }
+
+    return '';
+  }
+
+  async #loadProfileConfig(personId) {
+    if (!personId) {
+      return null;
+    }
+
+    try {
+      if (window.App?.loadProfileConfig) {
+        return await window.App.loadProfileConfig(personId);
+      }
+      const bucket = Math.floor((Math.max(1, Number(String(personId).replace(/[^0-9]/g, '')) || 1) - 1) / 1000);
+      const response = await fetch(this.#resolveSiteUrl(`data/Genepedia-Database/people/ownership/${bucket}/${personId}.json`), { cache: 'no-store' });
+      if (!response.ok) {
+        return null;
+      }
+      const payload = await response.json().catch(() => null);
+      return payload && typeof payload === 'object' ? payload : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async #loadPersonRecord(personId) {
+    if (!personId) {
+      return null;
+    }
+
+    try {
+      await this.#ensurePeopleDb();
+      if (window.PeopleDB?.loadPerson) {
+        return await window.PeopleDB.loadPerson(personId);
+      }
+    } catch (error) {
+      console.warn('Could not load person record for privacy checks.', error);
+    }
+
+    return null;
+  }
+
+  #normalizePrivacyState(value, { deceased = false } = {}) {
+    if (deceased) {
+      return {
+        visibility: 'public',
+        maintainersOnly: false,
+      };
+    }
+
+    const source = value && typeof value === 'object' ? value : {};
+    const rawVisibility = String(source.visibility || source.mode || 'public').trim().toLowerCase();
+    const visibility = rawVisibility === 'private' ? 'private' : 'public';
+    return {
+      visibility,
+      maintainersOnly: visibility === 'private',
+    };
+  }
+
+  #profileManagerLogins(config = {}) {
+    const logins = new Set();
+    const add = (identity) => {
+      const login = peoplePageIdentityLogin(identity);
+      if (login) {
+        logins.add(login);
+      }
+    };
+
+    const ownerLogin = peoplePageIdentityLogin(config?.owner);
+    if (ownerLogin) {
+      logins.add(ownerLogin);
+    }
+
+    (Array.isArray(config?.maintainers) ? config.maintainers : []).forEach(add);
+
+    if (!ownerLogin) {
+      add(config?.creator);
+    }
+
+    return logins;
+  }
+
+  #closeFamilyPersonIds(record, personId) {
+    const relationships = record?.relationships || {};
+    const ids = new Set();
+    const add = (value) => {
+      const id = String(value || '').trim();
+      if (id && id !== String(personId)) {
+        ids.add(id);
+      }
+    };
+
+    [
+      ...(Array.isArray(relationships.parents) ? relationships.parents : []),
+      ...(Array.isArray(relationships.spouses) ? relationships.spouses : []),
+      ...(Array.isArray(relationships.exSpouses) ? relationships.exSpouses : []),
+      ...(Array.isArray(relationships.children) ? relationships.children : []),
+      ...(Array.isArray(relationships.siblings) ? relationships.siblings : []),
+    ].forEach(add);
+
+    (Array.isArray(relationships.parentLinks) ? relationships.parentLinks : []).forEach((entry) => add(entry?.id));
+    (Array.isArray(relationships.partnerLinks) ? relationships.partnerLinks : []).forEach((entry) => add(entry?.id));
+    (Array.isArray(relationships.childLinks) ? relationships.childLinks : []).forEach((entry) => add(entry?.id));
+    return ids;
+  }
+
+  async #loadContributorLogins(personId) {
+    const logins = new Set();
+    const apiBase = this.#resolveGitHubApiUrl('github-file-commits.php');
+    const pullRequestsBase = this.#resolveGitHubApiUrl('github-pull-requests.php');
+
+    if (!apiBase || !pullRequestsBase) {
+      return logins;
+    }
+
+    const bucket = Math.floor((Math.max(1, Number(String(personId).replace(/[^0-9]/g, '')) || 1) - 1) / 1000);
+    const pathGroups = [
+      [
+        `people/${personId}/index.html`,
+        `people/${personId}/data/profile.html`,
+      ],
+      [
+        `data/Genepedia-Database/people/persons/${bucket}/${personId}.json`,
+        `data/Genepedia-Database/people/ownership/${bucket}/${personId}.json`,
+      ],
+    ];
+
+    for (const paths of pathGroups) {
+      const commitsUrl = new URL(apiBase);
+      commitsUrl.searchParams.set('paths', paths.join(','));
+      const pullRequestsUrl = new URL(pullRequestsBase);
+      pullRequestsUrl.searchParams.set('paths', paths.join(','));
+
+      const [commitsResponse, pullRequestsResponse] = await Promise.all([
+        fetch(commitsUrl.href, this.#gitHubFetchInit({ cache: 'no-store' })).catch(() => null),
+        fetch(pullRequestsUrl.href, this.#gitHubFetchInit({ cache: 'no-store' })).catch(() => null),
+      ]);
+
+      const commitsPayload = commitsResponse
+        ? await commitsResponse.json().catch(() => null)
+        : null;
+      const pullRequestsPayload = pullRequestsResponse
+        ? await pullRequestsResponse.json().catch(() => null)
+        : null;
+
+      if (commitsResponse?.ok && commitsPayload?.ok && Array.isArray(commitsPayload.commits)) {
+        commitsPayload.commits.forEach((commit) => {
+          const login = peoplePageNormalizeLogin(commit?.author_login || '');
+          if (login) {
+            logins.add(login);
+          }
+        });
+      }
+
+      if (pullRequestsResponse?.ok && pullRequestsPayload?.ok && Array.isArray(pullRequestsPayload.pull_requests)) {
+        pullRequestsPayload.pull_requests.forEach((pullRequest) => {
+          const login = peoplePageNormalizeLogin(pullRequest?.user?.login || '');
+          if (login) {
+            logins.add(login);
+          }
+        });
+      }
+    }
+
+    return logins;
+  }
+
+  async #loadPrivacyAccess() {
+    const personId = this.#resolvePersonId();
+    if (!personId) {
+      return {
+        personId: '',
+        isPrivate: false,
+        canViewDetails: true,
+        viewerPersonId: '',
+        viewerLogin: '',
+        title: '',
+      };
+    }
+
+    const [config, record, viewerLogin, directory] = await Promise.all([
+      this.#loadProfileConfig(personId),
+      this.#loadPersonRecord(personId),
+      this.#getCurrentViewerLogin(),
+      this.#loadPeopleLoginDirectory(),
+    ]);
+
+    const deceased = Boolean(record?.events?.death || (!record?.living && record?.living !== undefined));
+    const privacy = this.#normalizePrivacyState(config?.privacy, { deceased });
+    const isPrivate = privacy.visibility === 'private';
+    const viewerPersonId = viewerLogin ? String(directory.get(viewerLogin) || '').trim() : '';
+    const managerLogins = this.#profileManagerLogins(config || {});
+    const closeFamilyIds = this.#closeFamilyPersonIds(record, personId);
+    const contributorLogins = isPrivate ? await this.#loadContributorLogins(personId) : new Set();
+    const canViewDetails = !isPrivate
+      || managerLogins.has(viewerLogin)
+      || contributorLogins.has(viewerLogin)
+      || (viewerPersonId && closeFamilyIds.has(viewerPersonId));
+
+    return {
+      personId,
+      record,
+      config,
+      privacy,
+      isPrivate,
+      canViewDetails,
+      viewerPersonId,
+      viewerLogin,
+      title: String(record?.names?.display || '').trim(),
+    };
+  }
+
+  async #getPrivacyAccess() {
+    if (!this.#privacyAccessPromise) {
+      this.#privacyAccessPromise = this.#loadPrivacyAccess();
+    }
+    return this.#privacyAccessPromise;
+  }
+
+  #renderPrivateProfileHtml(access, tab) {
+    const title = peoplePageEscapeHtml(access?.title || this.querySelector('.people-page__title')?.textContent?.trim() || 'Private profile');
+    const tabLabel = tab === 'profile'
+      ? 'Biographical details'
+      : tab === 'tree'
+        ? 'Family tree'
+        : tab === 'media'
+          ? 'Media'
+          : tab === 'talk'
+            ? 'Discussion'
+            : 'Profile details';
+
+    return `
+      <section class="people-page__privacy" aria-label="Private profile notice">
+        <p class="people-page__privacy-name">${title}</p>
+        <div class="people-page__privacy-notice">
+          <h2 class="people-page__privacy-title">This profile is private</h2>
+          <p class="people-page__privacy-copy">Only maintainers, contributors, and close family can view the full details while this person is living.</p>
+        </div>
+        <div class="people-page__privacy-detail" aria-hidden="true">
+          <div class="people-page__privacy-detail-inner">
+            <h3>${peoplePageEscapeHtml(tabLabel)}</h3>
+            <p>Private profile details are hidden from public visitors.</p>
+            <p>Sign in with a linked account if you should have access.</p>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
   async #prepareContentHtml(html, tab) {
+    const access = await this.#getPrivacyAccess();
+    if (access.isPrivate && !access.canViewDetails) {
+      return this.#renderPrivateProfileHtml(access, tab);
+    }
+
     if (tab === 'profile') {
       try {
         await this.#ensureProfileInfoboxRender();
@@ -2157,6 +2556,24 @@ class PeoplePage extends HTMLElement {
     const token = ++this.#tabLoadSeq;
     this.#activeTabToken = token;
     this.#activeTabName = tab;
+
+    const access = await this.#getPrivacyAccess();
+    if (this.#isStaleTabLoad(token)) {
+      return;
+    }
+
+    if (access.isPrivate && !access.canViewDetails) {
+      contentEl.innerHTML = this.#renderPrivateProfileHtml(access, tab);
+      contentEl.removeAttribute('aria-busy');
+      this.dispatchEvent(
+        new CustomEvent('people-page-tab-loaded', {
+          bubbles: true,
+          composed: true,
+          detail: { tab },
+        }),
+      );
+      return;
+    }
 
     if (tab === 'changes') {
       await this.#loadChangesTab(token);
@@ -3584,7 +4001,7 @@ class PeoplePage extends HTMLElement {
   }
 
   // Maps GitHub logins to Genepedia people via the prebuilt ownership login
-  // index (data/people/v1/index/ownership-logins.json). Cached site-wide.
+  // index (data/Genepedia-Database/people/index/ownership-logins.json). Cached site-wide.
   async #loadPeopleLoginDirectory() {
     if (!window.__peopleLoginDirectoryPromise) {
       window.__peopleLoginDirectoryPromise = (async () => {
@@ -3592,7 +4009,7 @@ class PeoplePage extends HTMLElement {
         try {
           const payload = window.App?.loadOwnershipLoginIndex
             ? await window.App.loadOwnershipLoginIndex()
-            : await fetch(this.#resolveSiteUrl('data/people/v1/index/ownership-logins.json'), { cache: 'no-store' })
+            : await fetch(this.#resolveSiteUrl(window.App?.resolvePeopleDbPath?.('index/ownership-logins.json') || 'data/Genepedia-Database/people/index/ownership-logins.json'), { cache: 'no-store' })
               .then(async (response) => (response.ok ? response.json() : null))
               .then((data) => data?.logins || {});
           Object.entries(payload || {}).forEach(([login, personId]) => {
