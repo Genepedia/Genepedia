@@ -1305,13 +1305,13 @@
 
             return `
                 <div class="pie__row pie__row--date">
-                    <label class="pie__label" for="${escapeHtml(dateId)}">${escapeHtml(label)} date</label>
+                    <label class="pie__label" for="${escapeHtml(dateId)}">${escapeHtml(label)} Date</label>
                     <div class="pie__field pie__field--date">
                         <date-field-editor data-family-id="${escapeHtml(familyId)}" data-event-key="${escapeHtml(eventKey)}" input-id="${escapeHtml(dateId)}" layout="inline" show-preview precisions="exact,before,after,about,between"></date-field-editor>
                     </div>
                 </div>
                 <div class="pie__row pie__row--location">
-                    <label class="pie__label" for="${escapeHtml(placeId)}">${escapeHtml(label)} place</label>
+                    <label class="pie__label" for="${escapeHtml(placeId)}">${escapeHtml(label)} Place</label>
                     <div class="pie__field">
                         ${renderLocationField({ path: locationPath, id: placeId, placeholder: "Place", familyId, eventKey })}
                     </div>
@@ -1344,7 +1344,7 @@
                         <legend class="pie__legend">${this.#renderLegendHtml(personId, displayName)}</legend>
                         ${this.#renderPersonPickerRow(family, slot, displayName, personId)}
                         <div class="pie__row">
-                            <label class="pie__label" for="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-status">Partner status</label>
+                            <label class="pie__label" for="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-status">Partner Status</label>
                             <div class="pie__field">
                                 <select id="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-status" data-family-id="${escapeHtml(family.id)}" data-slot-id="${escapeHtml(slot.slotId)}" data-field="partnerKind">
                                     ${this.#renderSelectOptions(this.#partnerOptionsFor(personId), kind)}
@@ -1353,7 +1353,7 @@
                         </div>
                         ${kind === "other" ? `
                             <div class="pie__row">
-                                <label class="pie__label" for="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-custom">Custom label</label>
+                                <label class="pie__label" for="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-custom">Custom Label</label>
                                 <div class="pie__field">
                                     <input id="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-custom" type="text" value="${escapeHtml(family.relationship?.label || "")}" placeholder="e.g. Civil partner" data-family-id="${escapeHtml(family.id)}" data-slot-id="${escapeHtml(slot.slotId)}" data-field="partnerLabel">
                                 </div>
@@ -1417,7 +1417,7 @@
                     </div>
                     ${relationType === "other" ? `
                         <div class="pie__row">
-                            <label class="pie__label" for="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-custom">Custom label</label>
+                            <label class="pie__label" for="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-custom">Custom Label</label>
                             <div class="pie__field">
                                 <input id="prel-${escapeHtml(family.id)}-${escapeHtml(slot.slotId)}-custom" type="text" value="${escapeHtml(relationLabel)}" placeholder="${escapeHtml(customPlaceholder)}" data-family-id="${escapeHtml(family.id)}" data-parent-slot-id="${escapeHtml(isParentCard ? slot.slotId : selfSlotId)}" data-child-slot-id="${escapeHtml(isParentCard ? selfSlotId : slot.slotId)}" data-field="linkLabel">
                             </div>

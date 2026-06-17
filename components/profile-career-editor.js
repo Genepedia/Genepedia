@@ -1027,7 +1027,7 @@
                 <fieldset class="pie__group" data-entry-id="${escapeHtml(entryId)}">
                     <legend class="pie__legend"><span class="pedu__legend-entry" data-entry-legend-wrap="${escapeHtml(entryId)}">${this.#renderLegendInner(entry, index)}</span></legend>
                     <div class="pie__row">
-                        <label class="pie__label" for="pedu-${escapeHtml(entryId)}-type">Entry type</label>
+                        <label class="pie__label" for="pedu-${escapeHtml(entryId)}-type">Entry Type</label>
                         <div class="pie__field">
                             <select id="pedu-${escapeHtml(entryId)}-type" data-entry-id="${escapeHtml(entryId)}" data-field="type">
                                 ${this.#renderSelectOptions(EDUCATION_TYPE_OPTIONS, String(entry.type || ""))}
@@ -1035,13 +1035,13 @@
                         </div>
                     </div>
                     <div class="pie__row pie__row--align-top">
-                        <label class="pie__label" for="${escapeHtml(placeId)}">Employer / company</label>
+                        <label class="pie__label" for="${escapeHtml(placeId)}">Employer / Company</label>
                         <div class="pie__field">
                             <location-field-editor data-entry-id="${escapeHtml(entryId)}" input-id="${escapeHtml(placeId)}" placeholder="Search or enter company, employer, or place" toggle-label="Show and Edit Location Details"></location-field-editor>
                         </div>
                     </div>
                     <div class="pie__row">
-                        <label class="pie__label" for="${escapeHtml(titleId)}">Role / position</label>
+                        <label class="pie__label" for="${escapeHtml(titleId)}">Role / Position</label>
                         <div class="pie__field">
                             <input id="${escapeHtml(titleId)}" type="text" value="${escapeHtml(entry.title || "")}" placeholder="e.g. Software engineer, Teacher, Office manager" data-entry-id="${escapeHtml(entryId)}" data-field="title">
                         </div>

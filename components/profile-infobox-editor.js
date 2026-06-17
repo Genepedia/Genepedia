@@ -428,21 +428,21 @@
 					</div>
 				</div>
 				<div class="pie__row">
-					<label class="pie__label" for="pie-birth-surname">Birth surname</label>
+					<label class="pie__label" for="pie-birth-surname">Birth Surname</label>
 					<div class="pie__field"><input id="pie-birth-surname" type="text" data-field="birthSurname" placeholder="Birth Surname"></div>
 				</div>
 				<div class="pie__row">
-					<label class="pie__label" for="pie-display">Display name</label>
+					<label class="pie__label" for="pie-display">Display Name</label>
 					<div class="pie__field"><input id="pie-display" type="text" data-field="displayName" placeholder="First Name + Last Name (Birth Surname)"></div>
 				</div>
 				<div class="pie__row">
-					<label class="pie__label" for="pie-aka">Also known as</label>
+					<label class="pie__label" for="pie-aka">Also Known As</label>
 					<div class="pie__field"><input id="pie-aka" type="text" data-field="alsoKnownAs" placeholder="Separate nicknames with a comma"></div>
 				</div>
 			</fieldset>
 
 			<fieldset class="pie__group">
-				<legend class="pie__legend">Vital details</legend>
+				<legend class="pie__legend">Vital Details</legend>
 				<div class="pie__row">
 					<span class="pie__label">Status</span>
 					<div class="pie__field pie__field--radios" data-radio="status">
@@ -456,6 +456,7 @@
 					<div class="pie__field pie__field--radios" data-radio="gender">
 						<label><input type="radio" name="pie-gender" value="male"> Male</label>
 						<label><input type="radio" name="pie-gender" value="female"> Female</label>
+						<label><input type="radio" name="pie-gender" value="intersex"> Intersex</label>
 						<label><input type="radio" name="pie-gender" value="unknown"> Unknown</label>
 					</div>
 				</div>
@@ -464,7 +465,7 @@
 					<div class="pie__field"><input id="pie-occupation" type="text" data-field="occupation" placeholder="e.g. Teacher"></div>
 				</div>
 				<div class="pie__row pie__row--location">
-					<label class="pie__label" for="pie-residence">Last residence</label>
+					<label class="pie__label" for="pie-residence">Last Residence</label>
 					${renderLocationField({ path: "lastResidenceLocation", id: "pie-residence", placeholder: "Start typing a location" })}
 				</div>
 			</fieldset>
@@ -472,13 +473,13 @@
 			<fieldset class="pie__group" data-event="birth">
 				<legend class="pie__legend">Birth</legend>
 				<div class="pie__row pie__row--date">
-					<span class="pie__label">Date of birth</span>
+					<span class="pie__label">Date of Birth</span>
 					<div class="pie__field pie__field--date">
 						${renderDateRange("birth")}
 					</div>
 				</div>
 				<div class="pie__row pie__row--location">
-					<label class="pie__label" for="pie-birth-place">Place of birth</label>
+					<label class="pie__label" for="pie-birth-place">Place of Birth</label>
 					${renderLocationField({ path: "birth.location", id: "pie-birth-place", placeholder: "Start typing a location" })}
 				</div>
 
@@ -487,13 +488,13 @@
 			<fieldset class="pie__group" data-event="baptism">
 				<legend class="pie__legend">Baptism</legend>
 				<div class="pie__row pie__row--date">
-					<span class="pie__label">Date of baptism</span>
+					<span class="pie__label">Date of Baptism</span>
 					<div class="pie__field pie__field--date">
 						${renderDateRange("baptism")}
 					</div>
 				</div>
 				<div class="pie__row pie__row--location">
-					<label class="pie__label" for="pie-baptism-place">Place of baptism</label>
+					<label class="pie__label" for="pie-baptism-place">Place of Baptism</label>
 					${renderLocationField({ path: "baptism.location", id: "pie-baptism-place", placeholder: "Start typing a location" })}
 				</div>
 			</fieldset>
@@ -501,23 +502,23 @@
 			<fieldset class="pie__group pie__group--death" data-event="death" hidden>
 				<legend class="pie__legend">Death</legend>
 				<div class="pie__row pie__row--date">
-					<span class="pie__label">Date of death</span>
+					<span class="pie__label">Date of Death</span>
 					<div class="pie__field pie__field--date">
 						${renderDateRange("death")}
 					</div>
 				</div>
 				<div class="pie__row pie__row--location">
-					<label class="pie__label" for="pie-death-place">Place of death</label>
+					<label class="pie__label" for="pie-death-place">Place of Death</label>
 					${renderLocationField({ path: "death.location", id: "pie-death-place", placeholder: "Start typing a location" })}
 				</div>
 				<div class="pie__row">
-					<label class="pie__label" for="pie-death-cause">Cause of death</label>
+					<label class="pie__label" for="pie-death-cause">Cause of Death</label>
 					<div class="pie__field"><input id="pie-death-cause" type="text" data-field="death.cause" placeholder="e.g. Coronary thrombosis"></div>
 				</div>
 			</fieldset>
 
 			<fieldset class="pie__group pie__group--death" data-event="burial" hidden>
-				<legend class="pie__legend">Burial or cremation</legend>
+				<legend class="pie__legend">Burial or Cremation</legend>
 				<div class="pie__row">
 					<span class="pie__label">Type</span>
 					<div class="pie__field pie__field--radios" data-radio="burial.type">

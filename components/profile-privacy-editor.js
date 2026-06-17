@@ -194,7 +194,7 @@
                 }
             </style>
             <fieldset class="pie__group">
-                <legend class="pie__legend">Profile visibility</legend>
+                <legend class="pie__legend">Profile Visibility</legend>
                 <p class="pie__intro">Only maintainers can change profile privacy. Deceased profiles are always public.</p>
                 <div class="ppriv__options">
                     <label class="ppriv__option">

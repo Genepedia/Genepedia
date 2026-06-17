@@ -403,6 +403,11 @@
                 box-sizing: border-box;
             }
 
+            .ppe-personal__history-year.is-invalid {
+                border-color: #d33;
+                box-shadow: inset 0 0 0 1px #d33;
+            }
+
             .ppe-personal__history-remove {
                 display: inline-flex;
                 align-items: center;
@@ -455,11 +460,11 @@
             <fieldset class="pie__group">
                 <legend class="pie__legend">Appearance</legend>
                 <div class="pie__row">
-                    <label class="pie__label" for="ppe-hair-color">Hair color</label>
+                    <label class="pie__label" for="ppe-hair-color">Hair Color</label>
                     <div class="pie__field"><input id="ppe-hair-color" type="text" data-field="hairColor" placeholder="e.g. Brown"></div>
                 </div>
                 <div class="pie__row">
-                    <label class="pie__label" for="ppe-eye-color">Eye color</label>
+                    <label class="pie__label" for="ppe-eye-color">Eye Color</label>
                     <div class="pie__field"><input id="ppe-eye-color" type="text" data-field="eyeColor" placeholder="e.g. Blue"></div>
                 </div>
                 <div class="pie__row pie__row--align-top">
@@ -471,7 +476,7 @@
                     <div class="pie__field">${renderMeasurementControl("weight", "ppe-weight", "e.g. 72 kg")}</div>
                 </div>
                 <div class="pie__row pie__row--align-top">
-                    <label class="pie__label" for="ppe-shoe-size">Shoe size</label>
+                    <label class="pie__label" for="ppe-shoe-size">Shoe Size</label>
                     <div class="pie__field">${renderMeasurementControl("shoeSize", "ppe-shoe-size", "e.g. UK 9")}</div>
                 </div>
                     <div class="pie__row">
@@ -488,7 +493,7 @@
             <fieldset class="pie__group">
                 <legend class="pie__legend">Health</legend>
                 <div class="pie__row">
-                    <label class="pie__label" for="ppe-alcohol-use">Alcohol use</label>
+                    <label class="pie__label" for="ppe-alcohol-use">Alcohol Use</label>
                     <div class="pie__field">
                         <select id="ppe-alcohol-use" data-field="alcoholUse">
                             ${renderSelectOptions(ALCOHOL_USE_OPTIONS)}
@@ -514,7 +519,7 @@
                     </div>
                 </div>
                 <div class="pie__row">
-                    <label class="pie__label" for="ppe-blood-type">Blood type</label>
+                    <label class="pie__label" for="ppe-blood-type">Blood Type</label>
                     <div class="pie__field">
                         <select id="ppe-blood-type" data-field="bloodType">
                             ${renderSelectOptions(BLOOD_TYPE_OPTIONS)}
@@ -550,7 +555,7 @@
                     </div>
                 </div>
                 <div class="pie__row pie__row--align-top">
-                    <label class="pie__label" for="ppe-political">Political views</label>
+                    <label class="pie__label" for="ppe-political">Political Views</label>
                     <div class="pie__field pie__field--suggest">
                         <input id="ppe-political" type="text" data-field="politicalViews" data-suggest="politicalViews" placeholder="Choose or enter political views" required aria-required="true">
                         <div class="pie__suggestions" data-suggestions="politicalViews" hidden></div>
@@ -841,6 +846,39 @@
             };
         }
 
+        // A value in Height, Weight or Shoe size makes its Year field required.
+        // Keep the `required`/`aria-required` flags in step with the value field
+        // and clear the invalid highlight once a value is removed or a year typed.
+        #syncYearRequirements() {
+            for (const measure of ["height", "weight", "shoeSize"]) {
+                const valueInput = this.querySelector(`[data-field="${measure}"]`);
+                const yearInput = this.querySelector(`[data-field="${measure}Year"]`);
+                if (!valueInput || !yearInput) continue;
+                const hasValue = Boolean(normalizeText(valueInput.value));
+                yearInput.required = hasValue;
+                yearInput.setAttribute("aria-required", hasValue ? "true" : "false");
+                if (!hasValue || normalizeText(yearInput.value)) {
+                    yearInput.classList.remove("is-invalid");
+                }
+            }
+        }
+
+        // Returns the first measurement that has a value but no year, or null.
+        #findMissingMeasurementYear() {
+            const labels = { height: "height", weight: "weight", shoeSize: "shoe size" };
+            for (const measure of ["height", "weight", "shoeSize"]) {
+                const valueInput = this.querySelector(`[data-field="${measure}"]`);
+                const yearInput = this.querySelector(`[data-field="${measure}Year"]`);
+                if (!valueInput || !yearInput) continue;
+                const hasValue = Boolean(normalizeText(valueInput.value));
+                const hasYear = Boolean(normalizeText(yearInput.value));
+                if (hasValue && !hasYear) {
+                    return { measure, label: labels[measure], yearInput };
+                }
+            }
+            return null;
+        }
+
         // Read the year-tagged rows for a measurement into [{ year, value }],
         // dropping blank rows and ordering newest-first.
         #collectHistory(measure) {
@@ -911,6 +949,7 @@
             this.#renderChipList("hobbies");
             this.#renderChipList("disabilities");
             this.#renderChipList("allergies");
+            this.#syncYearRequirements();
         }
 
         #renderChipList(key) {
@@ -1042,6 +1081,7 @@
                 this.#openSuggestions(field === "languagesInput" ? "languages" : "hobbies", target);
                 return;
             }
+            this.#syncYearRequirements();
             this.#updateDataFromForm();
             this.#scheduleHistoryCapture();
             this.#notifyDirtyState();
@@ -1052,6 +1092,7 @@
             if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement)) return;
             const field = String(target.dataset.field || "").trim();
             if (!field) return;
+            this.#syncYearRequirements();
             this.#updateDataFromForm();
             this.#scheduleHistoryCapture();
             this.#notifyDirtyState();
@@ -1163,6 +1204,13 @@
         async #buildPublishFiles() {
             if (!this.#isDirty()) {
                 return [];
+            }
+            const missingYear = this.#findMissingMeasurementYear();
+            if (missingYear) {
+                missingYear.yearInput.classList.add("is-invalid");
+                document.dispatchEvent(new CustomEvent("profile-editor-activate-tab", { detail: { tab: "personal" } }));
+                requestAnimationFrame(() => missingYear.yearInput.focus());
+                throw new Error(`Enter the year for the ${missingYear.label} measurement.`);
             }
             await ensurePeopleDb();
             if (!window.PeopleDB) {
