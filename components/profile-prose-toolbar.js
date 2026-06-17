@@ -753,6 +753,13 @@ body.theme-dark .people-page__content aside {
   border-radius: 0.125rem;
 }
 
+.ppe__canvas aside table .gp-location .gp-location__flag,
+.people-page__content aside table .gp-location .gp-location__flag {
+  display: inline-block;
+  width: 1.45em;
+  height: auto;
+}
+
 .ppe__canvas aside th,
 .ppe__canvas aside td,
 .people-page__content aside th,

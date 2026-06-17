@@ -250,7 +250,9 @@ window.upgradeProfileIdentityInDocument = upgradeProfileIdentityInDocument;
     style.textContent = `
 .gp-gender { display: inline-flex; align-items: center; gap: 0.4em; }
 .gp-gender__icon { flex: 0 0 auto; opacity: 0.7; }
-.gp-location { cursor: help; text-decoration: underline dotted; text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
+.gp-location { display: inline-flex; align-items: center; gap: 0.35em; max-width: 100%; vertical-align: text-bottom; cursor: help; }
+.gp-location__text { min-width: 0; text-decoration: underline dotted; text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
+.gp-location .gp-location__flag { display: inline-block; flex: 0 0 auto; width: 1.45em; height: auto; border-radius: 0.12em; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16); }
 .gp-pop {
   position: fixed;
   z-index: 2147483000;
