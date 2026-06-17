@@ -134,6 +134,7 @@
 	const TRAILING_TOOLS = [
 		{ action: "link", icon: "bi-link-45deg", label: "Link" },
 		{ action: "image", icon: "bi-image", label: "Insert image" },
+		{ action: "video", icon: "bi-camera-video", label: "Insert video" },
 		{ action: "table", icon: "bi-table", label: "Insert Table" },
 		{ action: "chart", icon: "bi-bar-chart", label: "Insert Chart" },
 		{ separator: true },
@@ -448,6 +449,33 @@
 		const newTab = Boolean(options.newTab);
 		const targetAttrs = newTab ? ' target="_blank" rel="noopener noreferrer"' : "";
 		return `<p class="ppe-profile-actions"><a class="ppe-profile-button ppe-profile-button--${style}" href="${escapeHtml(href)}"${targetAttrs}>${escapeHtml(label)}</a></p>`;
+	}
+
+	// Extract the 11-char YouTube id from a watch / youtu.be / embed / shorts URL
+	// (or accept a bare id). Returns "" when nothing valid is found.
+	function parseYouTubeId(value) {
+		const raw = String(value || "").trim();
+		if (!raw) return "";
+		const patterns = [
+			/[?&]v=([a-zA-Z0-9_-]{11})/,
+			/youtu\.be\/([a-zA-Z0-9_-]{11})/,
+			/youtube(?:-nocookie)?\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+			/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+		];
+		for (const pattern of patterns) {
+			const match = raw.match(pattern);
+			if (match) return match[1];
+		}
+		return /^[a-zA-Z0-9_-]{11}$/.test(raw) ? raw : "";
+	}
+
+	// Build a responsive, atomic YouTube embed. Only a sanitized youtube-nocookie
+	// embed URL is emitted, so arbitrary iframe sources can never be injected.
+	function buildProfileVideoHtml(options = {}) {
+		const id = parseYouTubeId(options.url);
+		if (!id) return "";
+		const src = `https://www.youtube-nocookie.com/embed/${id}`;
+		return `<figure class="ppe-profile-video" contenteditable="false"><div class="ppe-profile-video__frame"><iframe src="${escapeHtml(src)}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe></div></figure>`;
 	}
 
 	function normalizeButtonsOptions(options = {}) {
@@ -1097,14 +1125,6 @@
 								<span>Link</span>
 								<input type="url" class="ppe__button-href" value="#">
 							</label>
-							<label class="ppe__table-field">
-								<span>Style</span>
-								<select class="ppe__button-style">
-									<option value="primary">Primary</option>
-									<option value="secondary">Secondary</option>
-									<option value="quiet">Quiet</option>
-								</select>
-							</label>
 							<label class="ppe__table-check">
 								<input type="checkbox" class="ppe__button-new-tab">
 								<span>Open in new tab</span>
@@ -1117,6 +1137,33 @@
 						<div class="ppe__popover-actions">
 							<button type="button" class="ppe__btn ppe__btn--primary ppe__button-insert">Insert Button</button>
 							<button type="button" class="ppe__btn" data-button-close>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="ppe__video-modal ppe__table-modal" hidden aria-hidden="true">
+				<div class="ppe__media-backdrop" data-video-close></div>
+				<div class="ppe__table-panel" role="dialog" aria-label="Insert Video" aria-modal="true">
+					<header class="ppe__media-header">
+						<h2>Insert Video</h2>
+						<button type="button" class="ppe__media-x" aria-label="Close" data-video-close>✕</button>
+					</header>
+					<div class="ppe__table-body">
+						<div class="ppe__table-form">
+							<label class="ppe__table-field">
+								<span>YouTube link</span>
+								<input type="url" class="ppe__video-url" placeholder="https://www.youtube.com/watch?v=…">
+							</label>
+							<p class="ppe__media-hint">Paste a YouTube watch, share (youtu.be) or embed link.</p>
+						</div>
+						<div class="ppe__table-preview-wrap">
+							<div class="ppe__table-preview-label">Preview</div>
+							<div class="ppe__table-preview ppe__video-preview" aria-hidden="true"></div>
+						</div>
+						<div class="ppe__popover-actions">
+							<button type="button" class="ppe__btn ppe__btn--primary ppe__video-insert">Insert Video</button>
+							<button type="button" class="ppe__btn" data-video-close>Cancel</button>
 						</div>
 					</div>
 				</div>
@@ -1318,6 +1365,7 @@
 			this.#bindColumnsModal();
 			this.#bindButtonModal();
 			this.#bindButtonsModal();
+			this.#bindVideoModal();
 			this.#bindDividerModal();
 			this.#bindSpacerModal();
 			this.#bindChartModal();
@@ -2049,6 +2097,10 @@
 				this.#openMediaModal();
 				return;
 			}
+			if (action === "video") {
+				this.#openVideoModal();
+				return;
+			}
 			if (action === "table") {
 				this.#openTableModal();
 				return;
@@ -2760,6 +2812,63 @@
 			this.#closeButtonModal();
 		}
 
+		#bindVideoModal() {
+			const modal = this.querySelector(".ppe__video-modal");
+			if (!modal) return;
+
+			modal.querySelectorAll("[data-video-close]").forEach((el) => {
+				el.addEventListener("click", () => this.#closeVideoModal());
+			});
+			modal.querySelector(".ppe__video-insert")?.addEventListener("click", () => this.#insertVideo());
+			modal.querySelector(".ppe__video-url")?.addEventListener("input", () => this.#updateVideoPreview());
+			modal.querySelector(".ppe__video-url")?.addEventListener("change", () => this.#updateVideoPreview());
+		}
+
+		#readVideoModalOptions() {
+			const modal = this.querySelector(".ppe__video-modal");
+			return { url: modal?.querySelector(".ppe__video-url")?.value };
+		}
+
+		#updateVideoPreview() {
+			const preview = this.querySelector(".ppe__video-preview");
+			if (!preview) return;
+			const html = buildProfileVideoHtml(this.#readVideoModalOptions());
+			preview.innerHTML = html || '<p class="ppe__media-hint">Enter a valid YouTube link to preview.</p>';
+		}
+
+		#openVideoModal() {
+			this.#saveSelection();
+			const modal = this.querySelector(".ppe__video-modal");
+			if (!modal) return;
+
+			const url = modal.querySelector(".ppe__video-url");
+			if (url) url.value = "";
+			this.#updateVideoPreview();
+			modal.hidden = false;
+			modal.setAttribute("aria-hidden", "false");
+			document.body.style.overflow = "hidden";
+			url?.focus();
+		}
+
+		#closeVideoModal() {
+			const modal = this.querySelector(".ppe__video-modal");
+			if (!modal) return;
+			modal.hidden = true;
+			modal.setAttribute("aria-hidden", "true");
+			document.body.style.overflow = "";
+		}
+
+		#insertVideo() {
+			const html = buildProfileVideoHtml(this.#readVideoModalOptions());
+			if (!html) {
+				const url = this.querySelector(".ppe__video-url");
+				url?.focus();
+				return;
+			}
+			this.#insertConfiguredBlock("video", html);
+			this.#closeVideoModal();
+		}
+
 		#bindButtonsModal() {
 			const modal = this.querySelector(".ppe__buttons-modal");
 			if (!modal) return;
@@ -3284,6 +3393,7 @@
 
 	window.ProfileProseToolbar = {
 		buildProfileButtonHtml,
+		buildProfileVideoHtml,
 		buildProfileButtonsHtml,
 		buildProfileColumnsHtml,
 		buildProfileDividerHtml,

@@ -507,7 +507,7 @@ body.theme-dark .search-page__result-link {
             return window.PeopleRegistry.resolvePersonProfileUrl(personId);
         }
 
-        return new URL(`people/${personId}/`, new URL(getSiteRootPrefix(), window.location.href)).href;
+        return new URL(`people/${personId}/index.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
     }
 
     function resolveSearchPageUrl(query = '') {

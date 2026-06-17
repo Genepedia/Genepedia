@@ -1034,8 +1034,22 @@
 					const record = await window.PeopleDB.loadPerson(this.__personId);
 					if (record) {
 						this.__record = record;
-						if (typeof record.familyHtml === "string" && record.familyHtml.trim()) {
-							this.__familyHtml = `<table-immediate-family>${record.familyHtml}</table-immediate-family>`;
+						// Match the live profile: build the immediate-family block from the
+						// canonical record so the editor's identity-box preview shows the
+						// same family list. Fall back to any legacy familyHtml on the record.
+						try {
+							const familyHtml = typeof window.PeopleDB.buildImmediateFamilyHtml === "function"
+								? await window.PeopleDB.buildImmediateFamilyHtml(record)
+								: "";
+							if (familyHtml && familyHtml.trim()) {
+								this.__familyHtml = familyHtml;
+							} else if (typeof record.familyHtml === "string" && record.familyHtml.trim()) {
+								this.__familyHtml = `<table-immediate-family>${record.familyHtml}</table-immediate-family>`;
+							}
+						} catch (error) {
+							if (typeof record.familyHtml === "string" && record.familyHtml.trim()) {
+								this.__familyHtml = `<table-immediate-family>${record.familyHtml}</table-immediate-family>`;
+							}
 						}
 						this.__data = window.PeopleDB.toInfoboxData(record);
 					}

@@ -514,10 +514,13 @@
 				const style = document.createElement('style');
 				style.id = 'profile-editor-breadcrumb-styles';
 				style.textContent = `
-				.profile-edit__breadcrumb-current { display: inline-flex; align-items: center; gap: 0.5rem; }
+				.profile-edit__breadcrumb-list > li { display: inline-flex; align-items: center; line-height: 1; }
+				.profile-edit__breadcrumb-home { display: inline-flex; align-items: center; line-height: 1; }
+				.profile-edit__breadcrumb-sep { display: inline-flex; align-items: center; line-height: 1; }
+				.profile-edit__breadcrumb-current { display: inline-flex; align-items: center; gap: 0.5rem; line-height: 1; }
 				.profile-edit__breadcrumb-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: var(--avatar-bg, #dfe3e6); color: var(--avatar-fg, #fff); flex: 0 0 28px; }
 				.profile-edit__breadcrumb-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-				.profile-edit__breadcrumb-name { vertical-align: middle; }
+				.profile-edit__breadcrumb-name { display: inline-flex; align-items: center; }
 				`;
 				document.head.append(style);
 			}
@@ -1497,7 +1500,7 @@
 				this.__pageEditor?.setDisplayName?.(displayName);
 				this.#setBreadcrumbCurrent(displayName, this.__isDraftProfile
 					? {}
-					: { href: resolveSiteUrl(`people/${PERSON_ID}/`) });
+					: { href: resolveSiteUrl(`people/${PERSON_ID}/index.html`) });
 			}
 
 			const endpoint = SELF_PROFILE_MODE ? "" : resolveGitHubApiUrl("github-submit-page-edit.php");

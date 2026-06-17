@@ -113,53 +113,25 @@
     }
 
     const TEMPLATE = `
-        <section class="ppriv" aria-label="Privacy editor">
+        <section class="ppriv pie" aria-label="Privacy editor">
             <style>
-                .ppriv {
-                    display: grid;
-                    gap: 1rem;
-                }
-
-                .ppriv__card {
-                    padding: 1rem 1.1rem;
-                    border: 1px solid rgba(0, 0, 0, 0.12);
-                    border-radius: 0.75rem;
-                    background: #fff;
-                }
-
-                .ppriv__title {
-                    margin: 0 0 0.35rem;
-                    font-size: 1rem;
-                }
-
-                .ppriv__note,
-                .ppriv__hint,
-                .ppriv__status {
-                    margin: 0;
-                    font-size: 0.88rem;
-                    color: #54595d;
-                }
-
-                .ppriv__status[data-type="error"] {
-                    color: #8f1d1d;
-                }
-
-                .ppriv__status[data-type="success"] {
-                    color: #17643a;
-                }
+                /* Reuse the shared editor look (.pie__group / .pie__legend /
+                   .pie__intro / .pie__status) so this tab matches the others;
+                   only the privacy-specific option cards and banner are local. */
+                .ppriv { width: 100%; }
 
                 .ppriv__options {
                     display: grid;
-                    gap: 0.75rem;
-                    margin-top: 1rem;
+                    gap: 0.55rem;
+                    margin-top: 0.75rem;
                 }
 
                 .ppriv__option {
                     display: grid;
                     gap: 0.2rem;
-                    padding: 0.8rem 0.9rem;
+                    padding: 0.7rem 0.85rem;
                     border: 1px solid rgba(0, 0, 0, 0.12);
-                    border-radius: 0.5rem;
+                    border-radius: 0.125rem;
                     background: rgba(0, 0, 0, 0.02);
                 }
 
@@ -181,9 +153,10 @@
                     display: flex;
                     gap: 0.6rem;
                     align-items: start;
-                    padding: 0.85rem 0.95rem;
+                    margin: 0 0 1.5rem;
+                    padding: 0.7rem 0.85rem;
                     border: 1px solid rgba(51, 102, 204, 0.24);
-                    border-radius: 0.5rem;
+                    border-radius: 0.125rem;
                     background: rgba(51, 102, 204, 0.08);
                     color: inherit;
                 }
@@ -206,14 +179,6 @@
                     line-height: 1.45;
                 }
 
-                body.theme-dark .ppriv__card {
-                    border-color: rgba(255, 255, 255, 0.12);
-                    background: #1a1e24;
-                }
-
-                body.theme-dark .ppriv__note,
-                body.theme-dark .ppriv__hint,
-                body.theme-dark .ppriv__status,
                 body.theme-dark .ppriv__option-copy {
                     color: #c8ccd1;
                 }
@@ -228,9 +193,9 @@
                     background: rgba(107, 158, 255, 0.12);
                 }
             </style>
-            <div class="ppriv__card">
-                <h3 class="ppriv__title">Profile visibility</h3>
-                <p class="ppriv__note">Only maintainers can change profile privacy. Deceased profiles are always public.</p>
+            <fieldset class="pie__group">
+                <legend class="pie__legend">Profile visibility</legend>
+                <p class="pie__intro">Only maintainers can change profile privacy. Deceased profiles are always public.</p>
                 <div class="ppriv__options">
                     <label class="ppriv__option">
                         <span class="ppriv__option-control"><input type="radio" name="privacy-visibility" value="public"> Public profile</span>
@@ -241,8 +206,8 @@
                         <span class="ppriv__option-copy">Public visitors only see the name. Details are blurred and marked private. Maintainers, contributors, and close family can still view the full profile.</span>
                     </label>
                 </div>
-                <p class="ppriv__status" role="status" hidden></p>
-            </div>
+                <p class="ppriv__status pie__status" role="status" hidden></p>
+            </fieldset>
             <div class="ppriv__banner" data-role="privacy-banner" hidden>
                 <i class="bi bi-shield-lock" aria-hidden="true"></i>
                 <div>

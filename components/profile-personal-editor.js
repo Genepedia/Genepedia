@@ -121,6 +121,39 @@
         return options.map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join("");
     }
 
+    // Per-measurement value placeholder for the year-tagged history rows.
+    const MEASUREMENT_HISTORY_PLACEHOLDER = {
+        height: "e.g. 1.75 m",
+        weight: "e.g. 60 kg",
+        shoeSize: "e.g. UK 8",
+    };
+
+    // The history sub-control under a measurement field: a list of saved rows plus
+    // an "Add past value" button. Rows are rendered by renderHistoryRow().
+    function renderHistoryControl(measure) {
+        return `
+            <div class="ppe-personal__history" data-history="${escapeHtml(measure)}">
+                <div class="ppe-personal__history-list" data-history-list="${escapeHtml(measure)}"></div>
+                <button type="button" class="ppe-personal__history-add" data-history-add="${escapeHtml(measure)}">
+                    <i class="bi bi-clock-history" aria-hidden="true"></i> Add past value
+                </button>
+            </div>
+        `;
+    }
+
+    function renderHistoryRow(measure, entry = {}) {
+        const year = entry && entry.year != null ? String(entry.year) : "";
+        const value = entry && entry.value != null ? String(entry.value) : "";
+        const placeholder = MEASUREMENT_HISTORY_PLACEHOLDER[measure] || "Value";
+        return `
+            <div class="ppe-personal__history-row" data-history-row="${escapeHtml(measure)}">
+                <input type="number" class="ppe-personal__history-year" data-history-year placeholder="Year" inputmode="numeric" value="${escapeHtml(year)}">
+                <input type="text" class="ppe-personal__history-value" data-history-value placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(value)}">
+                <button type="button" class="ppe-personal__history-remove" data-history-remove aria-label="Remove value"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+            </div>
+        `;
+    }
+
     const RELIGION_OPTIONS = [
         "Christianity",
         "Islam",
@@ -328,6 +361,77 @@
                 border-color: rgba(255, 255, 255, 0.3);
                 background: #101418;
             }
+
+            .ppe-personal__history {
+                margin-top: 0.4rem;
+            }
+
+            .ppe-personal__history-list {
+                display: grid;
+                gap: 0.4rem;
+            }
+
+            .ppe-personal__history-list:empty {
+                display: none;
+            }
+
+            .ppe-personal__history-row {
+                display: grid;
+                grid-template-columns: 6rem minmax(0, 1fr) auto;
+                gap: 0.4rem;
+                align-items: center;
+            }
+
+            .ppe-personal__history-row input {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .ppe-personal__history-remove {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 2rem;
+                height: 2rem;
+                border: 1px solid #a2a9b1;
+                border-radius: 0.125rem;
+                background: #fff;
+                color: #54595d;
+                cursor: pointer;
+            }
+
+            .ppe-personal__history-remove:hover {
+                border-color: #d33;
+                color: #d33;
+            }
+
+            .ppe-personal__history-add {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35rem;
+                margin-top: 0.4rem;
+                padding: 0.25rem 0.5rem;
+                border: 0;
+                background: transparent;
+                color: #3366cc;
+                font: inherit;
+                font-size: 0.85rem;
+                cursor: pointer;
+            }
+
+            .ppe-personal__history-add:hover {
+                text-decoration: underline;
+            }
+
+            body.theme-dark .ppe-personal__history-remove {
+                border-color: rgba(255, 255, 255, 0.3);
+                background: #101418;
+                color: #c8ccd1;
+            }
+
+            body.theme-dark .ppe-personal__history-add {
+                color: #6b9eff;
+            }
         </style>
         <form class="pie" autocomplete="off">
             <div class="pie__status" role="status" hidden></div>
@@ -342,17 +446,17 @@
                     <label class="pie__label" for="ppe-eye-color">Eye color</label>
                     <div class="pie__field"><input id="ppe-eye-color" type="text" data-field="eyeColor" placeholder="e.g. Blue"></div>
                 </div>
-                <div class="pie__row">
+                <div class="pie__row pie__row--align-top">
                     <label class="pie__label" for="ppe-height">Height</label>
-                    <div class="pie__field"><input id="ppe-height" type="text" data-field="height" placeholder="e.g. 1.80 m"></div>
+                    <div class="pie__field"><input id="ppe-height" type="text" data-field="height" placeholder="e.g. 1.80 m">${renderHistoryControl("height")}</div>
                 </div>
-                <div class="pie__row">
+                <div class="pie__row pie__row--align-top">
                     <label class="pie__label" for="ppe-weight">Weight</label>
-                    <div class="pie__field"><input id="ppe-weight" type="text" data-field="weight" placeholder="e.g. 72 kg"></div>
+                    <div class="pie__field"><input id="ppe-weight" type="text" data-field="weight" placeholder="e.g. 72 kg">${renderHistoryControl("weight")}</div>
                 </div>
-                <div class="pie__row">
+                <div class="pie__row pie__row--align-top">
                     <label class="pie__label" for="ppe-shoe-size">Shoe size</label>
-                    <div class="pie__field"><input id="ppe-shoe-size" type="text" data-field="shoeSize" placeholder="e.g. UK 9"></div>
+                    <div class="pie__field"><input id="ppe-shoe-size" type="text" data-field="shoeSize" placeholder="e.g. UK 9">${renderHistoryControl("shoeSize")}</div>
                 </div>
                     <div class="pie__row">
                         <label class="pie__label" for="ppe-handedness">Handedness</label>
@@ -488,6 +592,9 @@
                     bloodType: null,
                     allergies: [],
                     handedness: null,
+                    heightHistory: [],
+                    weightHistory: [],
+                    shoeSizeHistory: [],
                 };
             this.__savedSnapshot = "";
             this.__history = [];
@@ -698,7 +805,33 @@
                 bloodType: normalizeText(bloodTypeInput?.value) || null,
                 allergies: (function () { const a = normalizeTextList(this.__data.allergies); return a.length ? a : ["Unknown"]; }).call(this),
                 handedness: normalizeText(handednessInput?.value) || null,
+                heightHistory: this.#collectHistory("height"),
+                weightHistory: this.#collectHistory("weight"),
+                shoeSizeHistory: this.#collectHistory("shoeSize"),
             };
+        }
+
+        // Read the year-tagged rows for a measurement into [{ year, value }],
+        // dropping blank rows and ordering newest-first.
+        #collectHistory(measure) {
+            const rows = [...this.querySelectorAll(`[data-history-list="${measure}"] [data-history-row]`)];
+            const out = [];
+            for (const row of rows) {
+                const yearRaw = normalizeText(row.querySelector("[data-history-year]")?.value);
+                const valueRaw = normalizeText(row.querySelector("[data-history-value]")?.value);
+                if (!yearRaw && !valueRaw) continue;
+                const yearNum = Number.parseInt(yearRaw, 10);
+                out.push({ year: Number.isFinite(yearNum) ? yearNum : null, value: valueRaw || null });
+            }
+            out.sort((a, b) => (b.year || 0) - (a.year || 0));
+            return out;
+        }
+
+        #renderHistory(measure) {
+            const list = this.querySelector(`[data-history-list="${measure}"]`);
+            if (!list) return;
+            const entries = Array.isArray(this.__data?.[`${measure}History`]) ? this.__data[`${measure}History`] : [];
+            list.innerHTML = entries.map((entry) => renderHistoryRow(measure, entry)).join("");
         }
 
         getPersonalData() {
@@ -720,6 +853,9 @@
             this.querySelector('[data-field="religion"]').value = data.religion || "";
             this.querySelector('[data-field="politicalViews"]').value = data.politicalViews || "";
             this.querySelector('[data-field="shoeSize"]').value = data.shoeSize || "";
+            this.#renderHistory("height");
+            this.#renderHistory("weight");
+            this.#renderHistory("shoeSize");
             this.querySelector('[data-field="smoking"]').value = data.smoking || "";
             this.querySelector('[data-field="alcoholUse"]').value = data.alcoholUse || "";
             this.querySelector('[data-field="bloodType"]').value = data.bloodType || "";
@@ -862,6 +998,11 @@
                 this.#notifyDirtyState();
                 return;
             }
+            if (target.closest("[data-history-row]")) {
+                this.#scheduleHistoryCapture();
+                this.#notifyDirtyState();
+                return;
+            }
             const field = String(target.dataset.field || "").trim();
             if (!field) return;
             if (field === "languagesInput" || field === "hobbiesInput") {
@@ -894,6 +1035,25 @@
             if (chip) {
                 event.preventDefault();
                 this.#removeChip(chip.dataset.chipRemove, chip.dataset.chipValue);
+                return;
+            }
+            const historyAdd = event.target.closest('[data-history-add]');
+            if (historyAdd) {
+                event.preventDefault();
+                const measure = historyAdd.dataset.historyAdd;
+                const list = this.querySelector(`[data-history-list="${measure}"]`);
+                if (list) {
+                    list.insertAdjacentHTML("beforeend", renderHistoryRow(measure, {}));
+                    list.querySelector('[data-history-row]:last-child [data-history-year]')?.focus();
+                    this.#notifyDirtyState();
+                }
+                return;
+            }
+            const historyRemove = event.target.closest('[data-history-remove]');
+            if (historyRemove) {
+                event.preventDefault();
+                historyRemove.closest('[data-history-row]')?.remove();
+                this.#notifyDirtyState();
                 return;
             }
             const tokenControl = event.target.closest('[data-token-control]');

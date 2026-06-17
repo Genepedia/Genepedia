@@ -367,6 +367,30 @@ body.theme-dark .people-page__gallery img {
   box-sizing: border-box;
 }
 
+.people-page__content figure.ppe-profile-video {
+  margin: 1rem 0;
+  width: 100%;
+  max-width: 40rem;
+  box-sizing: border-box;
+}
+
+.people-page__content .ppe-profile-video__frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.people-page__content .ppe-profile-video__frame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .people-page__content:has(> aside) > figure.ppe-profile-chart {
   max-width: calc(100% - min(50%, 20rem) - 1.25rem);
 }
@@ -1067,6 +1091,22 @@ body.theme-dark .people-page__media-thumb {
   font-weight: 600;
 }
 
+.people-page__media-thumb--media {
+  position: relative;
+}
+
+.people-page__media-play {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.75rem;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
 .people-page__media-badge--warn {
   background: rgba(208, 44, 63, 0.9);
 }
@@ -1392,6 +1432,14 @@ function peoplePageImageExtension(name) {
   return match ? match[1] : '';
 }
 
+const PEOPLE_PAGE_YOUTUBE_RE = /(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/)|youtu\.be\/|youtube-nocookie\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
+
+// 11-char YouTube id from a watch / youtu.be / embed / shorts URL, else ''.
+function peoplePageYouTubeId(value) {
+  const match = String(value || '').match(PEOPLE_PAGE_YOUTUBE_RE);
+  return match ? match[1] : '';
+}
+
 function peoplePageMediaKind(nameOrUrl, mimeType = '') {
   const type = String(mimeType || '').toLowerCase();
   if (type.startsWith('image/')) {
@@ -1399,6 +1447,10 @@ function peoplePageMediaKind(nameOrUrl, mimeType = '') {
   }
   if (type === 'application/pdf') {
     return 'pdf';
+  }
+
+  if (peoplePageYouTubeId(nameOrUrl)) {
+    return 'video';
   }
 
   const value = String(nameOrUrl || '').split('?')[0];
@@ -1448,6 +1500,15 @@ function peoplePageRenderMediaThumbContent({ kind, url = '', caption = '', uploa
 
   if (kind === 'image') {
     return `<img src="${peoplePageEscapeHtml(url)}" alt="${peoplePageEscapeHtml(caption)}" loading="lazy">`;
+  }
+
+  if (kind === 'video') {
+    const id = peoplePageYouTubeId(url);
+    const poster = id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : '';
+    return `
+      ${poster ? `<img src="${peoplePageEscapeHtml(poster)}" alt="${peoplePageEscapeHtml(caption)}" loading="lazy">` : ''}
+      <span class="people-page__media-play" aria-hidden="true"><i class="bi bi-play-circle-fill"></i></span>
+    `;
   }
 
   return `
@@ -1555,8 +1616,11 @@ class PeoplePage extends HTMLElement {
       if (titleLink) {
         titleLink.textContent = next;
         try {
-          const href = window.location.href.replace(/(?:index|profile)\.html(?:#.*)?$/i, '');
-          titleLink.href = href;
+          // Point the title link straight at the profile's index.html.
+          const base = window.location.href
+            .replace(/[?#].*$/, '')
+            .replace(/(?:index|profile)\.html$/i, '');
+          titleLink.href = `${base}index.html`;
         } catch (e) {
           // ignore
         }
@@ -3019,7 +3083,7 @@ class PeoplePage extends HTMLElement {
       const kind = peoplePageMediaKind(image.name || image.url, image.mimeType || '');
       return `
         <figure class="people-page__media-item${removal ? ' is-removing' : ''}">
-          <div class="people-page__media-thumb ${kind === 'image' ? '' : `people-page__media-thumb--file people-page__media-thumb--${kind}`}" data-media-view="${peoplePageEscapeHtml(image.name)}" role="button" tabindex="0" aria-label="Open ${peoplePageEscapeHtml(caption)}">
+          <div class="people-page__media-thumb ${kind === 'image' ? '' : kind === 'video' ? 'people-page__media-thumb--media' : `people-page__media-thumb--file people-page__media-thumb--${kind}`}" data-media-view="${peoplePageEscapeHtml(image.name)}" role="button" tabindex="0" aria-label="Open ${peoplePageEscapeHtml(caption)}">
             ${peoplePageRenderMediaThumbContent({ kind, url: image.url, caption })}
             ${removal ? '<span class="people-page__media-badge people-page__media-badge--warn">Removal pending</span>' : ''}
             <div class="people-page__media-hover">
@@ -3031,7 +3095,7 @@ class PeoplePage extends HTMLElement {
                   <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
                 </button>
               ` : ''}
-              ${state.canManage && !removal && image.sourceType !== 'link' ? `
+              ${state.canManage && !removal ? `
                 <button type="button" class="people-page__media-icon people-page__media-icon--danger" data-media-delete="${peoplePageEscapeHtml(image.name)}" title="Remove" aria-label="Remove media">
                   <i class="bi bi-trash" aria-hidden="true"></i>
                 </button>
@@ -4034,7 +4098,7 @@ class PeoplePage extends HTMLElement {
     const promise = (async () => {
       const card = {
         personId,
-        profileUrl: this.#resolveSiteUrl(`people/${personId}/`),
+        profileUrl: this.#resolveSiteUrl(`people/${personId}/index.html`),
         name: '',
         photoUrl: '',
       };
