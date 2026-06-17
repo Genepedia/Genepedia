@@ -1358,7 +1358,7 @@ body.theme-dark .people-page__talk-form textarea {
   }
 }
 </style>
-<full-page-toolbar variant="people"></full-page-toolbar>
+<full-page-toolbar variant="people" edit-disabled></full-page-toolbar>
 <div class="people-page__content" aria-live="polite"></div>
 `;
 
@@ -1601,11 +1601,39 @@ class PeoplePage extends HTMLElement {
   }
 
   async #init() {
-    await this.__titleLoadPromise;
+    // Resolve privacy access right away — before the title finishes loading — and
+    // reflect edit permission as soon as it is known. The edit button starts
+    // hidden (see the template's `edit-disabled`), so it is only ever revealed
+    // for viewers who are allowed to see the profile, never flashed for private
+    // profiles the viewer cannot view.
     this.#privacyAccessPromise = this.#loadPrivacyAccess();
+    void this.#privacyAccessPromise
+      .then((access) => {
+        this.#privacyAccess = access;
+        this.#syncEditAccess();
+      })
+      .catch(() => {
+        // Leave access unresolved; the edit button stays hidden (fail closed).
+      });
+
+    await this.__titleLoadPromise;
     const initialTab = this.#getInitialTab();
     this.#selectTab(initialTab, { updateHash: Boolean(this.#getTabFromHash()) });
     await this.#loadTab(initialTab);
+  }
+
+  // Single source of truth for whether the toolbar's edit button may show.
+  // Until privacy access is resolved the button stays hidden, so it never
+  // appears for a private profile the viewer is not allowed to see.
+  #syncEditAccess() {
+    const toolbar = this.querySelector('full-page-toolbar');
+    if (!toolbar) {
+      return;
+    }
+
+    const access = this.#privacyAccess;
+    const blockEdit = !access || Boolean(access.isPrivate && !access.canViewDetails);
+    toolbar.toggleAttribute('edit-disabled', blockEdit);
   }
 
   #setTitle(title) {
@@ -2675,6 +2703,10 @@ class PeoplePage extends HTMLElement {
 
     const access = this.#privacyAccess;
     const shouldBlur = Boolean(access?.isPrivate && !access?.canViewDetails);
+
+    // A viewer who can't see a blurred private profile also can't edit it, so
+    // hide the toolbar's edit affordance while the blur is in effect.
+    this.#syncEditAccess();
 
     // Clear any overlay left over from a previous render so toggling tabs (or a
     // change in access) always starts from a clean slate.
