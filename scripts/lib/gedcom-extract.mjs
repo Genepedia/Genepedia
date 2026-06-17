@@ -293,7 +293,9 @@ function extractAttributes(indi, props) {
     hairColor: normalizeText(props.hair_color || '') || null,
     eyeColor: normalizeText(props.eye_color || '') || null,
     height: combineHeight(props),
+    heightYear: null,
     weight: normalizeText(props.weight || factValues(facts, ['weight']).at(0) || '') || null,
+    weightYear: null,
     ethnicity: normalizeText(props.ethnicity || factValues(facts, ['ethnicity', 'ethnic group', 'ethnicity']).at(0) || firstChild(indi, 'NATI')?.value || '') || null,
     religion: normalizeText(props.religion || factValues(facts, ['religion', 'faith']).at(0) || religionNode?.value || '') || null,
     politicalViews: normalizeText(props.political_views || props.political || factValues(facts, ['political views', 'politics', 'political']).at(0) || '') || null,
@@ -307,6 +309,7 @@ function extractAttributes(indi, props) {
       ...factValues(facts, ['hobbies', 'hobby']).flatMap((value) => splitListValue(value)),
     ]),
     shoeSize: normalizeText(props.shoe_size || props.shoesize || factValues(facts, ['shoe size', 'shoe']).at(0) || '') || null,
+    shoeSizeYear: null,
     smoking: normalizeText(props.smoking || props.smoker || factValues(facts, ['smoking', 'smoker']).at(0) || '') || null,
   };
 }

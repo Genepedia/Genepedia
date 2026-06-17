@@ -128,6 +128,16 @@
         shoeSize: "e.g. UK 8",
     };
 
+    function renderMeasurementControl(measure, inputId, placeholder) {
+        return `
+            <div class="ppe-personal__measurement-current" data-measurement-current="${escapeHtml(measure)}">
+                <input type="number" class="ppe-personal__history-year" data-field="${escapeHtml(measure)}Year" placeholder="Year" inputmode="numeric">
+                <input id="${escapeHtml(inputId)}" type="text" class="ppe-personal__measurement-value" data-field="${escapeHtml(measure)}" placeholder="${escapeHtml(placeholder)}">
+            </div>
+            ${renderHistoryControl(measure)}
+        `;
+    }
+
     // The history sub-control under a measurement field: a list of saved rows plus
     // an "Add past value" button. Rows are rendered by renderHistoryRow().
     function renderHistoryControl(measure) {
@@ -375,6 +385,7 @@
                 display: none;
             }
 
+            .ppe-personal__measurement-current,
             .ppe-personal__history-row {
                 display: grid;
                 grid-template-columns: 6rem minmax(0, 1fr) auto;
@@ -382,6 +393,11 @@
                 align-items: center;
             }
 
+            .ppe-personal__measurement-current {
+                grid-template-columns: 6rem minmax(0, 1fr);
+            }
+
+            .ppe-personal__measurement-current input,
             .ppe-personal__history-row input {
                 width: 100%;
                 box-sizing: border-box;
@@ -448,15 +464,15 @@
                 </div>
                 <div class="pie__row pie__row--align-top">
                     <label class="pie__label" for="ppe-height">Height</label>
-                    <div class="pie__field"><input id="ppe-height" type="text" data-field="height" placeholder="e.g. 1.80 m">${renderHistoryControl("height")}</div>
+                    <div class="pie__field">${renderMeasurementControl("height", "ppe-height", "e.g. 1.80 m")}</div>
                 </div>
                 <div class="pie__row pie__row--align-top">
                     <label class="pie__label" for="ppe-weight">Weight</label>
-                    <div class="pie__field"><input id="ppe-weight" type="text" data-field="weight" placeholder="e.g. 72 kg">${renderHistoryControl("weight")}</div>
+                    <div class="pie__field">${renderMeasurementControl("weight", "ppe-weight", "e.g. 72 kg")}</div>
                 </div>
                 <div class="pie__row pie__row--align-top">
                     <label class="pie__label" for="ppe-shoe-size">Shoe size</label>
-                    <div class="pie__field"><input id="ppe-shoe-size" type="text" data-field="shoeSize" placeholder="e.g. UK 9">${renderHistoryControl("shoeSize")}</div>
+                    <div class="pie__field">${renderMeasurementControl("shoeSize", "ppe-shoe-size", "e.g. UK 9")}</div>
                 </div>
                     <div class="pie__row">
                         <label class="pie__label" for="ppe-handedness">Handedness</label>
@@ -579,13 +595,16 @@
                     hairColor: null,
                     eyeColor: null,
                     height: null,
+                    heightYear: null,
                     weight: null,
+                    weightYear: null,
                     ethnicity: null,
                     religion: null,
                     politicalViews: null,
                     languages: [],
                     hobbies: [],
                     shoeSize: null,
+                    shoeSizeYear: null,
                     smoking: null,
                     alcoholUse: null,
                     disabilities: [],
@@ -783,22 +802,33 @@
             const alcoholUseInput = this.querySelector('[data-field="alcoholUse"]');
             const bloodTypeInput = this.querySelector('[data-field="bloodType"]');
             const handednessInput = this.querySelector('[data-field="handedness"]');
+            const yearValue = (field) => {
+                const raw = normalizeText(this.querySelector(`[data-field="${field}"]`)?.value);
+                const year = Number.parseInt(raw, 10);
+                return raw && Number.isFinite(year) ? year : null;
+            };
+            const heightValue = (function () {
+                const raw = normalizeText(this.querySelector('[data-field="height"]')?.value) || null;
+                if (!raw) return null;
+                const m = parseHeightToMeters(raw);
+                return m != null ? formatMeters(m) : raw;
+            }).call(this);
+            const weightValue = normalizeText(this.querySelector('[data-field="weight"]')?.value) || null;
+            const shoeSizeValue = normalizeText(this.querySelector('[data-field="shoeSize"]')?.value) || null;
             return {
                 hairColor: normalizeText(this.querySelector('[data-field="hairColor"]')?.value) || null,
                 eyeColor: normalizeText(this.querySelector('[data-field="eyeColor"]')?.value) || null,
-                height: (function () {
-                    const raw = normalizeText(this.querySelector('[data-field="height"]')?.value) || null;
-                    if (!raw) return null;
-                    const m = parseHeightToMeters(raw);
-                    return m != null ? formatMeters(m) : raw;
-                }).call(this),
-                weight: normalizeText(this.querySelector('[data-field="weight"]')?.value) || null,
+                height: heightValue,
+                heightYear: heightValue ? yearValue("heightYear") : null,
+                weight: weightValue,
+                weightYear: weightValue ? yearValue("weightYear") : null,
                 ethnicity: normalizeText(this.querySelector('[data-field="ethnicity"]')?.value) || "Unknown",
                 religion: normalizeText(this.querySelector('[data-field="religion"]')?.value) || "Unknown",
                 politicalViews: normalizeText(this.querySelector('[data-field="politicalViews"]')?.value) || "Unknown",
                 languages: normalizeTextList(this.__data.languages),
                 hobbies: normalizeTextList(this.__data.hobbies),
-                shoeSize: normalizeText(this.querySelector('[data-field="shoeSize"]')?.value) || null,
+                shoeSize: shoeSizeValue,
+                shoeSizeYear: shoeSizeValue ? yearValue("shoeSizeYear") : null,
                 smoking: normalizeText(smokingInput?.value) || null,
                 alcoholUse: normalizeText(alcoholUseInput?.value) || null,
                 disabilities: (function () { const d = normalizeTextList(this.__data.disabilities); return d.length ? d : ["Unknown"]; }).call(this),
@@ -842,16 +872,19 @@
             const data = this.__data || {};
             this.querySelector('[data-field="hairColor"]').value = data.hairColor || "";
             this.querySelector('[data-field="eyeColor"]').value = data.eyeColor || "";
+            this.querySelector('[data-field="heightYear"]').value = data.heightYear || "";
             const heightInput = this.querySelector('[data-field="height"]');
             const parsed = parseHeightToMeters(data.height || '');
             if (heightInput) {
                 heightInput.value = parsed != null ? formatMeters(parsed) : (data.height || '');
                 heightInput.placeholder = 'e.g. 1.80 m';
             }
+            this.querySelector('[data-field="weightYear"]').value = data.weightYear || "";
             this.querySelector('[data-field="weight"]').value = data.weight || "";
             this.querySelector('[data-field="ethnicity"]').value = data.ethnicity || "";
             this.querySelector('[data-field="religion"]').value = data.religion || "";
             this.querySelector('[data-field="politicalViews"]').value = data.politicalViews || "";
+            this.querySelector('[data-field="shoeSizeYear"]').value = data.shoeSizeYear || "";
             this.querySelector('[data-field="shoeSize"]').value = data.shoeSize || "";
             this.#renderHistory("height");
             this.#renderHistory("weight");

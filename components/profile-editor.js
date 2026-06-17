@@ -29,6 +29,1443 @@
 	const SELF_PROFILE_MATCH_LIMIT = 8;
 	const EDIT_TAB_NAMES = new Set(["profile", "infobox", "personal", "education", "career", "relationships", "privacy"]);
 
+	const PROFILE_EDITOR_STYLE_ID = "profile-editor-styles";
+	const PROFILE_EDITOR_STYLES = `
+/*
+ * Profile editor canvas styles.
+ *
+ * The <page-editor> canvas on people/edit.html gets the people-page__content
+ * class (via canvas-class) so profile fragments render with the same
+ * typography as the live profile page. These rules mirror the styles in
+ * components/people-page.js, plus editing styles for the raw
+ * <profile-identity> infobox elements (which the live page upgrades into an
+ * <aside> table at render time).
+ */
+
+.people-page__content {
+  color: #202122;
+  font: 1rem/1.65 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+body.theme-dark .people-page__content {
+  color: #eaecf0;
+}
+
+.people-page__content a {
+  color: #3366cc;
+}
+
+body.theme-dark .people-page__content a {
+  color: #6b9eff;
+}
+
+.people-page__content p {
+  margin: 0 0 0.9rem;
+}
+
+.people-page__content h1 {
+  margin: 0 0 1rem;
+  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.people-page__content h2 {
+  margin: 1.75rem 0 0.65rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  font-family: Linux Libertine, Hoefler Text, Georgia, Times New Roman, Times, serif;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1.25;
+  overflow: hidden;
+}
+
+body.theme-dark .people-page__content h2 {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.people-page__content h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.people-page__content ul,
+.people-page__content ol {
+  margin: 0 0 0.9rem;
+  padding-left: 1.5rem;
+}
+
+.people-page__content li {
+  margin-bottom: 0.35rem;
+}
+
+.people-page__content dl {
+  margin: 0 0 0.9rem;
+}
+
+.people-page__content dt {
+  font-weight: 600;
+}
+
+.people-page__content dd {
+  margin: 0 0 0.5rem 1rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Inline-editable identity infobox (raw <profile-identity> markup).   */
+/* Shown as a right-aligned card; the live page floats it instead.     */
+/* ------------------------------------------------------------------ */
+
+.people-page__content [data-editor-include] {
+  display: block;
+}
+
+.people-page__content profile-identity {
+  display: block;
+  width: min(100%, 22rem);
+  margin: 0 0 1rem auto;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #f8f9fa;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+body.theme-dark .people-page__content profile-identity {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #1a1e24;
+}
+
+.people-page__content profile-identity table-photo {
+  display: block;
+  padding-bottom: 0.5rem;
+}
+
+.people-page__content profile-identity table-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.125rem;
+}
+
+.people-page__content profile-identity table-name,
+.people-page__content profile-identity table-gender,
+.people-page__content profile-identity table-birth,
+.people-page__content profile-identity table-death,
+.people-page__content profile-identity table-place-of-burial,
+.people-page__content profile-identity table-immediate-family {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  column-gap: 1rem;
+  padding: 0.4rem 0;
+}
+
+.people-page__content profile-identity table-name::before,
+.people-page__content profile-identity table-gender::before,
+.people-page__content profile-identity table-birth::before,
+.people-page__content profile-identity table-death::before,
+.people-page__content profile-identity table-place-of-burial::before,
+.people-page__content profile-identity table-immediate-family::before {
+  font-weight: 600;
+  color: #54595d;
+}
+
+body.theme-dark .people-page__content profile-identity table-name::before,
+body.theme-dark .people-page__content profile-identity table-gender::before,
+body.theme-dark .people-page__content profile-identity table-birth::before,
+body.theme-dark .people-page__content profile-identity table-death::before,
+body.theme-dark .people-page__content profile-identity table-place-of-burial::before,
+body.theme-dark .people-page__content profile-identity table-immediate-family::before {
+  color: #a7adb4;
+}
+
+.people-page__content profile-identity table-name::before {
+  content: "Name";
+}
+
+.people-page__content profile-identity table-gender::before {
+  content: "Gender";
+}
+
+.people-page__content profile-identity table-birth::before {
+  content: "Birth";
+}
+
+.people-page__content profile-identity table-death::before {
+  content: "Death";
+}
+
+.people-page__content profile-identity table-place-of-burial::before {
+  content: "Place of burial";
+}
+
+.people-page__content profile-identity table-immediate-family::before {
+  content: "Immediate family";
+}
+
+.people-page__content profile-identity table-immediate-family p {
+  margin: 0 0 0.55rem;
+}
+
+.people-page__content profile-identity table-immediate-family p:last-child {
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Profile-specific blocks                                              */
+/* ------------------------------------------------------------------ */
+
+.people-page__content figure.profile-figure {
+  margin: 0 0 1rem;
+  max-width: 22rem;
+}
+
+.people-page__content figure.profile-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.125rem;
+  box-sizing: border-box;
+}
+
+body.theme-dark .people-page__content figure.profile-figure img {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.people-page__content figure.profile-figure figcaption {
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+  color: #54595d;
+  line-height: 1.35;
+}
+
+body.theme-dark .people-page__content figure.profile-figure figcaption {
+  color: #a7adb4;
+}
+
+/* ------------------------------------------------------------------ */
+/* Profile editor shell (<profile-editor>)                              */
+/* ------------------------------------------------------------------ */
+
+.profile-edit {
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+html body.profile-edit-page[data-has-full-header="true"] {
+  padding-top: var(--header-chrome-height, 55px);
+}
+
+/* Portal/other global styles set a small body margin; remove it on this
+   page so the fixed full-header aligns flush with the editor header. */
+body.profile-edit-page {
+  margin: 0;
+  background: #f8f9fa;
+  color: #202122;
+}
+
+body.theme-dark.profile-edit-page {
+  background: #101418;
+  color: #eaecf0;
+}
+
+/* Sticky toolbar: breadcrumb · tabs · status + Save. */
+.profile-edit__bar {
+  position: sticky;
+  top: var(--header-chrome-height, 55px);
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  background: #f8f9fa;
+}
+
+body.theme-dark .profile-edit__bar {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  background: #101418;
+}
+
+.profile-edit__breadcrumb {
+  font-size: 0.875rem;
+  color: var(--color-progressive, #3366cc);
+}
+
+.profile-edit__breadcrumb-list {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-edit__breadcrumb-list a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile-edit__breadcrumb-list a:hover {
+  text-decoration: underline;
+}
+
+.profile-edit__breadcrumb-current[aria-current="page"] {
+  color: var(--color-subtle, #54595d);
+  cursor: default;
+}
+
+.profile-edit__breadcrumb-sep {
+  color: var(--color-subtle, #6b7280);
+}
+
+.profile-edit__tabs {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.375rem;
+  background: #f8f9fa;
+}
+
+body.theme-dark .profile-edit__tabs {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #1a1e24;
+}
+
+.profile-edit__tab {
+  padding: 0.4rem 0.85rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: #54595d;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.theme-dark .profile-edit__tab {
+  color: #a7adb4;
+}
+
+.profile-edit__tab:hover {
+  color: #202122;
+}
+
+body.theme-dark .profile-edit__tab:hover {
+  color: #eaecf0;
+}
+
+.profile-edit__tab.is-active {
+  background: #3366cc;
+  color: #ffffff;
+}
+
+body.theme-dark .profile-edit__tab.is-active {
+  background: #6b9eff;
+  color: #101418;
+}
+
+.profile-edit__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.profile-edit__status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-subtle, #54595d);
+}
+
+.profile-edit__status[data-type="success"] {
+  color: var(--color-success, #1a7f37);
+}
+
+.profile-edit__status[data-type="error"] {
+  color: var(--color-danger, #cf222e);
+}
+
+.profile-edit__status a {
+  color: inherit;
+}
+
+.profile-edit__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--border-radius-base, 0.125rem);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-edit__save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-edit__panel[hidden] {
+  display: none;
+}
+
+.profile-edit__panels {
+  width: 100%;
+  max-width: var(--site-content-max-width, 90rem);
+  margin: 0 auto;
+  padding: calc(1rem - 2px) 1rem 1rem;
+  box-sizing: border-box;
+  color: #202122;
+  font: 1rem/1.65 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
+}
+
+body.theme-dark .profile-edit__panels {
+  color: #eaecf0;
+}
+
+.profile-edit__error {
+  margin: 1.5rem;
+  color: var(--color-danger, #cf222e);
+}
+
+.profile-edit__claim-review {
+  width: 100%;
+  max-width: var(--site-content-max-width, 90rem);
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.profile-edit__claim-review[hidden] {
+  display: none !important;
+}
+
+.profile-edit__claim-head {
+  margin-bottom: 1rem;
+}
+
+.profile-edit__claim-head h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.2;
+}
+
+.profile-edit__claim-head p {
+  margin: 0;
+  color: #54595d;
+}
+
+body.theme-dark .profile-edit__claim-head p {
+  color: #a2a9b1;
+}
+
+.profile-edit__match-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.profile-edit__match-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #a2a9b1;
+  border-radius: var(--border-radius-base);
+  background: #fff;
+}
+
+body.theme-dark .profile-edit__match-card {
+  border-color: #54595d;
+  background: #1b2025;
+}
+
+.profile-edit__match-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.profile-edit__match-card p {
+  margin: 0.15rem 0;
+  color: #54595d;
+}
+
+body.theme-dark .profile-edit__match-card p {
+  color: #a2a9b1;
+}
+
+.profile-edit__match-claim {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid #3366cc;
+  border-radius: 3px;
+  background: #3366cc;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.profile-edit__match-claim:hover:not(:disabled) {
+  border-color: #2a4b8d;
+  background: #2a4b8d;
+}
+
+.profile-edit__match-claim:disabled {
+  border-color: #a2a9b1;
+  background: #eaecf0;
+  color: #54595d;
+  cursor: not-allowed;
+}
+
+.profile-edit__claim-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .profile-edit__match-card {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-edit__match-claim {
+    width: 100%;
+    white-space: normal;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Structured infobox editor (<profile-infobox-editor>)                */
+/* ------------------------------------------------------------------ */
+
+.pie {
+  width: 100%;
+  max-width: 100%;
+  width: 100%;
+}
+
+.pie__intro {
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+  color: #54595d;
+  line-height: 1.5;
+}
+
+body.theme-dark .pie__intro {
+  color: #a7adb4;
+}
+
+.pie__status {
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.125rem;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 0.9rem;
+}
+
+body.theme-dark .pie__status {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: #1a1e24;
+}
+
+.pie__status[data-type="error"] {
+  border-color: rgba(208, 44, 63, 0.5);
+  background: rgba(208, 44, 63, 0.08);
+  color: #b32230;
+}
+
+.pie__status[data-type="success"] {
+  border-color: rgba(20, 134, 88, 0.5);
+  background: rgba(20, 134, 88, 0.08);
+  color: #14794a;
+}
+
+.pie__group {
+  margin: 0 0 1.5rem;
+  padding: 0.5rem 1rem 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.125rem;
+  scroll-margin-top: calc(var(--header-chrome-height, 55px) + 1rem);
+}
+
+body.theme-dark .pie__group {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.pie__group--death[hidden] {
+  display: none;
+}
+
+.pie__legend {
+  padding: 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.pie__row {
+  display: grid;
+  grid-template-columns: 9.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0.55rem 0;
+}
+
+.pie__row--align-top {
+  align-items: start;
+}
+
+.pie__row--align-top .pie__label,
+.pie__row--location .pie__label,
+.pie__row--date .pie__label {
+  padding-top: 0.4rem;
+}
+
+/* Date range UI */
+.pie__field--date .pie__date-range {
+  display: inline-flex;
+  align-items: center;
+}
+
+.pie__date-range-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pie__field--date .pie__date-range-row--divider,
+.pie__field--date .pie__date-range-row--to {
+  display: none;
+}
+
+.pie__field--date.is-between {
+  align-items: flex-start;
+}
+
+.pie__field--date.is-between:not([layout="stacked"]) .date-field-editor__controls {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 0.5rem;
+  row-gap: 0.65rem;
+}
+
+.pie__field--date.is-between .pie__date-range {
+  display: grid;
+  gap: 0.65rem;
+  /* Wide enough to keep the date input, Circa checkbox and the parsed-date
+     preview on one line (it otherwise wraps below the field). */
+  width: min(100%, 34rem);
+}
+
+.pie__field--date.is-between:not([layout="stacked"]) .date-field-editor__range {
+  min-width: 0;
+}
+
+.pie__field--date.is-between .pie__date-range-row,
+.pie__field--date.is-between .pie__date-range-row--divider,
+.pie__field--date.is-between .pie__date-range-row--to {
+  display: flex;
+}
+
+.pie__field--date.is-between .pie__date-range-row--divider {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+body.theme-dark .pie__field--date.is-between .pie__date-range-row--divider {
+  color: #a7adb4;
+}
+
+.pie__date-input-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  min-width: 12rem;
+}
+
+.pie__field--date .pie__date-input {
+  min-width: 0;
+  width: 100%;
+  padding: 0.45rem 2.35rem 0.45rem 0.6rem;
+  color-scheme: light;
+}
+
+body.theme-dark .pie__field--date .pie__date-input {
+  color-scheme: dark;
+}
+
+.pie__date-input-wrap .pie__date-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  width: 2.35rem;
+  height: 100%;
+  cursor: pointer;
+}
+
+.pie__date-picker-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0 0.125rem 0.125rem 0;
+  background: transparent;
+  color: #54595d;
+  cursor: pointer;
+}
+
+.pie__date-picker-button:hover,
+.pie__date-picker-button:focus-visible {
+  color: #3366cc;
+  outline: none;
+  background: rgba(51, 102, 204, 0.08);
+}
+
+body.theme-dark .pie__date-picker-button {
+  color: #a7adb4;
+}
+
+body.theme-dark .pie__date-picker-button:hover,
+body.theme-dark .pie__date-picker-button:focus-visible {
+  color: #6b9eff;
+  background: rgba(107, 158, 255, 0.12);
+}
+
+/* Cause-of-death suggestion dropdown */
+.pie__field--suggest {
+  position: relative;
+}
+
+.pie__suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 220;
+  background: var(--background-color-base, #ffffff);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.25rem;
+  max-height: 12rem;
+  overflow: auto;
+  padding: 0.25rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.pie__suggestion-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 0.125rem;
+  color: inherit;
+}
+
+.pie__suggestion-button.is-active,
+.pie__suggestion-button:hover {
+  background: var(--background-color-interactive-subtle, #f1f3f5);
+}
+
+body.theme-dark .pie__suggestions {
+  background: #101418;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.pie__row--align-top,
+.pie__row--location,
+.pie__row--date {
+  align-items: start;
+}
+
+.pie__label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #54595d;
+}
+
+body.theme-dark .pie__label {
+  color: #c8ccd1;
+}
+
+.pie__field {
+  min-width: 0;
+}
+
+.pie__field input[type="text"],
+.pie__field input[type="number"],
+.pie__field input[type="search"],
+.pie__field input[type="date"],
+.pie__field select {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #a2a9b1;
+  border-radius: 0.125rem;
+  font: inherit;
+  font-size: 0.9rem;
+  background: #ffffff;
+  color: #202122;
+  box-sizing: border-box;
+}
+
+body.theme-dark .pie__field input[type="text"],
+body.theme-dark .pie__field input[type="number"],
+body.theme-dark .pie__field input[type="search"],
+body.theme-dark .pie__field input[type="date"],
+body.theme-dark .pie__field select {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: #101418;
+  color: #eaecf0;
+}
+
+.pie__field input:focus,
+.pie__field select:focus {
+  outline: none;
+  border-color: #3366cc;
+  box-shadow: inset 0 0 0 1px #3366cc;
+}
+
+/* Ensure selects and native date inputs visually match height */
+.pie__field select,
+.pie__field input[type="date"],
+.pie__date-input-wrap {
+  box-sizing: border-box;
+  height: 2.4rem;
+}
+
+.pie__field--name {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.pie__field--split {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.pie__field--location {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+.pie__location-search-wrap {
+  position: relative;
+}
+
+.pie__location-results {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 0.3rem 0;
+  list-style: none;
+  border: 1px solid #a2a9b1;
+  border-radius: 0.125rem;
+  background: #ffffff;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.16);
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.pie__location-results[hidden] {
+  display: none !important;
+}
+
+body.theme-dark .pie__location-results {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: #171b20;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+}
+
+.pie__location-option {
+  margin: 0;
+}
+
+.pie__location-option-button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.55rem 0.65rem;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pie__location-option-button:hover,
+.pie__location-option-button.is-active {
+  background: rgba(51, 102, 204, 0.08);
+}
+
+body.theme-dark .pie__location-option-button:hover,
+body.theme-dark .pie__location-option-button.is-active {
+  background: rgba(107, 158, 255, 0.16);
+}
+
+.pie__location-option-title {
+  color: #202122;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+body.theme-dark .pie__location-option-title {
+  color: #eaecf0;
+}
+
+.pie__location-option-meta,
+.pie__location-empty {
+  color: #72777d;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+body.theme-dark .pie__location-option-meta,
+body.theme-dark .pie__location-empty {
+  color: #a7adb4;
+}
+
+.pie__location-empty {
+  padding: 0.6rem 0.65rem;
+}
+
+/* Photo upload & media picker */
+.pie__group--photo {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.pie__photo-preview-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.pie__photo-preview-img {
+  display: block;
+  max-width: min(100%, 16rem);
+  max-height: 14rem;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+}
+
+body.theme-dark .pie__photo-preview-img {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #1e2125;
+}
+
+.pie__photo-empty {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  padding: 1.25rem 0.75rem;
+  text-align: center;
+}
+
+.pie__photo-empty[hidden] {
+  display: none;
+}
+
+.pie__photo-empty-icon {
+  font-size: 2rem;
+  color: #72777d;
+}
+
+body.theme-dark .pie__photo-empty-icon {
+  color: #a7adb4;
+}
+
+.pie__photo-empty-text {
+  margin: 0;
+  color: #54595d;
+  font-size: 0.9rem;
+}
+
+body.theme-dark .pie__photo-empty-text {
+  color: #a7adb4;
+}
+
+.pie__photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pie__photo-actions .page-editor__button i {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.pie__photo-modal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.pie__photo-modal-toolbar .page-editor__button i {
+  font-size: 1rem;
+  line-height: 1;
+  margin-right: 0.35rem;
+}
+
+.pie__photo-modal-toolbar[hidden] {
+  display: none !important;
+}
+
+.pie__photo-modal-toolbar .page-editor__button[hidden] {
+  display: none !important;
+}
+
+.pie__photo-dropzone {
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  width: 100%;
+  margin-bottom: 0.85rem;
+  padding: 1.15rem 1rem;
+  border: 1px dashed rgba(51, 102, 204, 0.45);
+  border-radius: var(--border-radius-base);
+  background: rgba(51, 102, 204, 0.06);
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+body.theme-dark .pie__photo-dropzone {
+  border-color: rgba(107, 158, 255, 0.45);
+  background: rgba(107, 158, 255, 0.08);
+}
+
+.pie__photo-dropzone:hover,
+.pie__photo-dropzone.is-dragover {
+  border-color: #3366cc;
+  background: rgba(51, 102, 204, 0.12);
+  box-shadow: 0 0 0 2px rgba(51, 102, 204, 0.12);
+}
+
+body.theme-dark .pie__photo-dropzone:hover,
+body.theme-dark .pie__photo-dropzone.is-dragover {
+  border-color: #6b9eff;
+  background: rgba(107, 158, 255, 0.16);
+  box-shadow: 0 0 0 2px rgba(107, 158, 255, 0.14);
+}
+
+.pie__photo-dropzone:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.pie__photo-dropzone-icon {
+  font-size: 1.65rem;
+  color: #3366cc;
+}
+
+body.theme-dark .pie__photo-dropzone-icon {
+  color: #6b9eff;
+}
+
+.pie__photo-dropzone-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.pie__photo-dropzone-hint {
+  max-width: 24rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--color-subtle, #72777d);
+}
+
+.pie__media-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure the UA/author cascade doesn't force the modal visible when it
+   should be hidden via the \`hidden\` attribute or aria-hidden. */
+.pie__media-modal[hidden],
+.pie__media-modal[aria-hidden="true"] {
+  display: none !important;
+}
+
+.pie__media-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.pie__media-modal-panel {
+  position: relative;
+  width: min(92%, 64rem);
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--background-color-base, #fff);
+  border-radius: 0.375rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  padding: 0.5rem;
+  z-index: 360;
+}
+
+.pie__media-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.pie__media-modal-body {
+  padding: 0.6rem;
+}
+
+.pie__media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.5rem;
+}
+
+.pie__media-thumb {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: stretch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.pie__media-thumb img {
+  width: 100%;
+  height: 6.25rem;
+  object-fit: cover;
+  border-radius: 0.25rem;
+  display: block;
+}
+
+.pie__media-thumb-label {
+  font-size: 0.85rem;
+  color: #333;
+  padding: 0 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.theme-dark .pie__media-modal-panel {
+  background: #101418;
+  color: #eaecf0;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.pie__location-details {
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.125rem;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.theme-dark .pie__location-details {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pie__location-detail-row {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+}
+
+.pie__location-detail-row+.pie__location-detail-row {
+  margin-top: 0.45rem;
+}
+
+.pie__location-detail-label {
+  color: #54595d;
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+body.theme-dark .pie__location-detail-label {
+  color: #c8ccd1;
+}
+
+.pie__location-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #3366cc;
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.pie__location-toggle:hover {
+  text-decoration: underline;
+}
+
+body.theme-dark .pie__location-toggle {
+  color: #6b9eff;
+}
+
+.pie__location-toggle-icon {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.pie__field--radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.1rem;
+  align-items: center;
+}
+
+.pie__field--radios label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.pie__field--date {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pie__field--date select {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.pie__field--date input[type="text"],
+.pie__field--date .pie__date-input-wrap {
+  width: 12rem;
+  flex: 0 0 auto;
+}
+
+.pie__circa {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.pie__date-preview {
+  font-size: 0.85rem;
+  color: #54595d;
+  font-style: italic;
+}
+
+body.theme-dark .pie__date-preview {
+  color: #a7adb4;
+}
+
+.pie__hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: #72777d;
+}
+
+.pie__hint code {
+  font-size: 0.95em;
+}
+
+.pie__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #3366cc;
+  border-radius: 0.125rem;
+  background: #3366cc;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pie__save:hover {
+  background: #2a4b8d;
+  border-color: #2a4b8d;
+}
+
+.pie__save:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* ------------------------------------------------------------------ */
+/* Infobox section quick-nav + readability                             */
+/* ------------------------------------------------------------------ */
+
+/* Keep the structured form aligned with the profile page content column. */
+.profile-edit__panel[data-edit-panel="infobox"] .pie {
+  max-width: none;
+  margin-inline: 0;
+}
+
+.profile-edit__panel[data-edit-panel="personal"] .pie {
+  max-width: none;
+  margin-inline: 0;
+}
+
+@media (max-width: 600px) {
+  .pie__row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .pie__field--split {
+    flex-direction: column;
+  }
+
+  .pie__location-detail-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pie__location-detail-label {
+    text-align: left;
+  }
+}
+
+@media (max-width: 720px) {
+
+  .ppe__canvas aside,
+  .people-page__content aside {
+    float: none;
+    width: 100%;
+    max-width: none;
+    margin: 0 0 1rem;
+  }
+
+  .ppe__canvas aside table,
+  .people-page__content aside table {
+    width: 100%;
+  }
+
+  .people-page__content .ppe-profile-columns,
+  .ppe__table-preview .ppe-profile-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Keep quick-edit controls and date pickers inside the floated infobox card. */
+.ppe__canvas aside.ppe__infobox .ppe__infobox-field-editor .pie__date-input-wrap,
+.ppe__canvas aside.ppe__infobox .ppe__infobox-field-editor .ppe__infobox-date-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 2rem;
+}
+
+.ppe__canvas aside.ppe__infobox .ppe__infobox-field-editor .pie__date-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Breadcrumb avatar injected by <profile-editor>. */
+.profile-edit__breadcrumb-list > li {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.profile-edit__breadcrumb-home,
+.profile-edit__breadcrumb-sep,
+.profile-edit__breadcrumb-current,
+.profile-edit__breadcrumb-name {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.profile-edit__breadcrumb-current {
+  gap: 0.5rem;
+}
+
+.profile-edit__breadcrumb-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--avatar-bg, #dfe3e6);
+  color: var(--avatar-fg, #fff);
+  flex: 0 0 28px;
+}
+
+.profile-edit__breadcrumb-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+`;
+
+	function ensureProfileEditorStyles() {
+		if (document.getElementById(PROFILE_EDITOR_STYLE_ID)) {
+			return;
+		}
+
+		const style = document.createElement("style");
+		style.id = PROFILE_EDITOR_STYLE_ID;
+		style.textContent = PROFILE_EDITOR_STYLES;
+		document.head.append(style);
+	}
+
 	function resolveSiteUrl(path) {
 		const clean = String(path || "").replace(/^\/+/, "");
 		if (window.App?.resolveSiteUrl) return window.App.resolveSiteUrl(clean);
@@ -507,23 +1944,9 @@
 			this.__activeTab = this.#readStoredTab() || "profile";
 			this.__isDraftProfile = SELF_PROFILE_MODE || params.get("new") === "1";
 
+			ensureProfileEditorStyles();
 			this.innerHTML = TEMPLATE;
 
-			// Inject breadcrumb avatar styles once.
-			if (!document.getElementById('profile-editor-breadcrumb-styles')) {
-				const style = document.createElement('style');
-				style.id = 'profile-editor-breadcrumb-styles';
-				style.textContent = `
-				.profile-edit__breadcrumb-list > li { display: inline-flex; align-items: center; line-height: 1; }
-				.profile-edit__breadcrumb-home { display: inline-flex; align-items: center; line-height: 1; }
-				.profile-edit__breadcrumb-sep { display: inline-flex; align-items: center; line-height: 1; }
-				.profile-edit__breadcrumb-current { display: inline-flex; align-items: center; gap: 0.5rem; line-height: 1; }
-				.profile-edit__breadcrumb-avatar { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; background: var(--avatar-bg, #dfe3e6); color: var(--avatar-fg, #fff); flex: 0 0 28px; }
-				.profile-edit__breadcrumb-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-				.profile-edit__breadcrumb-name { display: inline-flex; align-items: center; }
-				`;
-				document.head.append(style);
-			}
 			this.classList.toggle("profile-edit--self", SELF_PROFILE_MODE);
 
 			if (!VALID_ID) {

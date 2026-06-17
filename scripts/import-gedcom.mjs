@@ -88,13 +88,16 @@ function emptyAttributes() {
     hairColor: null,
     eyeColor: null,
     height: null,
+    heightYear: null,
     weight: null,
+    weightYear: null,
     ethnicity: null,
     religion: null,
     politicalViews: null,
     languages: [],
     hobbies: [],
     shoeSize: null,
+    shoeSizeYear: null,
     smoking: null,
   };
 }
