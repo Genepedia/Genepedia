@@ -117,7 +117,7 @@
             <style>
                 /* Reuse the shared editor look (.pie__group / .pie__legend /
                    .pie__intro / .pie__status) so this tab matches the others;
-                   only the privacy-specific option cards and banner are local. */
+                   only the privacy-specific option cards are local. */
                 .ppriv { width: 100%; }
 
                 .ppriv__options {
@@ -149,36 +149,6 @@
                     line-height: 1.45;
                 }
 
-                .ppriv__banner {
-                    display: flex;
-                    gap: 0.6rem;
-                    align-items: start;
-                    margin: 0 0 1.5rem;
-                    padding: 0.7rem 0.85rem;
-                    border: 1px solid rgba(51, 102, 204, 0.24);
-                    border-radius: 0.125rem;
-                    background: rgba(51, 102, 204, 0.08);
-                    color: inherit;
-                }
-
-                .ppriv__banner i {
-                    font-size: 1rem;
-                    line-height: 1;
-                    margin-top: 0.05rem;
-                }
-
-                .ppriv__banner-title {
-                    margin: 0 0 0.2rem;
-                    font-size: 0.9rem;
-                    font-weight: 600;
-                }
-
-                .ppriv__banner p {
-                    margin: 0;
-                    font-size: 0.86rem;
-                    line-height: 1.45;
-                }
-
                 body.theme-dark .ppriv__option-copy {
                     color: #c8ccd1;
                 }
@@ -188,10 +158,6 @@
                     background: rgba(255, 255, 255, 0.04);
                 }
 
-                body.theme-dark .ppriv__banner {
-                    border-color: rgba(107, 158, 255, 0.28);
-                    background: rgba(107, 158, 255, 0.12);
-                }
             </style>
             <fieldset class="pie__group">
                 <legend class="pie__legend">Profile Visibility</legend>
@@ -208,13 +174,6 @@
                 </div>
                 <p class="ppriv__status pie__status" role="status" hidden></p>
             </fieldset>
-            <div class="ppriv__banner" data-role="privacy-banner" hidden>
-                <i class="bi bi-shield-lock" aria-hidden="true"></i>
-                <div>
-                    <p class="ppriv__banner-title">Private profile</p>
-                    <p>This profile is limited to maintainers, contributors, and close family while the person is living.</p>
-                </div>
-            </div>
         </section>
     `;
 
@@ -346,10 +305,6 @@
             this.querySelectorAll('input[name="privacy-visibility"]').forEach((input) => {
                 input.checked = input.value === state.visibility;
             });
-            const banner = this.querySelector('[data-role="privacy-banner"]');
-            if (banner) {
-                banner.hidden = state.visibility !== "private";
-            }
         }
 
         #syncAvailability() {
@@ -415,10 +370,6 @@
                 return;
             }
 
-            const banner = this.querySelector('[data-role="privacy-banner"]');
-            if (banner) {
-                banner.hidden = this.getPrivacyData().visibility !== "private";
-            }
             this.#notifyDirtyState();
         }
 

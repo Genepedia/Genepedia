@@ -250,9 +250,9 @@ window.upgradeProfileIdentityInDocument = upgradeProfileIdentityInDocument;
     style.textContent = `
 .gp-gender { display: inline-flex; align-items: center; gap: 0.4em; }
 .gp-gender__icon { flex: 0 0 auto; opacity: 0.7; }
-.gp-location { display: inline-flex; align-items: center; gap: 0.35em; max-width: 100%; vertical-align: text-bottom; cursor: help; }
-.gp-location__text { min-width: 0; text-decoration: underline dotted; text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
-.gp-location .gp-location__flag { display: inline-block; flex: 0 0 auto; width: 1.45em; height: auto; border-radius: 0.12em; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16); }
+.gp-location { display: inline; cursor: help; }
+.gp-location__text { text-decoration: underline dotted; text-underline-offset: 0.15em; text-decoration-thickness: 1px; }
+.gp-location .gp-location__flag { display: inline-block; width: 1.45em; height: auto; margin-left: 0.35em; vertical-align: -0.12em; border-radius: 0.12em; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16); }
 .gp-pop {
   position: fixed;
   z-index: 2147483000;
@@ -282,11 +282,10 @@ window.upgradeProfileIdentityInDocument = upgradeProfileIdentityInDocument;
 .gp-pop__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .gp-pop__photo--placeholder { display: flex; align-items: center; justify-content: center; color: #9aa0a6; font-size: 4rem; }
 /* Map: the iframe is taller than its window so the OpenStreetMap attribution
-   bar at the bottom is clipped away. pointer-events:none keeps it a clean
-   preview (and avoids the iframe swallowing hover). */
+   bar at the bottom is clipped away. */
 .gp-pop__map-wrap { position: relative; width: 100%; height: 184px; overflow: hidden; background: #e8eef2; }
 .gp-pop__map-wrap--loading { display: flex; align-items: center; justify-content: center; color: #9aa0a6; font-size: 2.4rem; }
-.gp-pop__map { position: absolute; top: -1px; left: -1px; width: calc(100% + 2px); height: 214px; border: 0; pointer-events: none; }
+.gp-pop__map { position: absolute; top: -1px; left: -1px; width: calc(100% + 2px); height: 214px; border: 0; pointer-events: auto; }
 .gp-pop__body { padding: 0.65rem 0.75rem 0.75rem; }
 .gp-pop__name { display: inline-block; font-weight: 700; font-size: 1rem; line-height: 1.25; }
 .gp-pop__name:hover { text-decoration: underline; }
@@ -297,11 +296,11 @@ window.upgradeProfileIdentityInDocument = upgradeProfileIdentityInDocument;
 .gp-pop__row .bi { margin-top: 0.12rem; flex: 0 0 auto; color: #72777d; }
 .gp-pop__row span { min-width: 0; }
 .gp-pop__muted { margin-top: 0.25rem; color: #72777d; }
-.gp-pop__maprow { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-top: 0.55rem; }
+.gp-pop__location-link { display: flex; align-items: flex-start; gap: 0.35rem; font-weight: 700; line-height: 1.3; }
+.gp-pop__location-link:hover span { text-decoration: underline; }
+.gp-pop__location-link .bi { margin-top: 0.08rem; flex: 0 0 auto; color: #72777d; }
 .gp-pop__cta { display: inline-flex; align-items: center; gap: 0.2rem; color: #3366cc; font-weight: 600; }
 .gp-pop__cta:hover { text-decoration: underline; }
-.gp-pop__attrib { flex: 0 0 auto; font-size: 0.72rem; color: #9aa0a6; }
-.gp-pop__attrib:hover { text-decoration: underline; }
 body.theme-dark .gp-pop {
   border-color: rgba(255, 255, 255, 0.16);
   background: #1f2329;
@@ -312,7 +311,7 @@ body.theme-dark .gp-pop__photo, body.theme-dark .gp-pop__map-wrap { background: 
 body.theme-dark .gp-pop__photo--placeholder, body.theme-dark .gp-pop__map-wrap--loading { color: #6b7178; }
 body.theme-dark .gp-pop__life, body.theme-dark .gp-pop__muted { color: #9aa0a6; }
 body.theme-dark .gp-pop__row { color: #d4d8dd; }
-body.theme-dark .gp-pop__row .bi { color: #9aa0a6; }
+body.theme-dark .gp-pop__row .bi, body.theme-dark .gp-pop__location-link .bi { color: #9aa0a6; }
 body.theme-dark .gp-pop__cta { color: #6b9eff; }
 `;
     document.head.appendChild(style);
@@ -523,6 +522,87 @@ body.theme-dark .gp-pop__cta { color: #6b9eff; }
   const geoPromises = new Map();
   const locationPops = new Map(); // place -> { el, filled, filling }
 
+  function uniqueLocationQueries(values) {
+    const seen = new Set();
+    return values
+      .map((value) => String(value || '').replace(/\s+/g, ' ').replace(/\s*,\s*/g, ', ').trim())
+      .filter((value) => {
+        if (!value) return false;
+        const key = value.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }
+
+  function dehyphenateLocationText(value) {
+    return String(value || '').replace(/([A-Za-zÀ-ž])[-‐‑‒–—]([A-Za-zÀ-ž])/g, '$1 $2');
+  }
+
+  function withoutDirectionalSuffix(value) {
+    return String(value || '')
+      .replace(/\s*[-‐‑‒–—]\s*(wes|west|oos|east|noord|north|suid|south)$/i, '')
+      .trim();
+  }
+
+  function locationQueryCandidates(place) {
+    const original = String(place || '').trim();
+    const afterColon = original.includes(':') ? original.split(':').pop().trim() : '';
+    const baseValues = uniqueLocationQueries([
+      original,
+      afterColon,
+      dehyphenateLocationText(afterColon),
+      dehyphenateLocationText(original),
+    ]);
+    const candidates = [...baseValues];
+
+    for (const base of baseValues) {
+      const parts = base.split(',').map((part) => part.trim()).filter(Boolean);
+      const country = parts.length > 1 ? parts[parts.length - 1] : '';
+      const first = parts[0] || '';
+      const locality = parts.length > 1 ? parts[1] : '';
+
+      if (country && locality) {
+        candidates.push([locality, country].join(', '));
+      }
+
+      const shortenedFirst = withoutDirectionalSuffix(first);
+      if (shortenedFirst && shortenedFirst !== first) {
+        if (country && locality) {
+          candidates.push([shortenedFirst, locality, country].join(', '));
+        }
+        candidates.push([shortenedFirst, ...parts.slice(1)].join(', '));
+      }
+
+      for (let index = 1; index < parts.length; index += 1) {
+        candidates.push(parts.slice(index).join(', '));
+      }
+    }
+
+    return uniqueLocationQueries(candidates).slice(0, 10);
+  }
+
+  function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function fetchGeocodeCandidate(query) {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
+    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data) || !data.length) return null;
+    const r = data[0];
+    const bb = Array.isArray(r.boundingbox) && r.boundingbox.length === 4 ? r.boundingbox : null;
+    return {
+      lat: parseFloat(r.lat),
+      lon: parseFloat(r.lon),
+      // Nominatim: [south, north, west, east] -> OSM embed bbox: west,south,east,north
+      bbox: bb ? [bb[2], bb[0], bb[3], bb[1]].map(Number) : null,
+      query,
+    };
+  }
+
   async function geocode(place) {
     if (geoValues.has(place)) {
       return geoValues.get(place);
@@ -532,19 +612,15 @@ body.theme-dark .gp-pop__cta { color: #6b9eff; }
     }
     const promise = (async () => {
       try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(place)}`;
-        const res = await fetch(url, { headers: { Accept: 'application/json' } });
-        if (!res.ok) return null;
-        const data = await res.json();
-        if (!Array.isArray(data) || !data.length) return null;
-        const r = data[0];
-        const bb = Array.isArray(r.boundingbox) && r.boundingbox.length === 4 ? r.boundingbox : null;
-        return {
-          lat: parseFloat(r.lat),
-          lon: parseFloat(r.lon),
-          // Nominatim: [south, north, west, east] -> OSM embed bbox: west,south,east,north
-          bbox: bb ? [bb[2], bb[0], bb[3], bb[1]].map(Number) : null,
-        };
+        const queries = locationQueryCandidates(place);
+        for (const [index, query] of queries.entries()) {
+          if (index > 0) {
+            await wait(PREFETCH_GAP);
+          }
+          const geo = await fetchGeocodeCandidate(query);
+          if (geo) return geo;
+        }
+        return null;
       } catch (e) {
         return null;
       }
@@ -578,11 +654,8 @@ body.theme-dark .gp-pop__cta { color: #6b9eff; }
     const large = `https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lon}#map=12/${geo.lat}/${geo.lon}`;
     return `<div class="gp-pop__map-wrap"><iframe class="gp-pop__map" src="${escapeHtml(embed)}" tabindex="-1" aria-hidden="true" title="Map of ${escapeHtml(place)}"></iframe></div>`
       + '<div class="gp-pop__body">'
-      + title
-      + '<div class="gp-pop__maprow">'
-      + `<a class="gp-pop__cta" href="${escapeHtml(large)}" target="_blank" rel="noopener">View larger map <i class="bi bi-box-arrow-up-right"></i></a>`
-      + '<a class="gp-pop__attrib" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© OpenStreetMap</a>'
-      + '</div></div>';
+      + `<a class="gp-pop__location-link" href="${escapeHtml(large)}" target="_blank" rel="noopener"><i class="bi bi-geo-alt"></i><span>${escapeHtml(place)}</span></a>`
+      + '</div>';
   }
 
   function fillLocationPop(entry) {

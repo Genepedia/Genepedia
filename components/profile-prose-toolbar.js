@@ -758,6 +758,8 @@ body.theme-dark .people-page__content aside {
   display: inline-block;
   width: 1.45em;
   height: auto;
+  margin-left: 0.35em;
+  vertical-align: -0.12em;
 }
 
 .ppe__canvas aside th,

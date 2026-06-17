@@ -94,86 +94,6 @@
 	];
 	let deathCausesListPromise = null;
 
-	const OCCUPATIONS_DATA_PATH = "data/occupations-onet-usa.json";
-	const EXTRA_OCCUPATIONS = [
-		"Vibe Coder",
-	];
-	const OCCUPATIONS_FALLBACK = [
-		"Farmer",
-		"Teacher",
-		"Doctor",
-		"Nurse",
-		"Lawyer",
-		"Engineer",
-		"Clerk",
-		"Blacksmith",
-		"Carpenter",
-		"Soldier",
-		"Police officer",
-		"Merchant",
-		"Priest",
-		"Laborer",
-		"Tailor",
-		"Seaman",
-		"Cook",
-		"Butcher",
-		"Shopkeeper",
-		"Artist",
-		"Musician",
-		"Accountant",
-		"Civil servant",
-		"Architect",
-		"Mechanic",
-		"Driver",
-		"Photographer",
-		"Writer",
-		"Publisher",
-		"Business owner",
-		...EXTRA_OCCUPATIONS,
-	];
-	let occupationsListPromise = null;
-
-	function mergeExtraOccupations(occupations) {
-		const merged = Array.isArray(occupations) ? [...occupations] : [];
-		const seen = new Set(merged.map((occupation) => String(occupation).toLocaleLowerCase("en-US")));
-		for (const occupation of EXTRA_OCCUPATIONS) {
-			const key = String(occupation).toLocaleLowerCase("en-US");
-			if (seen.has(key)) continue;
-			seen.add(key);
-			merged.push(occupation);
-		}
-		return merged;
-	}
-
-	function resolveOccupationsUrl() {
-		return resolveSiteUrl(OCCUPATIONS_DATA_PATH);
-	}
-
-	function loadOccupationsList() {
-		if (!occupationsListPromise) {
-			occupationsListPromise = fetch(resolveOccupationsUrl(), { cache: "force-cache" })
-				.then((response) => {
-					if (!response.ok) {
-						throw new Error(`Failed to load occupations list: ${response.status}`);
-					}
-					return response.json();
-				})
-				.then((payload) => {
-					const occupations = Array.isArray(payload?.occupations) ? payload.occupations : [];
-					if (occupations.length < 1000) {
-						throw new Error(`Occupations list is too small (${occupations.length}).`);
-					}
-					return mergeExtraOccupations(occupations);
-				})
-				.catch((error) => {
-					console.warn("Using fallback occupations list", error);
-					return mergeExtraOccupations(OCCUPATIONS_FALLBACK);
-				});
-		}
-
-		return occupationsListPromise;
-	}
-
 	function matchSuggestionList(items, query, limit = 8) {
 		const trimmedQuery = String(query || "").trim();
 		if (!trimmedQuery) {
@@ -460,10 +380,6 @@
 						<label><input type="radio" name="pie-gender" value="unknown"> Unknown</label>
 					</div>
 				</div>
-				<div class="pie__row">
-					<label class="pie__label" for="pie-occupation">Occupation</label>
-					<div class="pie__field"><input id="pie-occupation" type="text" data-field="occupation" placeholder="e.g. Teacher"></div>
-				</div>
 				<div class="pie__row pie__row--location">
 					<label class="pie__label" for="pie-residence">Last Residence</label>
 					${renderLocationField({ path: "lastResidenceLocation", id: "pie-residence", placeholder: "Start typing a location" })}
@@ -614,7 +530,6 @@
 			this.__photoFileInputHome = null;
 			this.#bind();
 			this.#syncStatusSections();
-			void loadOccupationsList();
 			void loadDeathCausesList();
 
 			// Register a provider so the page editor can collect this infobox
@@ -769,7 +684,6 @@
 			if (!form) return;
 			this.#bindLocationFields();
 			this.#bindCauseSuggestionFields();
-			this.#bindOccupationSuggestionFields();
 			this.#bindPhotoFields();
 
 			form.addEventListener("submit", (event) => {
@@ -934,7 +848,7 @@
 		// WYSIWYG profile editor to render the floated infobox preview live.
 		getIdentityFragmentHtml() {
 			try {
-				const data = this.__formReady ? this.#collect() : normalizeData(this.__data);
+				const data = this.#withDerivedCareerOccupation(this.__formReady ? this.#collect() : normalizeData(this.__data));
 				return buildFragment(data, this.__familyHtml);
 			} catch (error) {
 				return "";
@@ -943,10 +857,25 @@
 
 		getProfileData() {
 			try {
-				return normalizeData(this.#collect());
+				return this.#withDerivedCareerOccupation(normalizeData(this.#collect()));
 			} catch (error) {
-				return normalizeData(this.__data);
+				return this.#withDerivedCareerOccupation(normalizeData(this.__data));
 			}
+		}
+
+		#withDerivedCareerOccupation(data) {
+			const next = normalizeData(data);
+			const careerEditor = document.querySelector("profile-career-editor");
+			const career = typeof careerEditor?.getCareerData === "function"
+				? careerEditor.getCareerData()
+				: this.__record?.career;
+			if (typeof window.PeopleDB?.deriveLatestCareerOccupation === "function") {
+				next.occupation = window.PeopleDB.deriveLatestCareerOccupation(career);
+			} else {
+				const entries = Array.isArray(career) ? career : [];
+				next.occupation = String(entries[entries.length - 1]?.title || "").trim();
+			}
+			return next;
 		}
 
 		#buildStarterGedcom(data) {
@@ -1376,159 +1305,6 @@
 		}
 
 		/* ------------------------------------------------------------------ */
-		/* Occupation suggestions                                                */
-		/* ------------------------------------------------------------------ */
-
-		#bindOccupationSuggestionFields() {
-			this.__occupationSuggest = this.__occupationSuggest || null;
-			const input = this.querySelector('[data-field="occupation"]');
-			if (!input) return;
-			const container = input.closest('.pie__field') || input.parentElement;
-			if (!container) return;
-			container.classList.add('pie__field--suggest');
-			let dropdown = container.querySelector('.pie__suggestions');
-			if (!dropdown) {
-				dropdown = document.createElement('div');
-				dropdown.className = 'pie__suggestions';
-				dropdown.hidden = true;
-				container.append(dropdown);
-			}
-
-			const state = {
-				input,
-				container,
-				dropdown,
-				matches: [],
-				activeIndex: -1,
-				debounceTimer: 0,
-			};
-			this.__occupationSuggest = state;
-
-			input.addEventListener('input', () => {
-				window.clearTimeout(state.debounceTimer);
-				state.debounceTimer = window.setTimeout(() => {
-					void this.#runOccupationSearch();
-				}, 160);
-			});
-
-			input.addEventListener('focus', () => {
-				void this.#runOccupationSearch();
-			});
-
-			input.addEventListener('blur', () => {
-				window.setTimeout(() => this.#closeOccupationSuggestions(), 120);
-			});
-
-			input.addEventListener('keydown', (ev) => this.#handleOccupationKeydown(ev));
-
-			dropdown.addEventListener('mousedown', (ev) => ev.preventDefault());
-			dropdown.addEventListener('click', (ev) => {
-				const btn = ev.target.closest('[data-suggest-index]');
-				if (!btn) return;
-				const idx = Number(btn.dataset.suggestIndex);
-				const match = state.matches[idx];
-				if (match) this.#selectOccupationSuggestion(match);
-			});
-		}
-
-		async #runOccupationSearch() {
-			const state = this.__occupationSuggest;
-			if (!state || !state.input) return;
-			const occupations = await loadOccupationsList();
-			const requestId = (state.searchRequestId = (state.searchRequestId || 0) + 1);
-			const q = String(state.input.value || '').trim();
-			const matches = matchSuggestionList(occupations, q, 8);
-			if (requestId !== state.searchRequestId) {
-				return;
-			}
-			state.matches = matches;
-			this.#renderOccupationSuggestions();
-		}
-
-		#renderOccupationSuggestions() {
-			const state = this.__occupationSuggest;
-			if (!state || !state.dropdown) return;
-			state.dropdown.textContent = '';
-			state.activeIndex = -1;
-			if (!state.matches || !state.matches.length) {
-				state.dropdown.hidden = true;
-				return;
-			}
-			for (let i = 0; i < state.matches.length; i++) {
-				const btn = document.createElement('button');
-				btn.type = 'button';
-				btn.className = 'pie__suggestion-button';
-				btn.dataset.suggestIndex = String(i);
-				btn.setAttribute('role', 'option');
-				btn.innerHTML = escapeHtml(state.matches[i]);
-				state.dropdown.append(btn);
-			}
-			state.dropdown.hidden = false;
-			this.#setActiveOccupationSuggestion(0);
-		}
-
-		#setActiveOccupationSuggestion(index) {
-			const state = this.__occupationSuggest;
-			if (!state || !state.dropdown) return null;
-			const buttons = [...state.dropdown.querySelectorAll('[data-suggest-index]')];
-			buttons.forEach((b, idx) => {
-				b.classList.toggle('is-active', idx === index);
-				b.setAttribute('aria-selected', idx === index ? 'true' : 'false');
-			});
-			state.activeIndex = index;
-			return buttons[index] || null;
-		}
-
-		#handleOccupationKeydown(event) {
-			const state = this.__occupationSuggest;
-			if (!state || !state.dropdown) return;
-			const options = [...state.dropdown.querySelectorAll('[data-suggest-index]')];
-			if (event.key === 'ArrowDown') {
-				event.preventDefault();
-				if (!options.length) return;
-				const next = Math.min(state.activeIndex + 1, options.length - 1);
-				this.#setActiveOccupationSuggestion(next)?.scrollIntoView({ block: 'nearest' });
-				return;
-			}
-			if (event.key === 'ArrowUp') {
-				event.preventDefault();
-				if (!options.length) return;
-				const prev = Math.max(state.activeIndex - 1, 0);
-				this.#setActiveOccupationSuggestion(prev)?.scrollIntoView({ block: 'nearest' });
-				return;
-			}
-			if (event.key === 'Enter') {
-				event.preventDefault();
-				const idx = state.activeIndex >= 0 ? state.activeIndex : 0;
-				const match = state.matches[idx];
-				if (match) this.#selectOccupationSuggestion(match);
-				return;
-			}
-			if (event.key === 'Escape') {
-				this.#closeOccupationSuggestions();
-				return;
-			}
-		}
-
-		#selectOccupationSuggestion(match) {
-			const state = this.__occupationSuggest;
-			if (!state) return;
-			state.input.value = String(match);
-			state.input.dispatchEvent(new Event('input', { bubbles: true }));
-			this.#closeOccupationSuggestions();
-			state.input.focus();
-		}
-
-		#closeOccupationSuggestions() {
-			const state = this.__occupationSuggest;
-			if (!state || !state.dropdown) return;
-			state.dropdown.hidden = true;
-			state.activeIndex = -1;
-			state.matches = [];
-			state.dropdown.textContent = '';
-		}
-
-		/* ------------------------------------------------------------------ */
 		/* Photo picker + upload                                               */
 		/* ------------------------------------------------------------------ */
 
@@ -1650,10 +1426,6 @@
 				};
 			}
 
-			if (name === "Occupation") {
-				return { type: "text", value: this.querySelector('[data-field="occupation"]')?.value?.trim() || "" };
-			}
-
 			if (name === "Name") {
 				const data = this.#collect();
 				return {
@@ -1707,12 +1479,6 @@
 			const dateGroup = { Birth: "birth", Baptism: "baptism", Death: "death" }[name];
 			if (dateGroup) {
 				this.#applyQuickDate(dateGroup, value);
-				this.#notifyQuickEditChange();
-				return true;
-			}
-
-			if (name === "Occupation") {
-				this.#setFieldValue("occupation", value);
 				this.#notifyQuickEditChange();
 				return true;
 			}
