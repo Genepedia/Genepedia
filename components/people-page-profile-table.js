@@ -366,19 +366,29 @@ body.theme-dark .gp-pop__cta { color: #6b9eff; }
     activePop = el;
   }
 
+  function hideNow() {
+    clearTimeout(hideTimer);
+    if (activePop) {
+      activePop.classList.remove('is-visible');
+    }
+    activePop = null;
+    activeTrigger = null;
+  }
+
   function scheduleHide() {
     clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => {
-      if (activePop) {
-        activePop.classList.remove('is-visible');
-      }
-      activePop = null;
-      activeTrigger = null;
-    }, HIDE_DELAY);
+    hideTimer = setTimeout(hideNow, HIDE_DELAY);
   }
 
   function overPopover(node) {
     return Boolean(activePop && (node === activePop || activePop.contains(node)));
+  }
+
+  // Shortest distance from a point to the edge of a rectangle (0 when inside).
+  function distanceToRect(rect, x, y) {
+    const dx = Math.max(rect.left - x, 0, x - rect.right);
+    const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+    return Math.hypot(dx, dy);
   }
 
   // ---- Person popover (single, shared, lazy) -----------------------------
@@ -775,6 +785,29 @@ body.theme-dark .gp-pop__cta { color: #6b9eff; }
     }
   });
 
+  // Catch the cases mouseover misses: moving the pointer far away within a
+  // single element, or a fast flick off the popover. If the cursor is well
+  // outside both the trigger and the popover, close immediately.
+  document.addEventListener('mousemove', (event) => {
+    if (!activePop || !activeTrigger) {
+      return;
+    }
+    if (overPopover(event.target) || activeTrigger === event.target || activeTrigger.contains(event.target)) {
+      clearTimeout(hideTimer);
+      return;
+    }
+    const BUFFER = 48;
+    const x = event.clientX;
+    const y = event.clientY;
+    const nearTrigger = distanceToRect(activeTrigger.getBoundingClientRect(), x, y) <= BUFFER;
+    const nearPopover = distanceToRect(activePop.getBoundingClientRect(), x, y) <= BUFFER;
+    if (!nearTrigger && !nearPopover) {
+      hideNow();
+    } else {
+      scheduleHide();
+    }
+  });
+
   document.addEventListener('focusin', (event) => {
     const found = triggerFrom(event.target);
     if (found) {
@@ -790,7 +823,7 @@ body.theme-dark .gp-pop__cta { color: #6b9eff; }
 
   window.addEventListener('scroll', () => {
     if (activeTrigger) {
-      scheduleHide();
+      hideNow();
     }
   }, true);
 
