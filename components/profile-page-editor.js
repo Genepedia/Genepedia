@@ -2214,13 +2214,13 @@
 			}
 			const people = await this.#loadPeople();
 			const matches = people.filter((person) => {
-				const name = [person.firstName, person.lastName].filter(Boolean).join(" ").toLowerCase();
+				const name = [person.displayName, person.firstName, person.lastName].filter(Boolean).join(" ").toLowerCase();
 				return name.includes(q) || String(person.id) === q;
 			}).slice(0, 8);
 
 			results.innerHTML = matches.length
 				? matches.map((person) => {
-					const name = [person.firstName, person.lastName].filter(Boolean).join(" ").trim() || `Profile ${person.id}`;
+					const name = String(person.displayName || "").trim() || [person.firstName, person.lastName].filter(Boolean).join(" ").trim() || `Profile ${person.id}`;
 					return `<li><button type="button" class="ppe__link-result" data-id="${escapeHtml(String(person.id))}">${escapeHtml(name)} <span>#${escapeHtml(String(person.id))}</span></button></li>`;
 				}).join("")
 				: '<li class="ppe__link-empty">No matching profiles</li>';

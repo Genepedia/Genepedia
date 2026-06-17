@@ -1079,7 +1079,7 @@
                     <div class="pedu__empty">
                         <h3>No education linked yet</h3>
                         <p class="pedu__empty-note">Add schools, qualifications, or graduation entries. Each education record gets its own group box.</p>
-                        <p><button type="button" class="page-editor__button" data-action="add-education"><i class="bi bi-mortarboard" aria-hidden="true"></i><span>Add education</span></button></p>
+                        <p><button type="button" class="page-editor__button" data-action="add-education"><i class="bi bi-mortarboard" aria-hidden="true"></i><span>Add Education</span></button></p>
                     </div>
                 `;
                 return;

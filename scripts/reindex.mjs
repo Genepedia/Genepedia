@@ -246,6 +246,7 @@ async function main() {
     allIds.push(Number(record.id));
     registryPeople.push({
       id: record.id,
+      displayName: record.names?.display || '',
       firstName: record.names?.given || '',
       lastName: record.names?.surname || '',
       birthYear: record.events?.birth?.year || null,

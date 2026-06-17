@@ -293,6 +293,10 @@ body.theme-dark .ppe__toolbar-sep {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
+.ppe__menu-panel--fit {
+  max-height: min(34rem, calc(100vh - 7rem));
+}
+
 .ppe__menu-panel--fixed {
   position: fixed !important;
   z-index: 120;

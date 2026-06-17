@@ -1085,7 +1085,7 @@
                     <div class="pedu__empty">
                         <h3>No career history linked yet</h3>
                         <p class="pedu__empty-note">Add employers, roles, or work history entries. Each career record gets its own group box.</p>
-                        <p><button type="button" class="page-editor__button" data-action="add-career"><i class="bi bi-buildings" aria-hidden="true"></i><span>Add career</span></button></p>
+                        <p><button type="button" class="page-editor__button" data-action="add-career"><i class="bi bi-buildings" aria-hidden="true"></i><span>Add Career</span></button></p>
                     </div>
                 `;
                 return;

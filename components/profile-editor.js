@@ -1830,28 +1830,24 @@ body.theme-dark .pie__date-preview {
 					<button type="button" class="ppe__tool" data-mini-action="redo" data-mini-target="education" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
 						<span class="ppe__toolbar-sep" aria-hidden="true"></span>
 						<div class="ppe__menu">
-							<button type="button" class="ppe__tool ppe__menu-toggle" data-mini-menu-toggle="education-add" aria-haspopup="menu" aria-expanded="false" title="Add education">
+							<button type="button" class="ppe__tool ppe__menu-toggle" data-mini-menu-toggle="education-add" aria-haspopup="menu" aria-expanded="false" title="Add Education">
 								<i class="bi bi-mortarboard" aria-hidden="true"></i>
-								<span class="ppe__menu-toggle-label">Add education</span>
+								<span class="ppe__menu-toggle-label">Add Education</span>
 								<i class="bi bi-chevron-down ppe__menu-caret" aria-hidden="true"></i>
 							</button>
-							<div class="ppe__menu-panel ppe__add-block-panel prel__add-education-panel" data-mini-menu="education-add" role="menu" hidden>
-								<section class="page-editor__inserter-section">
-									<h3 class="page-editor__inserter-section-title">Education type</h3>
-									<div class="page-editor__inserter-list page-editor__inserter-list--compact">
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="college"><span class="page-editor__inserter-item-label">College/University</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="elementary"><span class="page-editor__inserter-item-label">Elementary School</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="graduate"><span class="page-editor__inserter-item-label">Graduate Education</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="highschool"><span class="page-editor__inserter-item-label">High School</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="junior_high"><span class="page-editor__inserter-item-label">Junior High</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="middle_school"><span class="page-editor__inserter-item-label">Middle School</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="preschool"><span class="page-editor__inserter-item-label">Preschool</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="primary"><span class="page-editor__inserter-item-label">Primary School</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="secondary"><span class="page-editor__inserter-item-label">Secondary School</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="vocational"><span class="page-editor__inserter-item-label">Vocational School</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="other"><span class="page-editor__inserter-item-label">Other</span></button>
-									</div>
-								</section>
+							<div class="ppe__menu-panel ppe__menu-panel--fit" data-mini-menu="education-add" role="menu" hidden>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="college" title="College/University"><i class="bi bi-mortarboard" aria-hidden="true"></i><span>College/University</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="graduate" title="Graduate Education"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i><span>Graduate Education</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="secondary" title="Secondary School"><i class="bi bi-journals" aria-hidden="true"></i><span>Secondary School</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="highschool" title="High School"><i class="bi bi-book" aria-hidden="true"></i><span>High School</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="junior_high" title="Junior High"><i class="bi bi-journal-bookmark" aria-hidden="true"></i><span>Junior High</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="middle_school" title="Middle School"><i class="bi bi-journal-text" aria-hidden="true"></i><span>Middle School</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="primary" title="Primary School"><i class="bi bi-pencil-square" aria-hidden="true"></i><span>Primary School</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="elementary" title="Elementary School"><i class="bi bi-pencil" aria-hidden="true"></i><span>Elementary School</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="preschool" title="Preschool"><i class="bi bi-emoji-smile" aria-hidden="true"></i><span>Preschool</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="vocational" title="Vocational School"><i class="bi bi-tools" aria-hidden="true"></i><span>Vocational School</span></button>
+								<div class="ppe__menu-sep" role="separator"></div>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-education" data-mini-target="education" data-edu-type="other" title="Other"><i class="bi bi-three-dots" aria-hidden="true"></i><span>Other</span></button>
 							</div>
 						</div>
 				</div>
@@ -1862,25 +1858,21 @@ body.theme-dark .pie__date-preview {
 					<button type="button" class="ppe__tool" data-mini-action="redo" data-mini-target="career" aria-label="Redo (Ctrl+Shift+Z)" title="Redo (Ctrl+Shift+Z)"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i></button>
 						<span class="ppe__toolbar-sep" aria-hidden="true"></span>
 						<div class="ppe__menu">
-							<button type="button" class="ppe__tool ppe__menu-toggle" data-mini-menu-toggle="career-add" aria-haspopup="menu" aria-expanded="false" title="Add career entry">
+							<button type="button" class="ppe__tool ppe__menu-toggle" data-mini-menu-toggle="career-add" aria-haspopup="menu" aria-expanded="false" title="Add Career">
 								<i class="bi bi-buildings" aria-hidden="true"></i>
-								<span class="ppe__menu-toggle-label">Add career</span>
+								<span class="ppe__menu-toggle-label">Add Career</span>
 								<i class="bi bi-chevron-down ppe__menu-caret" aria-hidden="true"></i>
 							</button>
-							<div class="ppe__menu-panel ppe__add-block-panel prel__add-education-panel" data-mini-menu="career-add" role="menu" hidden>
-								<section class="page-editor__inserter-section">
-									<h3 class="page-editor__inserter-section-title">Career type</h3>
-									<div class="page-editor__inserter-list page-editor__inserter-list--compact">
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="company"><span class="page-editor__inserter-item-label">Company</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="government"><span class="page-editor__inserter-item-label">Government</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="military"><span class="page-editor__inserter-item-label">Military</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="nonprofit"><span class="page-editor__inserter-item-label">Non-profit</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="self_employed"><span class="page-editor__inserter-item-label">Self-employed</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="internship"><span class="page-editor__inserter-item-label">Internship</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="contract"><span class="page-editor__inserter-item-label">Contract / freelance</span></button>
-										<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="other"><span class="page-editor__inserter-item-label">Other</span></button>
-									</div>
-								</section>
+							<div class="ppe__menu-panel ppe__menu-panel--fit" data-mini-menu="career-add" role="menu" hidden>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="company" title="Company"><i class="bi bi-building" aria-hidden="true"></i><span>Company</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="government" title="Government"><i class="bi bi-bank" aria-hidden="true"></i><span>Government</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="military" title="Military"><i class="bi bi-shield-shaded" aria-hidden="true"></i><span>Military</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="nonprofit" title="Non-profit"><i class="bi bi-heart" aria-hidden="true"></i><span>Non-profit</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="self_employed" title="Self-employed"><i class="bi bi-person-workspace" aria-hidden="true"></i><span>Self-employed</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="internship" title="Internship"><i class="bi bi-mortarboard" aria-hidden="true"></i><span>Internship</span></button>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="contract" title="Contract / freelance"><i class="bi bi-file-earmark-text" aria-hidden="true"></i><span>Contract / freelance</span></button>
+								<div class="ppe__menu-sep" role="separator"></div>
+								<button type="button" class="ppe__menu-item" role="menuitem" data-mini-action="add-career" data-mini-target="career" data-career-type="other" title="Other"><i class="bi bi-three-dots" aria-hidden="true"></i><span>Other</span></button>
 							</div>
 						</div>
 				</div>
@@ -2226,7 +2218,7 @@ body.theme-dark .pie__date-preview {
 				} else {
 					const people = await this.#loadPeopleRegistry();
 					const entry = people.find((p) => String(p?.id) === String(PERSON_ID));
-					if (entry) card = { name: [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim(), photoUrl: String(entry.photoUrl || '').trim() };
+					if (entry) card = { name: String(entry.displayName || '').trim() || [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim(), photoUrl: String(entry.photoUrl || '').trim() };
 				}
 
 				const defaultImg = (typeof window.App?.resolveSiteUrl === 'function')
@@ -2522,7 +2514,7 @@ body.theme-dark .pie__date-preview {
 				return {
 					...candidate,
 					id,
-					name: [candidate.person?.firstName, candidate.person?.lastName].filter(Boolean).join(" ").trim() || `Profile ${id}`,
+					name: String(candidate.person?.displayName || "").trim() || [candidate.person?.firstName, candidate.person?.lastName].filter(Boolean).join(" ").trim() || `Profile ${id}`,
 					claimedBy,
 					claimIsCurrentUser: Boolean(login && claimedBy && claimedBy.toLowerCase() === login),
 				};

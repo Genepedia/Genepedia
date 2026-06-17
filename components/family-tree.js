@@ -417,6 +417,10 @@
 	function gedcomDisplayName(nameRecord) {
 		if (!nameRecord) return "";
 
+		// Prefer the curated display name when present (Genepedia custom tag).
+		const curated = childValue(nameRecord, "_DISP").trim();
+		if (curated) return curated;
+
 		const given = childValue(nameRecord, "GIVN");
 		const surnamePrefix = childValue(nameRecord, "SPFX");
 		const surname = childValue(nameRecord, "SURN") || gedcomNameValueSurname(nameRecord.value);

@@ -541,6 +541,10 @@ body.theme-dark .search-page__result-link {
     }
 
     function getPersonDisplayName(entry) {
+        const display = String(entry.displayName || '').trim();
+        if (display) {
+            return display;
+        }
         return [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim();
     }
 
@@ -740,8 +744,9 @@ body.theme-dark .search-page__result-link {
                             avatar.textContent = '';
                             avatar.append(img);
                         }
-                        if (card.name) {
-                            // ensure title updated if needed
+                        // Only fall back to the card name if no display name was resolved;
+                        // never override the display name already shown in the title.
+                        if (card.name && !title.textContent.trim()) {
                             title.textContent = card.name;
                         }
                     } else {

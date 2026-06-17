@@ -216,6 +216,7 @@ function emitIndi(lines, person) {
   lines.push(`1 NAME ${sanitizeGedcomLine(gedcomNameValue(person))}`);
   if (person.names.given) lines.push(`2 GIVN ${sanitizeGedcomLine(person.names.given)}`);
   if (person.names.surname) lines.push(`2 SURN ${sanitizeGedcomLine(person.names.surname)}`);
+  if (person.names.display) lines.push(`2 _DISP ${sanitizeGedcomLine(person.names.display)}`);
   lines.push(`1 SEX ${gedcomSex(person.sex)}`);
   for (const [tag, event] of [['BIRT', person.events.birth], ['DEAT', person.events.death]]) {
     if (event && (event.date || event.place)) {
