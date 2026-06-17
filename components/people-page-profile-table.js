@@ -281,11 +281,12 @@ window.upgradeProfileIdentityInDocument = upgradeProfileIdentityInDocument;
 .gp-pop__photo { display: block; width: 100%; height: 184px; background: #eaecf0; }
 .gp-pop__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .gp-pop__photo--placeholder { display: flex; align-items: center; justify-content: center; color: #9aa0a6; font-size: 4rem; }
-/* Map: the iframe is taller than its window so the OpenStreetMap attribution
-   bar at the bottom is clipped away. */
+/* Map: the iframe extends BELOW its window (anchored at the top) so only the
+   OpenStreetMap attribution/"Report a problem" bar at the bottom is clipped away.
+   The top stays put, keeping the +/- zoom controls fully visible. */
 .gp-pop__map-wrap { position: relative; width: 100%; height: 184px; overflow: hidden; background: #e8eef2; }
 .gp-pop__map-wrap--loading { display: flex; align-items: center; justify-content: center; color: #9aa0a6; font-size: 2.4rem; }
-.gp-pop__map { position: absolute; top: -1px; left: -1px; width: calc(100% + 2px); height: 214px; border: 0; pointer-events: auto; }
+.gp-pop__map { position: absolute; top: -1px; left: -1px; width: calc(100% + 2px); height: 232px; border: 0; pointer-events: auto; }
 .gp-pop__body { padding: 0.65rem 0.75rem 0.75rem; }
 .gp-pop__name { display: inline-block; font-weight: 700; font-size: 1rem; line-height: 1.25; }
 .gp-pop__name:hover { text-decoration: underline; }
