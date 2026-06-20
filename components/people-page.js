@@ -478,6 +478,30 @@ body.theme-dark .ppe-chart-title {
   box-sizing: border-box;
 }
 
+.people-page__tab-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: clamp(20rem, 50vh, 40rem);
+  color: var(--page-toolbar-muted);
+  font-size: 0.95rem;
+}
+
+.people-page__tab-loading-spinner {
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: people-page-spin 0.7s linear infinite;
+  opacity: 0.7;
+}
+
+@keyframes people-page-spin {
+  to { transform: rotate(360deg); }
+}
+
 .people-page__tree-hint {
   margin-top: 0.5rem;
   font-size: 0.85rem;
@@ -1665,9 +1689,10 @@ class PeoplePage extends HTMLElement {
 
   #resolvePersonId() {
     const pathname = window.location.pathname.replace(/\\/g, '/');
-    // Supports clean directory routes (/people/<id>/) and legacy file routes
-    // (/people/<id>/index.html, /people/<id>/profile.html).
-    const match = pathname.match(/\/people\/([^/]+)\//);
+    // Supports the clean directory routes /pages/people/<id>/ and
+    // /pages/pets/<id>/ (and their /index.html, /profile.html file forms),
+    // plus the legacy /people/<id>/ route.
+    const match = pathname.match(/\/(?:pages\/(?:people|pets)|people)\/([^/]+)\//);
     return match?.[1]?.trim() || '';
   }
 
@@ -1690,11 +1715,15 @@ class PeoplePage extends HTMLElement {
     if (window.PeopleRegistry?.resolvePeopleJsonUrl) {
       return window.PeopleRegistry.resolvePeopleJsonUrl();
     }
+    if (typeof window.App?.resolveSiteUrl === 'function') {
+      return window.App.resolveSiteUrl('pages/people/people.json');
+    }
 
     const pathname = window.location.pathname.replace(/\\/g, '/');
-    const nestedMatch = pathname.match(/^(.*\/)people\/[^/]+\/(?:[^/]+)?$/);
-    const prefix = nestedMatch?.[1] || '';
-    return new URL('people/people.json', new URL(prefix, window.location.href)).href;
+    const dir = pathname.replace(/[^/]*$/, '');
+    const depth = dir.split('/').filter(Boolean).length;
+    const prefix = depth ? '../'.repeat(depth) : '';
+    return new URL('pages/people/people.json', new URL(prefix || './', window.location.href)).href;
   }
 
   async #seedTitleFromRegistry() {
@@ -1815,7 +1844,13 @@ class PeoplePage extends HTMLElement {
       if (!window.PeopleDB) {
         return '';
       }
-      return await window.PeopleDB.buildInfoboxFragment(personId);
+      // Load from the correct database (pets on a /pages/pets/ route) and pass the
+      // record, so a pet's infobox shows the pet — not the person with the same id.
+      const record = await this.#loadFocusRecord(personId);
+      if (!record) {
+        return '';
+      }
+      return await window.PeopleDB.buildInfoboxFragment(record);
     } catch (error) {
       console.warn('Could not build identity infobox from the database.', error);
       return '';
@@ -1886,15 +1921,33 @@ class PeoplePage extends HTMLElement {
     }
   }
 
+  // True when the current page is a pet profile (/pages/pets/<id>/), whose record
+  // lives in the separate pets collection rather than persons/.
+  #isPetRoute() {
+    return /\/pages\/pets\//.test(window.location.pathname.replace(/\\/g, '/'));
+  }
+
+  // Load the focused profile's record from the correct collection: pets on a
+  // /pages/pets/ route, people otherwise. (Pet ids start at 1 in their own space,
+  // so they would otherwise collide with person ids in persons/.)
+  async #loadFocusRecord(personId) {
+    if (!personId) return null;
+    await this.#ensurePeopleDb();
+    if (this.#isPetRoute() && window.PeopleDB?.loadPet) {
+      return window.PeopleDB.loadPet(personId);
+    }
+    return window.PeopleDB?.loadPerson ? window.PeopleDB.loadPerson(personId) : null;
+  }
+
   async #loadPersonRecord(personId) {
     if (!personId) {
       return null;
     }
 
     try {
-      await this.#ensurePeopleDb();
-      if (window.PeopleDB?.loadPerson) {
-        return await window.PeopleDB.loadPerson(personId);
+      const record = await this.#loadFocusRecord(personId);
+      if (record) {
+        return record;
       }
     } catch (error) {
       console.warn('Could not load person record for privacy checks.', error);
@@ -1983,8 +2036,8 @@ class PeoplePage extends HTMLElement {
     const bucket = Math.floor((Math.max(1, Number(String(personId).replace(/[^0-9]/g, '')) || 1) - 1) / 1000);
     const pathGroups = [
       [
-        `people/${personId}/index.html`,
-        `people/${personId}/data/profile.html`,
+        `pages/people/${personId}/index.html`,
+        `pages/people/${personId}/data/profile.html`,
       ],
       [
         `data/Genepedia-Database/people/persons/${bucket}/${personId}.json`,
@@ -2239,14 +2292,14 @@ class PeoplePage extends HTMLElement {
     }
 
     try {
-      const editUrl = new URL(this.#resolveSiteUrl('people/edit.html'));
+      const editUrl = new URL(this.#resolveSiteUrl('pages/people/edit.html'));
       editUrl.searchParams.set('person', personId);
       toolbar.setAttribute('edit-href', editUrl.href);
       toolbar.removeAttribute('edit-source');
       toolbar.removeAttribute('edit-content-selector');
     } catch (error) {
       // Fall back to the generic page editor when URL resolution fails.
-      toolbar.setAttribute('edit-source', `people/${personId}/profile.html`);
+      toolbar.setAttribute('edit-source', `pages/people/${personId}/profile.html`);
       toolbar.setAttribute('edit-content-selector', '__fragment__');
       toolbar.removeAttribute('edit-href');
     }
@@ -2449,7 +2502,9 @@ class PeoplePage extends HTMLElement {
       try {
         await this.#ensurePeopleDb();
         const text = window.PeopleDB
-          ? await window.PeopleDB.buildNeighborhoodGedcom(this.#resolvePersonId())
+          ? await (this.#isPetRoute() && window.PeopleDB.buildPetNeighborhoodGedcom
+            ? window.PeopleDB.buildPetNeighborhoodGedcom(this.#resolvePersonId())
+            : window.PeopleDB.buildNeighborhoodGedcom(this.#resolvePersonId()))
           : '';
         if (!text) {
           return false;
@@ -2621,6 +2676,17 @@ class PeoplePage extends HTMLElement {
     this.#activeTabToken = token;
     this.#activeTabName = tab;
 
+    // Give immediate feedback for tabs that do heavier async work (building the
+    // tree GEDCOM, loading the viewer + GEDCOM library, fetching media), so the
+    // previous tab's content doesn't linger on screen while the new one builds.
+    if (tab === 'tree' || tab === 'media' || tab === 'changes') {
+      contentEl.setAttribute('aria-busy', 'true');
+      contentEl.innerHTML = `<div class="people-page__tab-loading" role="status">
+        <span class="people-page__tab-loading-spinner" aria-hidden="true"></span>
+        <span>Loading ${tab === 'tree' ? 'family tree' : tab}…</span>
+      </div>`;
+    }
+
     // Resolve and cache privacy access up front so #applyPrivacyBlur can decide
     // synchronously whether the freshly rendered tab needs the blur overlay.
     this.#privacyAccess = await this.#getPrivacyAccess();
@@ -2773,7 +2839,11 @@ class PeoplePage extends HTMLElement {
     try {
       await this.#ensurePeopleDb();
       if (window.PeopleDB) {
-        gedUrl = (await window.PeopleDB.buildTreeGedcomUrl(personId)) || '';
+        // Pet profiles render a self-contained animal tree from the pets database;
+        // people render the people tree (with their pets attached).
+        gedUrl = (this.#isPetRoute() && window.PeopleDB.buildPetTreeGedcomUrl
+          ? await window.PeopleDB.buildPetTreeGedcomUrl(personId)
+          : await window.PeopleDB.buildTreeGedcomUrl(personId)) || '';
       }
     } catch (error) {
       console.warn('Could not build the family tree from the database.', error);
@@ -4130,7 +4200,7 @@ class PeoplePage extends HTMLElement {
     const promise = (async () => {
       const card = {
         personId,
-        profileUrl: this.#resolveSiteUrl(`people/${personId}/index.html`),
+        profileUrl: this.#resolveSiteUrl(`pages/people/${personId}/index.html`),
         name: '',
         photoUrl: '',
       };
@@ -4148,13 +4218,13 @@ class PeoplePage extends HTMLElement {
       }
 
       try {
-        const response = await fetch(this.#resolveSiteUrl(`people/${personId}/data/profile-table.html`), { cache: 'no-store' });
+        const response = await fetch(this.#resolveSiteUrl(`pages/people/${personId}/data/profile-table.html`), { cache: 'no-store' });
         if (response.ok) {
           const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
           const src = doc.querySelector('table-photo img')?.getAttribute('src')?.trim() || '';
           if (src && !/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(src)) {
             card.photoUrl = src.startsWith('data/')
-              ? this.#resolveSiteUrl(`people/${personId}/${src.replace(/^\.?\//, '')}`)
+              ? this.#resolveSiteUrl(`pages/people/${personId}/${src.replace(/^\.?\//, '')}`)
               : this.#resolvePersonMediaUrlFor(personId, src);
           } else if (src) {
             card.photoUrl = src;
@@ -4402,7 +4472,7 @@ class PeoplePage extends HTMLElement {
       || value.startsWith('assets/')
       || value.startsWith('lib/')
       || value.startsWith('pages/')
-      || value.startsWith('people/')
+      || value.startsWith('pages/people/')
     ) {
       return this.#resolveSiteUrl(value);
     }

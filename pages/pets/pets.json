@@ -1,0 +1,72 @@
+{
+  "generatedAt": "2026-06-19T06:31:23.181Z",
+  "count": 6,
+  "pets": [
+    {
+      "id": 1,
+      "displayName": "Rex",
+      "species": "Dog",
+      "breed": "Labrador Retriever",
+      "sex": "male",
+      "birthYear": 2019,
+      "deathYear": null,
+      "owner": 1,
+      "kind": "pet"
+    },
+    {
+      "id": 2,
+      "displayName": "Whiskers",
+      "species": "Cat",
+      "breed": "",
+      "sex": "female",
+      "birthYear": 2021,
+      "deathYear": null,
+      "owner": 1,
+      "kind": "pet"
+    },
+    {
+      "id": 3,
+      "displayName": "Bubbles",
+      "species": "Fish",
+      "breed": "",
+      "sex": "unknown",
+      "birthYear": 2023,
+      "deathYear": null,
+      "owner": 1,
+      "kind": "pet"
+    },
+    {
+      "id": 4,
+      "displayName": "Bella",
+      "species": "Dog",
+      "breed": "Labrador Retriever",
+      "sex": "female",
+      "birthYear": 2018,
+      "deathYear": null,
+      "owner": null,
+      "kind": "pet"
+    },
+    {
+      "id": 5,
+      "displayName": "Max",
+      "species": "Dog",
+      "breed": "Labrador Retriever",
+      "sex": "male",
+      "birthYear": 2021,
+      "deathYear": null,
+      "owner": 1,
+      "kind": "pet"
+    },
+    {
+      "id": 6,
+      "displayName": "Luna",
+      "species": "Dog",
+      "breed": "Labrador Retriever",
+      "sex": "female",
+      "birthYear": 2021,
+      "deathYear": null,
+      "owner": 1,
+      "kind": "pet"
+    }
+  ]
+}

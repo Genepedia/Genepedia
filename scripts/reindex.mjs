@@ -19,15 +19,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  DB_ROOT, SHARD_SIZE, RESERVED_IDS,
+  DB_ROOT, PETS_DB_ROOT, SHARD_SIZE, RESERVED_IDS,
   bucketForId, summaryShardPath, manifestPath, allIdsPath, searchShardPath,
   ownershipLoginIndexPath, searchKeysForTokens, profileRoute, sitemapPath,
+  petsRegistryPath,
 } from './lib/people-db-paths.mjs';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..');
 const PERSONS_DIR = path.join(REPO_ROOT, DB_ROOT, 'persons');
 const OWNERSHIP_DIR = path.join(REPO_ROOT, DB_ROOT, 'ownership');
+const PETS_PERSONS_DIR = path.join(REPO_ROOT, PETS_DB_ROOT, 'persons');
 
 function parseArgs(argv) {
   const args = { host: 'www.genepedia.org', sitemapOnly: false };
@@ -63,6 +65,12 @@ const STATIC_SITEMAP_PAGES = [
 // Build the ordered list of sitemap URLs: static pages first, then one direct
 // .html URL per person profile. Missing static pages are skipped with a warning
 // so the sitemap never advertises a 404.
+function sitemapEntryRoute(entry) {
+  const id = typeof entry === 'object' ? entry.id : entry;
+  const kind = typeof entry === 'object' ? entry.kind : 'person';
+  return profileRoute(id, kind);
+}
+
 function sitemapUrls(canonicalBase, allIds) {
   const urls = [];
   for (const page of STATIC_SITEMAP_PAGES) {
@@ -72,8 +80,8 @@ function sitemapUrls(canonicalBase, allIds) {
       console.warn(`Sitemap: skipping missing static page ${page}`);
     }
   }
-  for (const id of allIds) {
-    urls.push(`${canonicalBase}/people/${id}/index.html`);
+  for (const entry of allIds) {
+    urls.push(`${canonicalBase}/${sitemapEntryRoute(entry)}index.html`);
   }
   return urls;
 }
@@ -132,6 +140,237 @@ async function readAllPersons() {
     }
   }
   return persons;
+}
+
+// Read every record from the separate pets database (animals + their own
+// families). Returns the records sorted by id.
+async function readAllPets() {
+  const pets = [];
+  let bucketDirs = [];
+  try {
+    bucketDirs = await readdir(PETS_PERSONS_DIR, { withFileTypes: true });
+  } catch {
+    return pets;
+  }
+  for (const bucketDir of bucketDirs) {
+    if (!bucketDir.isDirectory()) continue;
+    const files = await readdir(path.join(PETS_PERSONS_DIR, bucketDir.name));
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      try {
+        const record = JSON.parse(await readFile(path.join(PETS_PERSONS_DIR, bucketDir.name, file), 'utf8'));
+        if (record && record.id != null) pets.push(record);
+      } catch (error) {
+        console.warn(`Skipping unreadable pet ${bucketDir.name}/${file}: ${error.message}`);
+      }
+    }
+  }
+  pets.sort((a, b) => Number(a.id) - Number(b.id));
+  return pets;
+}
+
+// Read every union (animal family) from the pets database.
+async function readAllPetUnions() {
+  const unions = [];
+  const dir = path.join(REPO_ROOT, PETS_DB_ROOT, 'unions');
+  let bucketDirs = [];
+  try {
+    bucketDirs = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return unions;
+  }
+  for (const bucketDir of bucketDirs) {
+    if (!bucketDir.isDirectory()) continue;
+    const files = await readdir(path.join(dir, bucketDir.name));
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      try {
+        const union = JSON.parse(await readFile(path.join(dir, bucketDir.name, file), 'utf8'));
+        if (union && union.id != null) unions.push(union);
+      } catch (error) {
+        console.warn(`Skipping unreadable pet union ${bucketDir.name}/${file}: ${error.message}`);
+      }
+    }
+  }
+  return unions;
+}
+
+function petNameTokens(record) {
+  const names = record.names || {};
+  const tokens = [];
+  for (const value of [names.display, names.callName, names.registeredName, record.species, record.breed, ...(names.aliases || [])]) {
+    for (const part of String(value || '').split(/\s+/)) {
+      if (part) tokens.push(part);
+    }
+  }
+  return tokens;
+}
+
+function petSummaryOf(record) {
+  return {
+    id: record.id,
+    name: record.names?.display || '',
+    species: record.species || '',
+    breed: record.breed || '',
+    sex: record.sex || 'unknown',
+    birthYear: record.events?.birth?.year || null,
+    deathYear: record.events?.death?.year || null,
+    owner: record.owner != null ? record.owner : null,
+    slug: record.slug || '',
+    route: profileRoute(record.id, 'pet'),
+    hasImage: Boolean(record.media?.primary || (record.media?.items || []).length),
+  };
+}
+
+function petGedDate(event) {
+  return event && event.date ? String(event.date).replace(/[\r\n]+/g, ' ').trim() : '';
+}
+
+// Self-contained GEDCOM of the whole pets database (animals + their families).
+function buildPetsGedcom(pets, unions) {
+  const lines = [
+    '0 HEAD', '1 GEDC', '2 VERS 5.5.5', '2 FORM LINEAGE-LINKED', '3 VERS 5.5.5',
+    '1 CHAR UTF-8', '1 SOUR GENEPEDIA', '2 NAME Genepedia', '2 VERS 1.0.0',
+    '1 DEST GENEPEDIA', '1 FILE pets-tree.ged', '1 LANG English',
+    '1 SUBM @U1@', '0 @U1@ SUBM', '1 NAME Genepedia',
+  ];
+  for (const pet of pets) {
+    const name = String(pet.names?.display || 'Pet').replace(/\//g, ' ').replace(/[\r\n]+/g, ' ').trim() || 'Pet';
+    lines.push(`0 @P${pet.id}@ INDI`);
+    lines.push(`1 NAME ${name}`);
+    lines.push(`1 SEX ${pet.sex === 'male' ? 'M' : pet.sex === 'female' ? 'F' : 'U'}`);
+    for (const [tag, event] of [['BIRT', pet.events?.birth], ['DEAT', pet.events?.death]]) {
+      if (event && (event.date || event.place)) {
+        lines.push(`1 ${tag}`);
+        if (event.date) lines.push(`2 DATE ${petGedDate(event)}`);
+        if (event.place) lines.push(`2 PLAC ${String(event.place).replace(/[\r\n]+/g, ' ').trim()}`);
+      }
+    }
+    lines.push(`1 REFN ${pet.id}`);
+    lines.push('2 TYPE genepedia');
+    lines.push(`1 _PET ${String(pet.species || '').replace(/[\r\n]+/g, ' ').trim() || 'Y'}`);
+    if (pet.breed) lines.push(`1 _BREED ${String(pet.breed).replace(/[\r\n]+/g, ' ').trim()}`);
+    for (const fid of pet.relationships?.parentUnions || []) lines.push(`1 FAMC @${fid}@`);
+    for (const fid of pet.relationships?.spouseUnions || []) lines.push(`1 FAMS @${fid}@`);
+  }
+  const sexById = new Map(pets.map((p) => [String(p.id), p.sex]));
+  for (const union of unions) {
+    lines.push(`0 @${union.id}@ FAM`);
+    for (const pid of union.partners || []) {
+      lines.push(`1 ${sexById.get(String(pid)) === 'female' ? 'WIFE' : 'HUSB'} @P${pid}@`);
+    }
+    for (const pid of union.children || []) lines.push(`1 CHIL @P${pid}@`);
+  }
+  lines.push('0 TRLR');
+  return `${lines.join('\n')}\n`;
+}
+
+// Rebuild the pets database derived layer so it mirrors the people database:
+// index/{summary,search,all-ids}, manifest, ownership, export GEDCOM, plus the
+// public registry. Returns sitemap entries.
+async function processPets(host) {
+  const pets = await readAllPets();
+  const unions = await readAllPetUnions();
+  const petsRoot = path.join(REPO_ROOT, PETS_DB_ROOT);
+
+  // index/summary + index/search (replace wholesale so deletions don't linger).
+  await rm(path.join(petsRoot, 'index', 'summary'), { recursive: true, force: true });
+  await rm(path.join(petsRoot, 'index', 'search'), { recursive: true, force: true });
+  const summaryByBucket = new Map();
+  const searchByKey = new Map();
+  for (const record of pets) {
+    const summary = petSummaryOf(record);
+    const bucket = bucketForId(record.id);
+    if (!summaryByBucket.has(bucket)) summaryByBucket.set(bucket, []);
+    summaryByBucket.get(bucket).push(summary);
+    for (const key of searchKeysForTokens(petNameTokens(record))) {
+      if (!searchByKey.has(key)) searchByKey.set(key, []);
+      searchByKey.get(key).push(summary);
+    }
+  }
+  for (const [bucket, list] of summaryByBucket) {
+    list.sort((a, b) => a.id - b.id);
+    await writeJson(path.join(petsRoot, 'index', 'summary', `${bucket}.json`), { bucket, count: list.length, animals: list });
+  }
+  for (const [key, list] of searchByKey) {
+    list.sort((a, b) => (a.name || '').localeCompare(b.name || '') || a.id - b.id);
+    await writeJson(path.join(petsRoot, 'index', 'search', `${key}.json`), { key, count: list.length, animals: list });
+  }
+
+  // index/all-ids.json
+  const allIds = pets.map((p) => Number(p.id)).sort((a, b) => a - b);
+  await writeJson(path.join(petsRoot, 'index', 'all-ids.json'), { count: allIds.length, ids: allIds });
+
+  // ownership/<bucket>/<id>.json — a pet is editable by its owning person.
+  await rm(path.join(petsRoot, 'ownership'), { recursive: true, force: true });
+  for (const record of pets) {
+    await writeJson(path.join(petsRoot, 'ownership', String(bucketForId(record.id)), `${record.id}.json`), {
+      creator: null,
+      owner: record.owner != null ? { personId: record.owner } : null,
+      maintainers: [],
+    });
+  }
+
+  // export/full-tree.ged — the whole pets database as one GEDCOM.
+  await writeText(path.join(petsRoot, 'export', 'full-tree.ged'), buildPetsGedcom(pets, unions));
+
+  // sources/ + reports/ so the layout mirrors people (kept as real placeholders).
+  await writeJson(path.join(petsRoot, 'sources', 'animal-id-map.json'), {});
+  await writeJson(path.join(petsRoot, 'reports', 'reindex-report.json'), {
+    generatedAt: new Date().toISOString(),
+    animals: pets.length,
+    unions: unions.length,
+  });
+  // unions/ exists even before any animal families are recorded.
+  await mkdir(path.join(petsRoot, 'unions'), { recursive: true });
+  await writeText(path.join(petsRoot, 'unions', '.gitkeep'), '');
+
+  // manifest.json
+  const speciesCounts = {};
+  for (const record of pets) {
+    const key = String(record.species || 'Unknown');
+    speciesCounts[key] = (speciesCounts[key] || 0) + 1;
+  }
+  await writeJson(path.join(petsRoot, 'manifest.json'), {
+    schema: 'genepedia/animal-db@1',
+    generatedAt: new Date().toISOString(),
+    host,
+    shardSize: SHARD_SIZE,
+    routes: { profile: 'pages/pets/<id>/' },
+    layout: {
+      persons: `${PETS_DB_ROOT}/persons/<bucket>/<id>.json`,
+      unions: `${PETS_DB_ROOT}/unions/<bucket>/<id>.json`,
+      summary: `${PETS_DB_ROOT}/index/summary/<bucket>.json`,
+      search: `${PETS_DB_ROOT}/index/search/<key>.json`,
+    },
+    counts: {
+      animals: pets.length,
+      unions: unions.length,
+      withMedia: pets.filter((p) => p.media?.primary || (p.media?.items || []).length).length,
+      living: pets.filter((p) => p.living).length,
+      species: speciesCounts,
+    },
+  });
+
+  // Public registry (pages/pets/pets.json).
+  const registry = pets.map((record) => ({
+    id: record.id,
+    displayName: record.names?.display || '',
+    species: record.species || '',
+    breed: record.breed || '',
+    sex: record.sex || 'unknown',
+    birthYear: record.events?.birth?.year || null,
+    deathYear: record.events?.death?.year || null,
+    owner: record.owner != null ? record.owner : null,
+    kind: 'pet',
+  }));
+  await writeJson(path.join(REPO_ROOT, petsRegistryPath()), {
+    generatedAt: new Date().toISOString(),
+    count: registry.length,
+    pets: registry,
+  });
+
+  return pets.map((record) => ({ id: record.id, kind: 'pet' }));
 }
 
 async function readAllOwnershipConfigs() {
@@ -197,6 +436,7 @@ function nameTokens(record) {
 }
 
 function summaryOf(record) {
+  const kind = record.kind === 'pet' ? 'pet' : 'person';
   return {
     id: record.id,
     name: record.names?.display || '',
@@ -205,7 +445,8 @@ function summaryOf(record) {
     birthYear: record.events?.birth?.year || null,
     deathYear: record.events?.death?.year || null,
     slug: record.slug || '',
-    route: record.page?.route || profileRoute(record.id),
+    route: profileRoute(record.id, kind),
+    ...(kind === 'pet' ? { kind: 'pet', species: record.species || '' } : {}),
     hasImage: Boolean(record.media?.primary || (record.media?.items || []).length),
   };
 }
@@ -217,9 +458,10 @@ async function main() {
   // Fast path: only regenerate sitemap.xml (no submodule index/shard writes).
   if (args.sitemapOnly) {
     const allIds = await readAllIds();
-    const urls = sitemapUrls(canonicalBase, allIds);
+    const petEntries = await processPets(args.host);
+    const urls = sitemapUrls(canonicalBase, [...allIds, ...petEntries]);
     await writeText(path.join(REPO_ROOT, sitemapPath()), sitemapXml(urls));
-    console.log(`Sitemap regenerated: ${urls.length} URL(s) — ${urls.length - allIds.length} static page(s) + ${allIds.length} profile(s).`);
+    console.log(`Sitemap regenerated: ${urls.length} URL(s) — incl. ${allIds.length} people + ${petEntries.length} pets.`);
     return;
   }
 
@@ -251,6 +493,7 @@ async function main() {
       lastName: record.names?.surname || '',
       birthYear: record.events?.birth?.year || null,
       deathYear: record.events?.death?.year || null,
+      ...(record.kind === 'pet' ? { kind: 'pet', species: record.species || '' } : {}),
     });
   }
 
@@ -277,13 +520,19 @@ async function main() {
   });
 
   registryPeople.sort((a, b) => Number(a.id) - Number(b.id));
-  await writeJson(path.join(REPO_ROOT, 'people', 'people.json'), {
+  await writeJson(path.join(REPO_ROOT, 'pages', 'people', 'people.json'), {
     generatedAt: new Date().toISOString(),
     count: registryPeople.length,
     people: registryPeople,
   });
 
-  const sitemapUrlList = sitemapUrls(canonicalBase, allIds);
+  // Pets are a separate database; register them and add to the shared sitemap.
+  const petEntries = await processPets(args.host);
+  const sitemapEntries = [
+    ...registryPeople.map((p) => ({ id: p.id, kind: 'person' })),
+    ...petEntries,
+  ];
+  const sitemapUrlList = sitemapUrls(canonicalBase, sitemapEntries);
   await writeText(path.join(REPO_ROOT, sitemapPath()), sitemapXml(sitemapUrlList));
 
   // Refresh manifest counts (keep other fields).

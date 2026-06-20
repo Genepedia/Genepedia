@@ -18,6 +18,22 @@
         { value: "guardian", label: "Guardian" },
         { value: "other", label: "Other" },
     ];
+    const PET_SPECIES_OPTIONS = [
+        { value: "dog", label: "Dog" },
+        { value: "cat", label: "Cat" },
+        { value: "bird", label: "Bird" },
+        { value: "fish", label: "Fish" },
+        { value: "rabbit", label: "Rabbit" },
+        { value: "horse", label: "Horse" },
+        { value: "hamster", label: "Hamster" },
+        { value: "reptile", label: "Reptile" },
+        { value: "other", label: "Other" },
+    ];
+    const PET_SEX_OPTIONS = [
+        { value: "unknown", label: "Unknown" },
+        { value: "male", label: "Male" },
+        { value: "female", label: "Female" },
+    ];
     const PEOPLE_SUGGESTION_LIMIT = 8;
 
     const TEMPLATE = `
@@ -50,6 +66,24 @@
                     font-weight: 600;
                     line-height: 1.2;
                     vertical-align: middle;
+                }
+
+                .prel__pet-avatar {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 2.1rem;
+                    height: 2.1rem;
+                    border-radius: 999px;
+                    flex: 0 0 auto;
+                    font-size: 1.1rem;
+                    background: rgba(0, 0, 0, 0.06);
+                    border: 1px solid rgba(0, 0, 0, 0.08);
+                }
+
+                body.theme-dark .prel__pet-avatar {
+                    background: rgba(255, 255, 255, 0.06);
+                    border-color: rgba(255, 255, 255, 0.1);
                 }
 
                 .prel__toolbar-actions,
@@ -519,6 +553,24 @@
         };
     }
 
+    function normalizePetSex(value) {
+        const sex = String(value || "").trim().toLowerCase();
+        return PET_SEX_OPTIONS.some((option) => option.value === sex) ? sex : "unknown";
+    }
+
+    function petSpeciesKind(value) {
+        const text = String(value || "").trim().toLowerCase();
+        if (!text) return "";
+        const match = PET_SPECIES_OPTIONS.find((option) => option.value === text || option.label.toLowerCase() === text);
+        return match && match.value !== "other" ? match.value : "other";
+    }
+
+    function resolvePetSpecies(kind, custom) {
+        if (kind === "other") return String(custom || "").trim();
+        const match = PET_SPECIES_OPTIONS.find((option) => option.value === kind);
+        return match ? match.label : "";
+    }
+
     class ProfileRelationshipsEditor extends HTMLElement {
         connectedCallback() {
             if (this.__rendered) return;
@@ -539,6 +591,9 @@
             this.__unionSeed = Date.now();
             this.__slotSeed = 0;
             this.__placeholderSeed = 0;
+            this.__pets = [];
+            this.__petSeed = 0;
+            this.__petsBaselineCount = 0;
             this.innerHTML = TEMPLATE;
 
             this.__onClick = (event) => this.#handleClick(event);
@@ -763,6 +818,49 @@
             return `${PLACEHOLDER_PREFIX}${kind}_${this.__placeholderSeed}`;
         }
 
+        #nextPetId() {
+            this.__petSeed += 1;
+            return `pet-draft-${this.__petSeed}`;
+        }
+
+        #emptyPet(species = "") {
+            const kind = petSpeciesKind(species);
+            return {
+                petId: this.#nextPetId(),
+                recordId: null,
+                name: "",
+                speciesKind: kind || (species ? "other" : ""),
+                speciesOther: kind === "other" ? String(species || "").trim() : "",
+                breed: "",
+                color: "",
+                microchip: "",
+                sex: "unknown",
+                birth: emptyEventDraft(),
+                death: emptyEventDraft(),
+                notes: "",
+            };
+        }
+
+        // Build an editor draft from an existing animal record.
+        #petDraftFromRecord(record) {
+            const speciesRaw = String(record?.species || "").trim();
+            const kind = petSpeciesKind(speciesRaw);
+            return {
+                petId: this.#nextPetId(),
+                recordId: normalizeId(record?.id),
+                name: String(record?.names?.display || record?.names?.callName || "").trim(),
+                speciesKind: kind,
+                speciesOther: kind === "other" ? speciesRaw : "",
+                breed: String(record?.breed || "").trim(),
+                color: String(record?.attributes?.color || "").trim(),
+                microchip: String(record?.attributes?.microchipId || "").trim(),
+                sex: normalizePetSex(record?.sex),
+                birth: eventDraftFromEvent(record?.events?.birth),
+                death: eventDraftFromEvent(record?.events?.death),
+                notes: "",
+            };
+        }
+
         #nextUnionId() {
             let candidate = "";
             do {
@@ -969,7 +1067,21 @@
                     })),
                 }))
                 .sort((left, right) => left.id.localeCompare(right.id, undefined, { numeric: true }));
-            return JSON.stringify(families);
+            const pets = this.__pets.map((pet) => ({
+                petId: pet.petId,
+                recordId: pet.recordId || null,
+                name: String(pet.name || "").trim(),
+                speciesKind: pet.speciesKind || "",
+                speciesOther: String(pet.speciesOther || "").trim(),
+                breed: String(pet.breed || "").trim(),
+                color: String(pet.color || "").trim(),
+                microchip: String(pet.microchip || "").trim(),
+                sex: normalizePetSex(pet.sex),
+                birth: { ...pet.birth },
+                death: { ...pet.death },
+                notes: String(pet.notes || "").trim(),
+            }));
+            return JSON.stringify({ families, pets });
         }
 
         #isDirty() {
@@ -1011,10 +1123,26 @@
             if (!snapshot) return;
             this.__historyRestoring = true;
             try {
-                const families = JSON.parse(snapshot);
+                const parsed = JSON.parse(snapshot);
+                const families = Array.isArray(parsed) ? parsed : parsed?.families;
                 if (Array.isArray(families)) {
                     this.__families = new Map(families.map((family) => [family.id, cloneJson(family)]));
                 }
+                const pets = Array.isArray(parsed?.pets) ? parsed.pets : [];
+                this.__pets = pets.map((pet) => ({
+                    petId: pet.petId || this.#nextPetId(),
+                    recordId: pet.recordId || null,
+                        name: String(pet.name || ""),
+                    speciesKind: pet.speciesKind || "",
+                    speciesOther: String(pet.speciesOther || ""),
+                    breed: String(pet.breed || ""),
+                    color: String(pet.color || ""),
+                    microchip: String(pet.microchip || ""),
+                    sex: normalizePetSex(pet.sex),
+                    birth: { ...emptyEventDraft(), ...(pet.birth || {}) },
+                    death: { ...emptyEventDraft(), ...(pet.death || {}) },
+                    notes: String(pet.notes || ""),
+                }));
             } catch (error) {
                 // ignore malformed history entries
             } finally {
@@ -1051,6 +1179,14 @@
             if (action === "add-partner") {
                 const family = this.#emptyFamily("partner", { partnerKind: detail.partnerKind || "partner" });
                 this.__families.set(family.id, family);
+                this.#setStatus("");
+                this.#render();
+                this.#scheduleHistoryCapture();
+                this.#notifyDirtyChange();
+                return;
+            }
+            if (action === "add-pet") {
+                this.__pets.push(this.#emptyPet(detail.petSpecies || ""));
                 this.#setStatus("");
                 this.#render();
                 this.#scheduleHistoryCapture();
@@ -1132,13 +1268,28 @@
                 }
             }
 
+            // A "pet union" is a dedicated union where this person is the sole
+            // partner and every child is a standalone pet record (kind:'pet').
+            // Those are surfaced as pet cards, not family cards.
             this.__families = new Map(unions.map((union) => [String(union.id), this.#familyDraftFromUnion(union)]));
+
+            // Pets are standalone records in the separate pets database, linked by
+            // this person's `pets: [petId,...]`. Load each for an editable card.
+            this.__pets = [];
+            const petIds = Array.isArray(record.pets) ? record.pets : [];
+            if (petIds.length && typeof window.PeopleDB.loadPet === "function") {
+                const petRecords = await Promise.all(petIds.map((id) => window.PeopleDB.loadPet(id).catch(() => null)));
+                for (const petRec of petRecords) {
+                    if (petRec) this.__pets.push(this.#petDraftFromRecord(petRec));
+                }
+            }
+            this.__petsBaselineCount = this.__pets.length;
             await this.#loadPeopleRegistry();
             await this.#refreshPeopleIndex();
             this.#render();
             this.#setSavedBaseline({ quiet: true });
             document.querySelector("profile-editor")?.refreshDirtyState?.();
-            this.#setStatus(this.#buildCards().length ? "" : "Add a parent, partner, or child to start editing relationships.");
+            this.#setStatus(this.#buildCards().length || this.__pets.length ? "" : "Add a parent, partner, child, or pet to start editing relationships.");
         }
 
         async #refreshPeopleIndex() {
@@ -1443,20 +1594,131 @@
             `;
         }
 
+        #findPet(petId) {
+            return this.__pets.find((pet) => pet.petId === String(petId || "")) || null;
+        }
+
+        #updatePetLegend(pet) {
+            const legend = this.querySelector(`.prel__pet[data-pet-id="${CSS.escape(pet.petId)}"] .prel__legend-name`);
+            if (!legend) return;
+            const speciesLabel = resolvePetSpecies(pet.speciesKind, pet.speciesOther);
+            legend.textContent = `${pet.name ? pet.name : "New pet"}${speciesLabel ? ` (${speciesLabel})` : ""}`;
+        }
+
+        #renderPetDateRow(pet, eventKey, label) {
+            const draft = pet[eventKey] || emptyEventDraft();
+            const dateId = `prel-${escapeHtml(pet.petId)}-${eventKey}-date`;
+            const placeId = `prel-${escapeHtml(pet.petId)}-${eventKey}-place`;
+            const preview = datePreview(draft.date, draft.precision);
+            return `
+                <div class="pie__row">
+                    <label class="pie__label" for="${dateId}">${escapeHtml(label)} Date</label>
+                    <div class="pie__field">
+                        <input id="${dateId}" type="text" value="${escapeHtml(draft.date || "")}" placeholder="e.g. 2018-04-12 or March 2018" data-pet-id="${escapeHtml(pet.petId)}" data-field="petEventDate" data-event-key="${eventKey}">
+                        <p class="prel__date-preview"${preview ? "" : " hidden"}>${escapeHtml(preview)}</p>
+                    </div>
+                </div>
+                <div class="pie__row">
+                    <label class="pie__label" for="${placeId}">${escapeHtml(label)} Place</label>
+                    <div class="pie__field">
+                        <input id="${placeId}" type="text" value="${escapeHtml(draft.place || "")}" placeholder="Place" data-pet-id="${escapeHtml(pet.petId)}" data-field="petEventPlace" data-event-key="${eventKey}">
+                    </div>
+                </div>
+            `;
+        }
+
+        #renderPetCard(pet) {
+            const displayName = pet.name ? pet.name : "New pet";
+            const speciesLabel = resolvePetSpecies(pet.speciesKind, pet.speciesOther);
+            const subtitle = speciesLabel ? ` (${speciesLabel})` : "";
+            return `
+                <fieldset class="pie__group prel__pet" data-pet-id="${escapeHtml(pet.petId)}" data-kind="pet">
+                    <legend class="pie__legend"><span class="prel__legend-person"><span class="prel__pet-avatar" aria-hidden="true">🐾</span><span class="prel__legend-name">${escapeHtml(displayName)}${escapeHtml(subtitle)}</span></span></legend>
+                    <div class="pie__row">
+                        <label class="pie__label" for="prel-${escapeHtml(pet.petId)}-name">Name</label>
+                        <div class="pie__field">
+                            <input id="prel-${escapeHtml(pet.petId)}-name" type="text" value="${escapeHtml(pet.name || "")}" placeholder="e.g. Rex" data-pet-id="${escapeHtml(pet.petId)}" data-field="petName">
+                        </div>
+                    </div>
+                    <div class="pie__row">
+                        <label class="pie__label" for="prel-${escapeHtml(pet.petId)}-species">Species</label>
+                        <div class="pie__field">
+                            <select id="prel-${escapeHtml(pet.petId)}-species" data-pet-id="${escapeHtml(pet.petId)}" data-field="petSpecies">
+                                <option value=""${pet.speciesKind ? "" : " selected"}>Choose a species…</option>
+                                ${this.#renderSelectOptions(PET_SPECIES_OPTIONS, pet.speciesKind)}
+                            </select>
+                        </div>
+                    </div>
+                    ${pet.speciesKind === "other" ? `
+                        <div class="pie__row">
+                            <label class="pie__label" for="prel-${escapeHtml(pet.petId)}-species-custom">Custom Species</label>
+                            <div class="pie__field">
+                                <input id="prel-${escapeHtml(pet.petId)}-species-custom" type="text" value="${escapeHtml(pet.speciesOther || "")}" placeholder="e.g. Tortoise" data-pet-id="${escapeHtml(pet.petId)}" data-field="petSpeciesOther">
+                            </div>
+                        </div>
+                    ` : ""}
+                    <div class="pie__row">
+                        <label class="pie__label" for="prel-${escapeHtml(pet.petId)}-breed">Breed</label>
+                        <div class="pie__field">
+                            <input id="prel-${escapeHtml(pet.petId)}-breed" type="text" value="${escapeHtml(pet.breed || "")}" placeholder="e.g. Labrador Retriever" data-pet-id="${escapeHtml(pet.petId)}" data-field="petBreed">
+                        </div>
+                    </div>
+                    <div class="pie__row">
+                        <label class="pie__label" for="prel-${escapeHtml(pet.petId)}-sex">Sex</label>
+                        <div class="pie__field">
+                            <select id="prel-${escapeHtml(pet.petId)}-sex" data-pet-id="${escapeHtml(pet.petId)}" data-field="petSex">
+                                ${this.#renderSelectOptions(PET_SEX_OPTIONS, pet.sex)}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pie__row">
+                        <label class="pie__label" for="prel-${escapeHtml(pet.petId)}-color">Color / Coat</label>
+                        <div class="pie__field">
+                            <input id="prel-${escapeHtml(pet.petId)}-color" type="text" value="${escapeHtml(pet.color || "")}" placeholder="e.g. Golden, black &amp; white" data-pet-id="${escapeHtml(pet.petId)}" data-field="petColor">
+                        </div>
+                    </div>
+                    ${this.#renderPetDateRow(pet, "birth", "Birth")}
+                    ${this.#renderPetDateRow(pet, "death", "Death")}
+                    <div class="pie__row">
+                        <label class="pie__label" for="prel-${escapeHtml(pet.petId)}-microchip">Microchip ID</label>
+                        <div class="pie__field">
+                            <input id="prel-${escapeHtml(pet.petId)}-microchip" type="text" value="${escapeHtml(pet.microchip || "")}" placeholder="e.g. 985112000123456" data-pet-id="${escapeHtml(pet.petId)}" data-field="petMicrochip">
+                        </div>
+                    </div>
+                    <div class="pie__row">
+                        <label class="pie__label" for="prel-${escapeHtml(pet.petId)}-notes">Notes</label>
+                        <div class="pie__field">
+                            <input id="prel-${escapeHtml(pet.petId)}-notes" type="text" value="${escapeHtml(pet.notes || "")}" placeholder="Anything else worth noting" data-pet-id="${escapeHtml(pet.petId)}" data-field="petNotes">
+                        </div>
+                    </div>
+                    <div class="pie__row">
+                        <span class="pie__label">Actions</span>
+                        <div class="pie__field prel__inline-actions">
+                            <button type="button" class="page-editor__button page-editor__sidebar-delete" data-action="remove-pet" data-pet-id="${escapeHtml(pet.petId)}">
+                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                <span>Remove pet</span>
+                            </button>
+                        </div>
+                    </div>
+                </fieldset>
+            `;
+        }
+
         #render() {
             const list = this.#listEl();
             if (!list) return;
             const cards = this.#buildCards();
-            if (!cards.length) {
+            if (!cards.length && !this.__pets.length) {
                 list.innerHTML = `
                     <div class="prel__empty">
                         <h3>No relationships linked yet</h3>
-                        <p class="prel__empty-note">Add parents, partners, or children above. Each related person gets their own group box.</p>
+                        <p class="prel__empty-note">Add parents, partners, children, or pets above. Each one gets its own group box.</p>
                     </div>
                 `;
                 return;
             }
-            list.innerHTML = cards.map((card) => this.#renderCard(card)).join("");
+            const petsHtml = this.__pets.map((pet) => this.#renderPetCard(pet)).join("");
+            list.innerHTML = cards.map((card) => this.#renderCard(card)).join("") + petsHtml;
             this.#configureDateFields();
             this.#bindLocationFields();
             this.#fillLocationFields();
@@ -1505,7 +1767,22 @@
 
             if (action === "remove-card") {
                 this.#removeCard(String(button.dataset.familyId || ""), String(button.dataset.slotId || ""), String(button.dataset.kind || ""));
+                return;
             }
+
+            if (action === "remove-pet") {
+                this.#removePet(String(button.dataset.petId || ""));
+            }
+        }
+
+        #removePet(petId) {
+            const before = this.__pets.length;
+            this.__pets = this.__pets.filter((pet) => pet.petId !== String(petId || ""));
+            if (this.__pets.length === before) return;
+            this.#setStatus("");
+            this.#render();
+            this.#scheduleHistoryCapture();
+            this.#notifyDirtyChange();
         }
 
         #addCoParentToFamily(familyId) {
@@ -1663,6 +1940,46 @@
                 return;
             }
 
+            if (field && field.startsWith("pet") && target.dataset.petId != null) {
+                const pet = this.#findPet(target.dataset.petId);
+                if (!pet) return;
+                if (field === "petName") {
+                    pet.name = String(target.value || "");
+                    this.#updatePetLegend(pet);
+                } else if (field === "petSpeciesOther") {
+                    pet.speciesOther = String(target.value || "");
+                    this.#updatePetLegend(pet);
+                } else if (field === "petNotes") {
+                    pet.notes = String(target.value || "");
+                } else if (field === "petBreed") {
+                    pet.breed = String(target.value || "");
+                } else if (field === "petColor") {
+                    pet.color = String(target.value || "");
+                } else if (field === "petMicrochip") {
+                    pet.microchip = String(target.value || "");
+                } else if (field === "petEventDate" || field === "petEventPlace") {
+                    const eventKey = String(target.dataset.eventKey || "");
+                    if (!pet[eventKey]) return;
+                    if (field === "petEventPlace") {
+                        pet[eventKey].place = String(target.value || "");
+                    } else {
+                        pet[eventKey].date = String(target.value || "");
+                        const previewEl = target.parentElement?.querySelector(".prel__date-preview");
+                        if (previewEl) {
+                            const preview = datePreview(pet[eventKey].date, pet[eventKey].precision);
+                            previewEl.textContent = preview;
+                            previewEl.hidden = !preview;
+                        }
+                    }
+                } else {
+                    return;
+                }
+                this.#setStatus("");
+                this.#scheduleHistoryCapture();
+                this.#notifyDirtyChange();
+                return;
+            }
+
             if (locationSearchPath) {
                 const parts = locationSearchPath.split('.');
                 const familyId = parts[1];
@@ -1749,6 +2066,28 @@
                 }
                 this.#setStatus("");
                 this.#render();
+                this.#scheduleHistoryCapture();
+                this.#notifyDirtyChange();
+                return;
+            }
+
+            if (field === "petSpecies") {
+                const pet = this.#findPet(target.dataset.petId);
+                if (pet) {
+                    pet.speciesKind = String(target.value || "");
+                    if (pet.speciesKind !== "other") pet.speciesOther = "";
+                }
+                this.#setStatus("");
+                this.#render();
+                this.#scheduleHistoryCapture();
+                this.#notifyDirtyChange();
+                return;
+            }
+
+            if (field === "petSex") {
+                const pet = this.#findPet(target.dataset.petId);
+                if (pet) pet.sex = normalizePetSex(target.value);
+                this.#setStatus("");
                 this.#scheduleHistoryCapture();
                 this.#notifyDirtyChange();
                 return;
@@ -1983,6 +2322,23 @@
             return record;
         }
 
+        // Form data for a single pet draft (fed to PeopleDB.buildPetRecord).
+        #petData(pet) {
+            return {
+                name: String(pet.name || "").trim(),
+                species: resolvePetSpecies(pet.speciesKind, pet.speciesOther),
+                breed: String(pet.breed || "").trim(),
+                color: String(pet.color || "").trim(),
+                microchip: String(pet.microchip || "").trim(),
+                sex: normalizePetSex(pet.sex),
+                events: {
+                    birth: eventFromDraft(pet.birth),
+                    death: eventFromDraft(pet.death),
+                },
+                notes: String(pet.notes || "").trim(),
+            };
+        }
+
         #deriveRelationshipsForRecord(recordId, unionsById, recordsById) {
             const selfId = normalizeId(recordId);
             const parents = new Set();
@@ -2085,6 +2441,82 @@
             return `${window.PeopleDB.DB_ROOT}/unions/${window.PeopleDB.bucketForId(unionId)}/${unionId}.json`;
         }
 
+        // Turn the pet drafts into standalone pet profiles: allocate ids for new
+        // pets, build their records/shells/prose/ownership, the owner→pets union,
+        // and the registry additions. Pet records + the union are returned so the
+        // caller can fold them into relationship derivation; the rest are extra
+        // files published alongside the relationship edit.
+        async #loadPetsRegistry() {
+            try {
+                const response = await fetch(resolveSiteUrl("pages/pets/pets.json"), { cache: "no-store" });
+                if (!response.ok) return [];
+                const payload = await response.json();
+                return Array.isArray(payload?.pets) ? payload.pets : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        async #buildPetArtifacts() {
+            if (!this.__pets.length && !this.__petsBaselineCount) {
+                return { files: [], petIds: [] };
+            }
+
+            // Pets get their own id sequence from the pets database registry.
+            const petRegistry = await this.#loadPetsRegistry();
+            this.__petsBaselineCount = petRegistry.length;
+            let maxPetId = 0;
+            for (const entry of petRegistry) maxPetId = Math.max(maxPetId, Number(entry.id) || 0);
+            for (const pet of this.__pets) if (pet.recordId) maxPetId = Math.max(maxPetId, Number(pet.recordId) || 0);
+
+            const files = [];
+            const petIds = [];
+            const registryById = new Map(petRegistry.map((entry) => [normalizeId(entry.id), entry]));
+
+            for (const pet of this.__pets) {
+                const id = pet.recordId ? normalizeId(pet.recordId) : String(++maxPetId);
+                pet.recordId = id;
+                petIds.push(idValue(id));
+                const data = { ...this.#petData(pet), owner: idValue(this.__personId) };
+                const record = window.PeopleDB.buildPetRecord(idValue(id), data);
+
+                files.push({ path: window.PeopleDB.petRecordPath(id), content: `${JSON.stringify(record, null, 2)}\n` });
+                files.push({ path: `pages/pets/${id}/index.html`, content: window.PeopleDB.buildProfileShellHtml(record) });
+                files.push({
+                    path: `pages/pets/${id}/profile.html`,
+                    content: `<h1>${escapeHtml(record.names.display)}</h1>\n<p>${escapeHtml(data.species || "Pet")}${data.notes ? ` — ${escapeHtml(data.notes)}` : ""}.</p>\n`,
+                });
+                registryById.set(normalizeId(id), {
+                    id: idValue(id),
+                    displayName: record.names.display,
+                    species: data.species || "",
+                    breed: data.breed || "",
+                    sex: record.sex,
+                    birthYear: record.events?.birth?.year || null,
+                    deathYear: record.events?.death?.year || null,
+                    owner: idValue(this.__personId),
+                    kind: "pet",
+                });
+            }
+
+            // Drop this owner's pets that are no longer linked (removed cards).
+            const keptIds = new Set(this.__pets.map((pet) => normalizeId(pet.recordId)));
+            for (const [id, entry] of [...registryById.entries()]) {
+                if (normalizeId(entry.owner) === normalizeId(this.__personId) && !keptIds.has(id)) {
+                    registryById.delete(id);
+                }
+            }
+
+            // Republish the pets registry (pages/pets/pets.json) including the new pets.
+            const mergedPets = [...registryById.values()].sort((left, right) => Number(left.id) - Number(right.id));
+            files.push({
+                path: "pages/pets/pets.json",
+                content: `${JSON.stringify({ generatedAt: new Date().toISOString(), count: mergedPets.length, pets: mergedPets }, null, 2)}\n`,
+            });
+
+            return { files, petIds };
+        }
+
         async #buildPublishFiles() {
             if (!this.#isDirty()) {
                 return [];
@@ -2092,7 +2524,16 @@
 
             await ensurePeopleDb();
             const editedUnions = this.#normalizedFamilyPayloads();
+            // Pets are standalone records in the separate pets database, linked by
+            // the owner's `pets: [petId,...]` (no union). buildPetArtifacts allocates
+            // their ids and returns their files + the id list for the owner record.
+            const petArtifacts = await this.#buildPetArtifacts();
             const currentRecord = await this.#buildCurrentRecord();
+            if (petArtifacts.petIds.length) {
+                currentRecord.pets = petArtifacts.petIds;
+            } else {
+                delete currentRecord.pets;
+            }
             const touchedIds = new Set([this.__personId]);
             for (const union of editedUnions.values()) {
                 for (const id of union.partners || []) touchedIds.add(normalizeId(id));
@@ -2104,6 +2545,7 @@
             const missingIds = [];
             for (const id of touchedIds) {
                 if (!id || id === this.__personId) continue;
+                if (recordsById.has(id)) continue;
                 let record = this.__relatedRecords.get(id) || null;
                 if (!record) {
                     try {
@@ -2163,6 +2605,8 @@
                     path: window.PeopleDB.recordPath(id),
                     content: `${JSON.stringify(record, null, 2)}\n`,
                 })),
+                // Pet SEO shells, prose, ownership, and the registry addition.
+                ...petArtifacts.files,
             ];
         }
     }

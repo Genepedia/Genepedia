@@ -3806,7 +3806,7 @@ body.theme-dark .ppe__media-divider::after {
 			const normalized = src.replace(/^\.?\//, "");
 			const personId = this.#getPersonId();
 			if (normalized.startsWith("assets/")) return resolveSiteUrl(normalized);
-			if (personId) return resolveSiteUrl(`people/${personId}/data/${normalized}`);
+			if (personId) return resolveSiteUrl(`pages/people/${personId}/data/${normalized}`);
 			return resolveSiteUrl(normalized);
 		}
 
@@ -4838,7 +4838,7 @@ body.theme-dark .ppe__media-divider::after {
 					if (window.PeopleRegistry?.loadPeopleRegistry) {
 						return await window.PeopleRegistry.loadPeopleRegistry();
 					}
-					const res = await fetch(resolveSiteUrl("people/people.json"), { cache: "no-store" });
+					const res = await fetch(resolveSiteUrl("pages/people/people.json"), { cache: "no-store" });
 					const data = await res.json();
 					return Array.isArray(data?.people) ? data.people : [];
 				} catch (error) {

@@ -35,6 +35,22 @@ export function unionPath(unionId) {
   return `${DB_ROOT}/unions/${bucketForId(unionId)}/${unionId}.json`;
 }
 
+// Pets are a separate parallel database mirroring the people layout, with their
+// own id sequence starting at 1 and their own unions (animal families).
+export const PETS_DB_ROOT = 'data/Genepedia-Database/pets';
+
+export function petPersonPath(id) {
+  return `${PETS_DB_ROOT}/persons/${bucketForId(id)}/${id}.json`;
+}
+
+export function petUnionPath(unionId) {
+  return `${PETS_DB_ROOT}/unions/${bucketForId(unionId)}/${unionId}.json`;
+}
+
+export function petsRegistryPath() {
+  return 'pages/pets/pets.json';
+}
+
 export function graphPath(id) {
   return `${DB_ROOT}/graph/${bucketForId(id)}/${id}.json`;
 }
@@ -114,7 +130,13 @@ export function slugify(name, fallbackId) {
   return slug || `profile-${fallbackId}`;
 }
 
-/** Canonical public route for a person profile (directory route for clean URLs). */
-export function profileRoute(id) {
-  return `people/${id}/`;
+/** Canonical public route for a person/pet profile (directory route for clean URLs). */
+export function profileRoute(id, kind = 'person') {
+  return kind === 'pet' ? `pages/pets/${id}/` : `pages/people/${id}/`;
 }
+
+/**
+ * Number of "../" hops from a profile's index.html back to the site root.
+ * pages/people/<id>/  and  pages/pets/<id>/  are both three directories deep.
+ */
+export const PROFILE_ROOT_PREFIX = '../../../';

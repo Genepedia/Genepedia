@@ -5,7 +5,7 @@ profiles on static hosting (GitHub Pages) with no server database. There are
 three layers:
 
 1. **Canonical JSON database** — structured, sharded, machine-readable.
-2. **Per-person profile folders** — SEO-friendly pages served at `/people/<id>/`.
+2. **Per-person profile folders** — SEO-friendly pages served at `/pages/people/<id>/`.
 3. **GEDCOM** — import/export interchange only (not the source of truth at runtime).
 
 ## Canonical database: `data/people/`
@@ -13,7 +13,7 @@ three layers:
 | Path | Purpose |
 | --- | --- |
 | `manifest.json` | Schema version, host, counts, shard strategy, reserved ids. |
-| `persons/<bucket>/<id>.json` | Full person record (names, events, media, relationships). |
+| `persons/<bucket>/<id>.json` | Full person record (names, events, media, relationships, pets). |
 | `unions/<bucket>/<id>.json` | Family/union record (`partners`, `children`, marriage/divorce). |
 | `index/summary/<bucket>.json` | Lightweight summaries for listings/sitemaps. |
 | `index/search/<key>.json` | Name-prefix search shards (2-char keys) for scalable static search. |
@@ -27,7 +27,7 @@ so the layout scales without unbounded directory growth.
 
 Shared helpers live in [scripts/lib/people-db-paths.mjs](../scripts/lib/people-db-paths.mjs).
 
-## Per-person folders: `people/<id>/`
+## Per-person folders: `pages/people/<id>/`
 
 The database is the single source of truth for **structured data**. Each person
 folder is deliberately thin — only the SEO shell and the editable prose:
@@ -50,7 +50,7 @@ Ownership/claims live in the database at `data/people/ownership/<bucket>/<id>.js
 `profile-table.html`, `family-tree.ged`, `media.html`, or `tree.html` — those were
 redundant with the database and have been removed.
 
-Routes are clean directories (`/people/<id>/`) because GitHub Pages has no URL
+Routes are clean directories (`/pages/people/<id>/` and `/pages/pets/<id>/`) because GitHub Pages has no URL
 rewrites; every route maps to a real `index.html`.
 
 ## How editing and adding work (write path)
@@ -62,15 +62,31 @@ managed profiles or opens a pull request otherwise.
 - **Edit infobox** (`profile-infobox-editor.js`): loads `persons/<id>.json`, merges
   the edited identity fields back into the record (preserving relationships), and
   publishes `data/people/persons/<bucket>/<id>.json` + a regenerated
-  `people/<id>/index.html`.
-- **Edit prose** (`profile-page-editor.js`): publishes `people/<id>/data/profile.html`.
+  `pages/people/<id>/index.html`.
+- **Edit relationships / pets** (`profile-relationships-editor.js`): edits unions
+  (parents/partners/children) and the owner's **pets**. Pets live in a **separate
+  parallel database** at `data/Genepedia-Database/pets/` that mirrors the people
+  layout (`persons/`, `unions/`, indexes) with **its own id sequence starting at
+  1**, so animals can have full family trees of their own (pet unions, children)
+  without people. Each pet record carries `kind: "pet"`, `species`, and an `owner`
+  back-reference; the owning person links them via `pets: [petId,...]`. Pets are
+  served at `pages/pets/<id>/` and registered in `pages/pets/pets.json`. Saving an
+  "Add pet" card allocates the next pet id, publishes the pet record (in the pets
+  DB), its SEO shell + prose, the pets registry, and the updated owner record.
+  A person's tree attaches their pets via a synthetic `@PETF_<ownerId>@` family
+  (xref space `@PET<id>@`, never colliding with people); a pet's own tree is built
+  straight from the pets database (`buildPetNeighborhoodGedcom`). Pets are tagged
+  `_PET <species>` so the `<family-tree>` viewer hides them by default behind a
+  "Show pets" toggle, and they are excluded from site search unless the Settings
+  page "Show pets in search results" toggle is enabled.
+- **Edit prose** (`profile-page-editor.js`): publishes `pages/people/<id>/data/profile.html`.
 - **Claim / ownership** (`profile-editor.js`): publishes
   `data/people/ownership/<bucket>/<id>.json`.
 - **Add a person**: allocates the next id, then publishes `index.html`,
   `data/profile.html`, the person record, and the ownership record (plus a
   `people.json` registry entry).
 
-The API path allowlist accepts `people/<id>/index.html`, `people/<id>/data/*.html`,
+The API path allowlist accepts `pages/people/<id>/index.html`, `people/<id>/data/*.html`,
 `data/people/**.json`, `people/people.json`, and `sitemap.xml`.
 
 Derived indexes (summary/search shards, `all-ids.json`, `people.json`, `sitemap.xml`,

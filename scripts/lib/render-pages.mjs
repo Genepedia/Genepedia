@@ -234,7 +234,7 @@ export function renderProfilePageHtml({ id, person, canonicalUrl, description, i
 	<script type="application/ld+json">
 ${JSON.stringify(jsonLd, null, 2)}
 	</script>
-	<script src="../../site-info.js"></script>
+	<script src="../../../site-info.js"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@latest/font/bootstrap-icons.min.css">
 	<style>
 		html,
@@ -242,13 +242,13 @@ ${JSON.stringify(jsonLd, null, 2)}
 			margin: 0;
 		}
 	</style>
-	<script defer src="../../lib/Web-Framework/components/mini-header.js"></script>
-	<script defer src="../../lib/Web-Framework/components/full-header.js"></script>
-	<script defer src="../../components/people-page-profile-table.js"></script>
-	<script defer src="../../lib/Web-Framework/components/full-page-toolbar.js"></script>
-	<script defer src="../../lib/people-db.js"></script>
-	<script defer src="../../components/people-page.js"></script>
-	<script defer src="../../lib/Web-Framework/components/full-footer.js"></script>
+	<script defer src="../../../lib/Web-Framework/components/mini-header.js"></script>
+	<script defer src="../../../lib/Web-Framework/components/full-header.js"></script>
+	<script defer src="../../../components/people-page-profile-table.js"></script>
+	<script defer src="../../../lib/Web-Framework/components/full-page-toolbar.js"></script>
+	<script defer src="../../../lib/people-db.js"></script>
+	<script defer src="../../../components/people-page.js"></script>
+	<script defer src="../../../lib/Web-Framework/components/full-footer.js"></script>
 </head>
 
 <body>

@@ -67,6 +67,22 @@
         }
     }
 
+    // Public profile folder/route for a person or pet. People live under
+    // pages/people/<id>/ and pets under pages/pets/<id>/ (folder = clean URL).
+    function resolveProfileFolder(id, kind = 'person') {
+        const base = kind === 'pet' ? 'pages/pets' : 'pages/people';
+        return `${base}/${id}`;
+    }
+
+    function resolveProfilePath(id, kind = 'person', file = '') {
+        const folder = resolveProfileFolder(id, kind);
+        return file ? `${folder}/${String(file).replace(/^\/+/, '')}` : `${folder}/`;
+    }
+
+    function resolveProfileUrl(id, kind = 'person', file = '') {
+        return resolveSiteUrl(resolveProfilePath(id, kind, file));
+    }
+
     function resolvePeopleDbPath(dbPath = '') {
         const normalized = normalizeSitePath(dbPath);
         if (!normalized
@@ -124,6 +140,10 @@
         }
 
         const personMediaPrefixes = [
+            `pages/people/${id}/images/`,
+            `pages/people/${id}/data/images/`,
+            `pages/pets/${id}/images/`,
+            `pages/pets/${id}/data/images/`,
             `people/${id}/images/`,
             `people/${id}/data/images/`,
         ];
@@ -300,7 +320,7 @@
             .map((person) => Number.parseInt(String(person?.id || ''), 10))
             .filter((id) => Number.isFinite(id));
         const nextId = numericIds.length ? Math.max(...numericIds) + 1 : 1;
-        window.location.assign(resolveSiteUrl(`people/edit.html?person=${nextId}&new=1`));
+        window.location.assign(resolveSiteUrl(`pages/people/edit.html?person=${nextId}&new=1`));
     }
 
     function normalizeGitHubLogin(userOrLogin) {
@@ -423,7 +443,7 @@
         const promise = (async () => {
             const profileUrl = window.PeopleRegistry?.resolvePersonProfileUrl
                 ? window.PeopleRegistry.resolvePersonProfileUrl(id)
-                : resolveSiteUrl(`people/${id}/${window.location.protocol === 'file:' ? 'index.html' : ''}`);
+                : resolveSiteUrl(`pages/people/${id}/${window.location.protocol === 'file:' ? 'index.html' : ''}`);
             const card = {
                 personId: id,
                 profileUrl,
@@ -494,7 +514,7 @@
 
     async function resolveSelfProfileSetupUrl(userOrLogin = null, view = 'profile') {
         const nextId = await getNextPersonId();
-        const url = new URL(resolveSiteUrl('people/edit.html'), window.location.href);
+        const url = new URL(resolveSiteUrl('pages/people/edit.html'), window.location.href);
         url.searchParams.set('person', nextId);
         url.searchParams.set('new', '1');
         url.searchParams.set('self', '1');
@@ -525,7 +545,7 @@
         }
 
         if (targetView === 'edit') {
-            const url = new URL(resolveSiteUrl('people/edit.html'), window.location.href);
+            const url = new URL(resolveSiteUrl('pages/people/edit.html'), window.location.href);
             url.searchParams.set('person', claimed.id);
             return url.href;
         }
@@ -791,6 +811,9 @@
     app.getSlogan = getSlogan;
     app.PeopleDbRoot = PEOPLE_DB_ROOT;
     app.resolveSiteUrl = resolveSiteUrl;
+    app.resolveProfileFolder = resolveProfileFolder;
+    app.resolveProfilePath = resolveProfilePath;
+    app.resolveProfileUrl = resolveProfileUrl;
     app.resolvePeopleDbPath = resolvePeopleDbPath;
     app.resolvePeopleDbUrl = resolvePeopleDbUrl;
     app.resolvePersonMediaPath = resolvePersonMediaPath;

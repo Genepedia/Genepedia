@@ -1921,6 +1921,17 @@ body.theme-dark .pie__date-preview {
 									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-child" data-mini-target="relationships" data-child-type="other"><span class="page-editor__inserter-item-label">Other</span></button>
 								</div>
 							</section>
+							<section class="page-editor__inserter-section">
+								<h3 class="page-editor__inserter-section-title">Pet</h3>
+								<div class="page-editor__inserter-grid page-editor__inserter-grid--compact prel__add-relationship-grid">
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-pet" data-mini-target="relationships" data-pet-species="dog"><span class="page-editor__inserter-item-label">Dog</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-pet" data-mini-target="relationships" data-pet-species="cat"><span class="page-editor__inserter-item-label">Cat</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-pet" data-mini-target="relationships" data-pet-species="bird"><span class="page-editor__inserter-item-label">Bird</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-pet" data-mini-target="relationships" data-pet-species="fish"><span class="page-editor__inserter-item-label">Fish</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-pet" data-mini-target="relationships" data-pet-species="horse"><span class="page-editor__inserter-item-label">Horse</span></button>
+									<button type="button" class="page-editor__inserter-item page-editor__inserter-item--compact" role="menuitem" data-mini-action="add-pet" data-mini-target="relationships" data-pet-species="other"><span class="page-editor__inserter-item-label">Other</span></button>
+								</div>
+							</section>
 						</div>
 					</div>
 				</div>
@@ -2089,6 +2100,7 @@ body.theme-dark .pie__date-preview {
 						childType: button.dataset.childType || "",
 						eduType: button.dataset.eduType || "",
 						careerType: button.dataset.careerType || "",
+						petSpecies: button.dataset.petSpecies || "",
 					};
 					this.#runMiniAction(action, target, detail);
 					if (action !== "undo" && action !== "redo") {
@@ -2253,7 +2265,7 @@ body.theme-dark .pie__date-preview {
 
 		async #initBreadcrumb() {
 			const home = this.querySelector(".profile-edit__breadcrumb-home");
-			if (home) home.href = resolveSiteUrl("people/");
+			if (home) home.href = resolveSiteUrl("pages/people/");
 
 			if (SELF_PROFILE_MODE) {
 				this.__isDraftProfile = true;
@@ -2270,7 +2282,7 @@ body.theme-dark .pie__date-preview {
 			}
 
 			this.#setBreadcrumbCurrent("Profile", {
-				href: resolveSiteUrl(`people/${PERSON_ID}/index.html`),
+				href: resolveSiteUrl(`pages/people/${PERSON_ID}/index.html`),
 			});
 		}
 
@@ -2371,7 +2383,7 @@ body.theme-dark .pie__date-preview {
 				if (!name) return;
 				this.#setBreadcrumbCurrent(name, this.__isDraftProfile
 					? {}
-					: { href: resolveSiteUrl(`people/${PERSON_ID}/index.html`) });
+					: { href: resolveSiteUrl(`pages/people/${PERSON_ID}/index.html`) });
 			});
 		}
 
@@ -2468,7 +2480,7 @@ body.theme-dark .pie__date-preview {
 				if (window.PeopleRegistry?.loadPeopleRegistry) {
 					return await window.PeopleRegistry.loadPeopleRegistry({ refresh: true });
 				}
-				const response = await fetch(resolveSiteUrl("people/people.json"), { cache: "no-store" });
+				const response = await fetch(resolveSiteUrl("pages/people/people.json"), { cache: "no-store" });
 				const payload = await response.json();
 				return Array.isArray(payload?.people) ? payload.people : [];
 			} catch (error) {
@@ -2555,7 +2567,7 @@ body.theme-dark .pie__date-preview {
 
 			const cards = matches.map((match) => {
 				const years = [match.person?.birthYear, match.person?.deathYear].filter(Boolean).join(" - ");
-				const profileUrl = resolveSiteUrl(`people/${match.id}/profile.html`);
+				const profileUrl = resolveSiteUrl(`pages/people/${match.id}/profile.html`);
 				const claimedElsewhere = match.claimedBy && !match.claimIsCurrentUser;
 				const claimText = match.claimIsCurrentUser
 					? "Already claimed by you"
@@ -2612,7 +2624,7 @@ body.theme-dark .pie__date-preview {
 				.sort((left, right) => String(left.id).localeCompare(String(right.id), undefined, { numeric: true }));
 
 			return {
-				path: "people/people.json",
+				path: "pages/people/people.json",
 				content: `${JSON.stringify({ generatedAt: new Date().toISOString(), people: nextPeople }, null, 2)}\n`,
 			};
 		}
@@ -2656,12 +2668,12 @@ body.theme-dark .pie__date-preview {
 
 		#resolveSelfProfileTarget(personId) {
 			if (SELF_RETURN_TARGET === "edit") {
-				const url = new URL(resolveSiteUrl("people/edit.html"), window.location.href);
+				const url = new URL(resolveSiteUrl("pages/people/edit.html"), window.location.href);
 				url.searchParams.set("person", personId);
 				return url.href;
 			}
 
-			const profileHref = resolveSiteUrl(`people/${personId}/${window.location.protocol === 'file:' ? 'index.html' : ''}`);
+			const profileHref = resolveSiteUrl(`pages/people/${personId}/${window.location.protocol === 'file:' ? 'index.html' : ''}`);
 			const url = new URL(profileHref, window.location.href);
 			if (SELF_RETURN_TARGET === "tree") {
 				url.hash = "tree";
@@ -2872,7 +2884,7 @@ body.theme-dark .pie__date-preview {
 					});
 				}
 				this.#setStatus("New profile saved.", "success");
-				window.location.assign(resolveSiteUrl(`people/${String(payload.person || PERSON_ID)}/profile.html`));
+				window.location.assign(resolveSiteUrl(`pages/people/${String(payload.person || PERSON_ID)}/profile.html`));
 			} catch (error) {
 				console.error(error);
 				this.#setStatus("Could not save the new profile right now. Please try again.", "error");
@@ -2915,7 +2927,7 @@ body.theme-dark .pie__date-preview {
 				this.__pageEditor?.setDisplayName?.(displayName);
 				this.#setBreadcrumbCurrent(displayName, this.__isDraftProfile
 					? {}
-					: { href: resolveSiteUrl(`people/${PERSON_ID}/index.html`) });
+					: { href: resolveSiteUrl(`pages/people/${PERSON_ID}/index.html`) });
 			}
 
 			const endpoint = SELF_PROFILE_MODE ? "" : resolveGitHubApiUrl("github-submit-page-edit.php");

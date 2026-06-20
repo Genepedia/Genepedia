@@ -143,6 +143,10 @@
 		MARC: "Marriage contract",
 		MARL: "Marriage license",
 		MARNM: "Married name",
+		_PET: "Pet",
+		_SPEC: "Species",
+		_BREED: "Breed",
+		_OWNER: "Owner",
 		MARR: "Marriage",
 		MARS: "Marriage settlement",
 		NAME: "Name",
@@ -294,6 +298,57 @@
 		};
 	}
 
+	// Owner (tree person id) of a pet family — the synthetic @PETF_<owner>@ union
+	// has the owner as its sole partner.
+	function petUnionOwnerId(union) {
+		return (union.partners || []).find(Boolean) ?? "";
+	}
+
+	// Return tree data with each owner's pets shown or hidden. Pets are INDI
+	// records (`isPet`) attached through `isPetUnion` families; `visibleOwners` is
+	// the set of person ids whose pets should appear. Owners not in the set have
+	// their pets (and pet family) stripped, so the genealogy lays out unchanged.
+	function filterTreeData(data, visibleOwners) {
+		const owners = visibleOwners instanceof Set ? visibleOwners : new Set();
+		// Only owner-attached pets (children of a synthetic `isPetUnion` family in a
+		// PEOPLE tree) are hideable. An ANIMAL tree has no pet-unions — its pets are
+		// connected by ordinary unions — so it passes through untouched.
+		const petUnions = data.unions.filter((union) => union.isPetUnion);
+		if (!petUnions.length) {
+			return data;
+		}
+		const hiddenUnionIds = new Set(
+			petUnions.filter((union) => !owners.has(petUnionOwnerId(union))).map((union) => union.id),
+		);
+		const hiddenPetIds = new Set();
+		for (const union of petUnions) {
+			if (!hiddenUnionIds.has(union.id)) continue;
+			for (const childId of union.children || []) hiddenPetIds.add(childId);
+		}
+		const people = data.people.filter((person) => !hiddenPetIds.has(person.id));
+		const unions = data.unions
+			.filter((union) => !hiddenUnionIds.has(union.id))
+			.map((union) => {
+				// "Children / Pets" is a switch: when an owner is showing their pets,
+				// hide that union's human children so pets replace them (not stack with
+				// them). Their own profile still shows the children when focused there.
+				if (!union.isPetUnion && (union.children?.length) && (union.partners || []).some((pid) => owners.has(pid))) {
+					return { ...union, children: [] };
+				}
+				return union;
+			});
+		const rootUnionId = unions.some((union) => union.id === data.rootUnionId)
+			? data.rootUnionId
+			: (unions[0]?.id ?? "");
+		return { ...data, people, unions, rootUnionId };
+	}
+
+	// Pet families owned by a given person (so the viewer can offer a per-person
+	// "show pets" switch below them).
+	function petUnionsForOwner(data, personId) {
+		return data.unions.filter((union) => union.isPetUnion && petUnionOwnerId(union) === personId);
+	}
+
 	function gedcomIndividualToPerson(record, rootGedcom = null) {
 		const id = gedcomRecordId(record);
 		const nameRecords = children(record, "NAME");
@@ -310,6 +365,16 @@
 		const deathPlace = eventPlace(record, "DEAT");
 		const sex = (childValue(record, "SEX") || "U").toUpperCase();
 		const genepediaId = gedcomGenepediaId(record);
+		const petNode = firstChild(record, "_PET");
+		const isPet = Boolean(petNode);
+		const speciesRaw = isPet ? String(petNode.value ?? "").trim() : "";
+		const species = speciesRaw && speciesRaw.toUpperCase() !== "Y" ? speciesRaw : "";
+		const ownerNode = firstChild(record, "_OWNER");
+		const ownerName = ownerNode ? String(ownerNode.value ?? "").trim() : "";
+		const ownerId = ownerNode ? String(childValue(ownerNode, "_OID") ?? "").trim() : "";
+		// `_HASFAM` marks a pet that has its own animal family elsewhere (the pets
+		// DB) that isn't drawn in this tree — so a Tree button is worth offering.
+		const hasOwnTree = Boolean(firstChild(record, "_HASFAM"));
 
 		return {
 			genepediaId: genepediaId || undefined,
@@ -325,6 +390,11 @@
 			gedcom: record,
 			gedcomXref: record.pointer,
 			id,
+			isPet,
+			species: species || undefined,
+			ownerName: ownerName || undefined,
+			ownerId: ownerId || undefined,
+			hasOwnTree,
 			name: gedcomDisplayName(primaryName) || id,
 			photoUrl: gedcomIndividualPhotoUrl(record, rootGedcom) || undefined,
 			sex,
@@ -344,6 +414,7 @@
 			gedcom: record,
 			gedcomXref: record.pointer,
 			id: gedcomRecordId(record),
+			isPetUnion: Boolean(firstChild(record, "_PETFAM")),
 			partners: [...new Set(partnerIds)],
 		};
 	}
@@ -594,6 +665,8 @@
 		if (!node) return "";
 		const raw = String(node.value ?? "").trim();
 		if (raw === "Y" && GEDCOM_EVENT_TAGS.has(node.tag)) return "";
+		// `_PET Y` marks a pet whose species is unspecified — show "Pet", no "Y".
+		if (node.tag === "_PET") return raw === "Y" ? "" : raw;
 		if (node.tag === "NAME") return gedcomDisplayName(node) || gedcomNameValueDisplay(raw);
 		if (node.tag === "SEX") return gedcomSexText(raw);
 		if (node.tag === "ADDR") return gedcomAddressText(node) || raw;
@@ -692,7 +765,7 @@
 	// it as a site-resolved URL (or "" when there is none). The src is resolved
 	// relative to the person's data/ folder.
 	async function readPersonPhotoFromFile(id, fileName) {
-		const url = resolveSitePath(`people/${encodeURIComponent(id)}/data/${fileName}`);
+		const url = resolveSitePath(`pages/people/${encodeURIComponent(id)}/data/${fileName}`);
 		const response = await fetch(url, { cache: "no-store" });
 		if (!response.ok) return "";
 		const doc = new DOMParser().parseFromString(await response.text(), "text/html");
@@ -708,7 +781,7 @@
 			return resolveSitePath(normalized);
 		}
 		if (normalized.startsWith("data/")) {
-			return resolveSitePath(`people/${encodeURIComponent(id)}/${normalized}`);
+			return resolveSitePath(`pages/people/${encodeURIComponent(id)}/${normalized}`);
 		}
 		return resolvePersonMediaUrl(id, normalized);
 	}
@@ -798,6 +871,10 @@
 		await Promise.all(
 			(people || []).map(async (person) => {
 				if (!person || person.photoUrl) return;
+				// Pets live in a separate database; their `genepediaId` is a pet id that
+				// would collide with a person id here, so never resolve a pet's portrait
+				// from the people DB — they fall back to the paw placeholder.
+				if (person.isPet) return;
 				const url = await resolveGenepediaPhotoUrl(person.genepediaId);
 				if (url) person.photoUrl = url;
 			}),
@@ -1324,6 +1401,7 @@
 		onEdit,
 		onAdd,
 		onTree,
+		focusPersonId = null,
 		readOnly = false,
 	}) {
 		const { peopleById } = indexes;
@@ -1358,6 +1436,7 @@
 			const pos = placement;
 			const person = peopleById.get(personId) ?? { id: personId, name: personId };
 			const gender = normalizeGender(person.gender);
+			const isPet = Boolean(person.isPet);
 			const displayName = formatDisplayName(person) || personId;
 
 			const hiddenImmediateFamilyIds = (() => {
@@ -1384,6 +1463,7 @@
 			const node = el("div", "node");
 			node.dataset.personId = personId;
 			node.dataset.gender = gender;
+			if (isPet) node.classList.add("node--pet");
 			node.style.left = `${pos.x}px`;
 			node.style.top = `${pos.y}px`;
 			node.tabIndex = 0;
@@ -1410,6 +1490,11 @@
 				img.alt = "";
 				img.src = person.photoUrl;
 				avatar.appendChild(img);
+			} else if (isPet) {
+				const petIcon = el("span", "node__avatar-icon node__avatar-icon--pet");
+				petIcon.setAttribute("aria-hidden", "true");
+				petIcon.textContent = "🐾";
+				avatar.appendChild(petIcon);
 			} else {
 				avatar.appendChild(createBiIcon("person-circle", "node__avatar-icon"));
 			}
@@ -1431,7 +1516,7 @@
 				name.className = "node__name";
 				// Link straight to the person's index.html so the name works on
 				// file:// (no directory index) and on the live site alike.
-				name.href = resolveSitePath(`people/${encodeURIComponent(genepediaId)}/index.html`);
+				name.href = resolveSitePath(`${isPet ? "pages/pets" : "pages/people"}/${encodeURIComponent(genepediaId)}/index.html`);
 				name.addEventListener("click", (e) => {
 					// Let the link navigate; don't also trigger node selection.
 					e.stopPropagation();
@@ -1443,50 +1528,73 @@
 
 			const datesText = formatDates(person);
 			const meta = el("div", "node__meta");
-			meta.textContent = datesText || " ";
+			if (isPet) {
+				const speciesText = person.species ? String(person.species) : "Pet";
+				meta.textContent = [speciesText, datesText].filter(Boolean).join(" · ") || " ";
+			} else {
+				meta.textContent = datesText || " ";
+			}
 
 			const actions = el("div", "node__actions");
 
+			// A pet's family lives in the separate pets database, so its buttons open
+			// the pet's own profile/tree rather than re-rooting this people tree.
+			const petProfileUrl = (hash) => resolveSitePath(`pages/pets/${encodeURIComponent(String(person.genepediaId ?? personId))}/index.html`) + (hash || "");
+
+			const makeNodeButton = (icon, label) => {
+				const button = document.createElement("button");
+				button.type = "button";
+				button.className = "icon-button";
+				button.setAttribute("aria-label", label);
+				button.setAttribute("data-tooltip", label.split(" ")[0]);
+				button.appendChild(createBiIcon(icon));
+				return button;
+			};
+
 			let treeAction = null;
-			if (hasImmediateFamilyToShow) {
-				treeAction = document.createElement("button");
-				treeAction.type = "button";
-				treeAction.className = "icon-button node__tree-action";
-				treeAction.setAttribute("aria-label", "Open tree");
-				treeAction.setAttribute("data-tooltip", "Tree");
-				treeAction.appendChild(createBiIcon("diagram-3"));
+			// Show the Tree button only when there's family NOT already on screen:
+			// people with hidden immediate relatives, or a pet whose own animal
+			// family (in the pets DB) isn't drawn in this tree (`hasOwnTree`). Never
+			// on the node we're already centred on — that tree is already open.
+			const hasMoreTree = isPet ? (Boolean(person.hasOwnTree) || hasImmediateFamilyToShow) : hasImmediateFamilyToShow;
+			const isFocusNode = focusPersonId != null && personId === focusPersonId;
+			if (!isFocusNode && hasMoreTree) {
+				treeAction = makeNodeButton("diagram-3", "Open tree");
+				treeAction.classList.add("node__tree-action");
 				treeAction.addEventListener("click", (e) => {
 					e.preventDefault();
 					e.stopPropagation();
-					onTree?.({ personId });
+					if (isPet) {
+						window.location.assign(petProfileUrl("#tree"));
+					} else {
+						onTree?.({ personId });
+					}
 				});
 			}
 
 			if (!readOnly) {
-				const editAction = document.createElement("button");
-				editAction.type = "button";
-				editAction.className = "icon-button";
-				editAction.setAttribute("aria-label", "Edit person");
-				editAction.setAttribute("data-tooltip", "Edit");
-				editAction.appendChild(createBiIcon("pencil"));
+				const editAction = makeNodeButton("pencil", isPet ? "Edit pet" : "Edit person");
 				editAction.addEventListener("click", (e) => {
 					e.preventDefault();
 					e.stopPropagation();
 					setSelected(personId, { source: "action" });
-					onEdit?.({ personId, anchorEl: editAction });
+					if (isPet) {
+						window.location.assign(petProfileUrl(""));
+					} else {
+						onEdit?.({ personId, anchorEl: editAction });
+					}
 				});
 
-				const addAction = document.createElement("button");
-				addAction.type = "button";
-				addAction.className = "icon-button";
-				addAction.setAttribute("aria-label", "Add relative");
-				addAction.setAttribute("data-tooltip", "Add");
-				addAction.appendChild(createBiIcon("plus-lg"));
+				const addAction = makeNodeButton("plus-lg", isPet ? "Add to pet's family" : "Add relative");
 				addAction.addEventListener("click", (e) => {
 					e.preventDefault();
 					e.stopPropagation();
 					setSelected(personId, { source: "action" });
-					onAdd?.({ personId, anchorEl: addAction });
+					if (isPet) {
+						window.location.assign(petProfileUrl("#tree"));
+					} else {
+						onAdd?.({ personId, anchorEl: addAction });
+					}
 				});
 
 				// Order: Tree, Edit, Add (Tree omitted if nothing new to show)
@@ -1497,6 +1605,24 @@
 			}
 
 			content.append(name, meta);
+			// Animal nodes show their owning person (a link to that person's profile).
+			if (isPet && person.ownerName) {
+				const owner = el("div", "node__owner");
+				const ownerIcon = createBiIcon("person-heart", "node__owner-icon");
+				owner.append(ownerIcon);
+				const ownerLabel = person.ownerId
+					? document.createElement("a")
+					: document.createElement("span");
+				if (person.ownerId) {
+					ownerLabel.href = resolveSitePath(`pages/people/${encodeURIComponent(person.ownerId)}/index.html`);
+					ownerLabel.addEventListener("click", (e) => e.stopPropagation());
+				}
+				ownerLabel.className = "node__owner-name";
+				ownerLabel.textContent = person.ownerName;
+				ownerLabel.title = `Owner: ${person.ownerName}`;
+				owner.append(ownerLabel);
+				content.append(owner);
+			}
 			node.append(avatar, content);
 			if (actions.childElementCount > 0) node.append(actions);
 			node.addEventListener("click", (e) => {
@@ -1926,10 +2052,12 @@
 }
 
 .main {
+	height: 100%;
 	min-height: 0;
 	min-width: 0;
 	display: grid;
 	grid-template-columns: 1fr;
+	align-items: stretch;
 }
 
 .main--sidebar {
@@ -2264,14 +2392,18 @@ button:focus-visible {
 .node__content {
 	min-width: 0;
 	grid-column: 2;
-	grid-row: 1;
+	grid-row: 1 / -1;
 	padding: 0;
+	/* Reserve space so text never sits under the absolutely-placed actions. */
+	padding-bottom: calc(28px + var(--node-ui-gap));
 }
 
+/* Actions are pinned to the node bottom-right so every box places them
+   identically, regardless of name length or button count. */
 .node__actions {
-	grid-column: 2;
-	grid-row: 2;
-	justify-self: end;
+	position: absolute;
+	right: var(--node-ui-gap);
+	bottom: var(--node-ui-gap);
 	display: flex;
 	gap: var(--node-ui-gap);
 }
@@ -2309,6 +2441,33 @@ button:focus-visible {
 	white-space: nowrap;
 }
 
+.node__owner {
+	margin-top: 3px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	opacity: 0.8;
+	min-width: 0;
+}
+
+.node__owner-icon {
+	flex: 0 0 auto;
+	opacity: 0.7;
+}
+
+.node__owner-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: inherit;
+	text-decoration: none;
+}
+
+a.node__owner-name:hover {
+	text-decoration: underline;
+}
+
 .node--selected {
 	border-color: Highlight;
 	outline: 2px solid Highlight;
@@ -2320,6 +2479,16 @@ button:focus-visible {
    same person shown in another place, not a different individual. */
 .node--duplicate {
 	border-style: dashed;
+}
+
+/* Pet nodes look the same as person nodes (same border, corners, gender tint);
+   only the avatar differs — a paw glyph in place of a portrait. */
+.node__avatar-icon--pet {
+	font-size: 30px;
+	line-height: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 /* A spouse/child tinted to match its marriage's connector colour, so it's
@@ -2363,6 +2532,12 @@ button:focus-visible {
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 	white-space: nowrap;
 	cursor: default;
+}
+
+/* The per-person pets switch hangs just below the person (vs. the parent switch
+   which is centred on the connector above them). */
+.pets-switch {
+	transform: translate(-50%, 0);
 }
 
 .branch-switch__label {
@@ -2481,12 +2656,15 @@ button:focus-visible {
 }
 
 .sidebar {
+	height: 100%;
+	align-self: stretch;
 	border-left: 1px solid GrayText;
 	background: Canvas;
 	color: CanvasText;
 	padding: 12px;
 	overflow: auto;
 	min-width: 0;
+	min-height: 0;
 }
 
 .sidebar__header {
@@ -2941,11 +3119,27 @@ a.node__name:focus-visible {
 
 			await ensureGedcomLibrary();
 
-			let data = await loadTreeData(gedUrl);
-			await enrichPeopleWithPhotos(data.people);
+			const fullData = await loadTreeData(gedUrl);
+			await enrichPeopleWithPhotos(fullData.people);
+			// Pets are hidden by default. `petsVisibleFor` holds the person ids whose
+			// pets are currently shown — driven by the per-person "Children / Pets"
+			// switch shown below each owner in the tree.
+			const petsVisibleFor = new Set();
+			let data = filterTreeData(fullData, petsVisibleFor);
 			let indexes = buildIndexes(data);
 			let engine = createLayoutEngine(data, indexes);
 			let currentRootUnionId = data.rootUnionId;
+
+			// Rebuild the working dataset/indexes/engine for the current pet
+			// visibility. Callers re-render afterwards.
+			const applyPetVisibility = () => {
+				data = filterTreeData(fullData, petsVisibleFor);
+				indexes = buildIndexes(data);
+				engine = createLayoutEngine(data, indexes);
+				if (!indexes.unionsById.has(currentRootUnionId)) {
+					currentRootUnionId = data.rootUnionId;
+				}
+			};
 			// The person the tree is currently built around. Drives the parent-branch
 			// switcher (biological / adopted) shown between them and their parents.
 			let currentFocusPersonId = null;
@@ -3393,10 +3587,10 @@ a.node__name:focus-visible {
 				if (person.genepediaId) {
 					const profileLink = document.createElement("a");
 					profileLink.className = "sidebar__profile-link";
-					profileLink.href = resolveSitePath(`people/${encodeURIComponent(person.genepediaId)}/index.html`);
+					profileLink.href = resolveSitePath(`${person.isPet ? "pages/pets" : "pages/people"}/${encodeURIComponent(person.genepediaId)}/index.html`);
 					profileLink.append(createBiIcon("person-badge", "sidebar__profile-link-icon"));
 					const linkText = document.createElement("span");
-					linkText.textContent = "View Genepedia profile";
+					linkText.textContent = person.isPet ? "View pet profile" : "View Genepedia profile";
 					profileLink.append(linkText);
 					sidebarContent.append(profileLink);
 				}
@@ -3657,6 +3851,71 @@ a.node__name:focus-visible {
 				nodesRoot.append(switcher);
 			};
 
+			// A per-person "Children / Pets" switch placed just below the focus person
+			// (mirroring the parent-branch switch above them). Flips what shows beneath
+			// them — their children, or their pets from the pets database. Only appears
+			// when that person owns pets.
+			const renderPetsSwitcher = () => {
+				nodesRoot.querySelector(".pets-switch")?.remove();
+				const focusId = currentFocusPersonId;
+				if (!focusId) return;
+				const ownerUnions = petUnionsForOwner(fullData, focusId);
+				if (!ownerUnions.length) return;
+				const focusPos = layoutResult?.positions?.people?.get(focusId);
+				if (!focusPos) return;
+				const petCount = ownerUnions.reduce((sum, union) => sum + (union.children?.length || 0), 0);
+				const childCount = new Set(
+					fullData.unions
+						.filter((union) => !union.isPetUnion && (union.partners || []).includes(focusId))
+						.flatMap((union) => union.children || []),
+				).size;
+				const showing = petsVisibleFor.has(focusId);
+
+				const switcher = el("div", "branch-switch pets-switch");
+				switcher.style.left = `${focusPos.x}px`;
+				switcher.style.top = `${focusPos.y + CONFIG.nodeHeight / 2 + 20}px`;
+				switcher.addEventListener("click", (e) => e.stopPropagation());
+				switcher.addEventListener("pointerdown", (e) => e.stopPropagation());
+
+				const label = el("div", "branch-switch__label");
+				const pawIcon = el("span", "branch-switch__label-icon");
+				pawIcon.setAttribute("aria-hidden", "true");
+				pawIcon.textContent = "🐾";
+				label.append(pawIcon);
+				const labelText = document.createElement("span");
+				labelText.textContent = "Below";
+				label.append(labelText);
+				switcher.append(label);
+
+				const chipsWrap = el("div", "branch-switch__chips");
+				const makeChip = (text, icon, active, wantPets) => {
+					const chip = document.createElement("button");
+					chip.type = "button";
+					chip.className = "branch-switch__chip";
+					chip.classList.toggle("is-active", active);
+					chip.append(createBiIcon(icon, "branch-switch__chip-icon"));
+					const t = document.createElement("span");
+					t.className = "branch-switch__chip-label";
+					t.textContent = text;
+					chip.append(t);
+					chip.setAttribute("aria-pressed", active ? "true" : "false");
+					chip.addEventListener("click", (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						if (wantPets === petsVisibleFor.has(focusId)) return;
+						if (wantPets) petsVisibleFor.add(focusId);
+						else petsVisibleFor.delete(focusId);
+						applyPetVisibility();
+						renderTree({ selectPersonId: focusId, source: "pets-switch", transformMode: "pan" });
+					});
+					return chip;
+				};
+				chipsWrap.append(makeChip(`Children (${childCount})`, "people-fill", !showing, false));
+				chipsWrap.append(makeChip(`Pets (${petCount})`, "heart-fill", showing, true));
+				switcher.append(chipsWrap);
+				nodesRoot.append(switcher);
+			};
+
 			const renderTree = (opts = {}) => {
 				closeTreeSearch();
 				const prevTransform = panZoom.get();
@@ -3688,6 +3947,7 @@ a.node__name:focus-visible {
 						openRelationMenu({ personId, anchorEl });
 					},
 					onTree: ({ personId }) => openTreeForPerson(personId),
+					focusPersonId: currentFocusPersonId,
 					readOnly: isReadOnly,
 				});
 
@@ -3720,6 +3980,7 @@ a.node__name:focus-visible {
 				}
 
 				renderBranchSwitcher();
+				renderPetsSwitcher();
 				updateTreeStatsNow();
 			};
 

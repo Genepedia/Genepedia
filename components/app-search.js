@@ -502,12 +502,24 @@ body.theme-dark .search-page__result-link {
         return '';
     }
 
-    function resolvePersonProfileUrl(personId) {
+    function resolvePersonProfileUrl(personId, kind = 'person') {
         if (window.PeopleRegistry?.resolvePersonProfileUrl) {
-            return window.PeopleRegistry.resolvePersonProfileUrl(personId);
+            return window.PeopleRegistry.resolvePersonProfileUrl(personId, kind);
         }
 
-        return new URL(`people/${personId}/index.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
+        const base = kind === 'pet' ? 'pages/pets' : 'pages/people';
+        return new URL(`${base}/${personId}/index.html`, new URL(getSiteRootPrefix(), window.location.href)).href;
+    }
+
+    // Pets are excluded from search unless the user opts in on the Settings page
+    // (persisted to localStorage). Defaults to hidden.
+    const SHOW_PETS_IN_SEARCH_KEY = 'show-pets-in-search';
+    function showPetsInSearch() {
+        try {
+            return localStorage.getItem(SHOW_PETS_IN_SEARCH_KEY) === 'true';
+        } catch {
+            return false;
+        }
     }
 
     function resolveSearchPageUrl(query = '') {
@@ -628,14 +640,39 @@ body.theme-dark .search-page__result-link {
         return window.PeopleRegistry.loadPeopleRegistry();
     }
 
-    async function findPersonMatches(query, { limit = 8 } = {}) {
-        const people = await loadSearchIndex();
+    // Pets are a separate registry (pages/pets/pets.json). Loaded and merged only
+    // when the user has opted into pets-in-search.
+    let petsRegistryPromise = null;
+    async function loadPetsIndex() {
+        if (!petsRegistryPromise) {
+            const url = window.App?.resolveSiteUrl
+                ? window.App.resolveSiteUrl('pages/pets/pets.json')
+                : new URL('pages/pets/pets.json', new URL(getSiteRootPrefix(), window.location.href)).href;
+            petsRegistryPromise = fetch(url, { cache: 'no-store' })
+                .then((response) => (response.ok ? response.json() : null))
+                .then((data) => (Array.isArray(data?.pets) ? data.pets.map((pet) => ({
+                    id: pet.id,
+                    displayName: pet.displayName,
+                    firstName: pet.displayName,
+                    lastName: '',
+                    kind: 'pet',
+                    species: pet.species || '',
+                })) : []))
+                .catch(() => []);
+        }
+        return petsRegistryPromise;
+    }
 
-        return people
+    async function findPersonMatches(query, { limit = 8 } = {}) {
+        const includePets = showPetsInSearch();
+        const people = await loadSearchIndex();
+        const pets = includePets ? await loadPetsIndex() : [];
+
+        return [...people, ...pets]
             .map((entry) => ({
                 entry,
                 score: scorePersonEntry(query, entry),
-                url: resolvePersonProfileUrl(entry.id),
+                url: resolvePersonProfileUrl(entry.id, entry.kind),
             }))
             .filter((result) => result.score > 0)
             .sort((a, b) => b.score - a.score || getPersonDisplayName(a.entry).localeCompare(getPersonDisplayName(b.entry)))

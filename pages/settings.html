@@ -70,6 +70,16 @@
                     </div>
 
                     <div class="settings-page__section">
+                        <h2 class="settings-page__section-heading">Search</h2>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="setting-show-pets">
+                                Show pets in search results
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-page__section">
                         <h2 class="settings-page__section-heading">Language</h2>
                         <div class="form-group">
                             <label for="setting-language">Language</label>
@@ -96,11 +106,13 @@
         (function () {
             const STORAGE_KEY = 'app-app-settings';
             const THEME_KEY = 'app-theme';
+            const SHOW_PETS_IN_SEARCH_KEY = 'show-pets-in-search';
             const DEFAULTS = {
                 theme: 'dark',
                 layout: 'comfortable',
                 defaultFormat: 'png',
                 inlineImages: true,
+                showPetsInSearch: false,
                 language: 'en'
             };
 
@@ -119,6 +131,8 @@
                 try {
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
                     localStorage.setItem(THEME_KEY, s.theme);
+                    // Mirror to a standalone key the search module reads directly.
+                    localStorage.setItem(SHOW_PETS_IN_SEARCH_KEY, String(Boolean(s.showPetsInSearch)));
                     return true;
                 } catch (e) {
                     console.error('Could not save settings', e);
@@ -135,6 +149,7 @@
                 qs('setting-layout').value = s.layout;
                 qs('setting-default-format').value = s.defaultFormat;
                 qs('setting-inline-images').checked = Boolean(s.inlineImages);
+                qs('setting-show-pets').checked = Boolean(s.showPetsInSearch);
                 qs('setting-language').value = s.language;
             }
 
@@ -144,6 +159,7 @@
                     layout: qs('setting-layout').value,
                     defaultFormat: qs('setting-default-format').value,
                     inlineImages: qs('setting-inline-images').checked,
+                    showPetsInSearch: qs('setting-show-pets').checked,
                     language: qs('setting-language').value
                 };
             }

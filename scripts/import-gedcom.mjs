@@ -614,7 +614,8 @@ async function main() {
   }
 
   // --- Reset old people folders (keep reserved) ---
-  const peopleDir = path.join(REPO_ROOT, 'people');
+  // Profile folders live under pages/people/<id>/ (folder = clean public URL).
+  const peopleDir = path.join(REPO_ROOT, 'pages', 'people');
   if (args.reset) {
     const removed = await performReset(peopleDir);
     console.log(`Reset: removed ${removed} old person folder(s) (kept reserved ${[...RESERVED_SET].join(', ')}).`);

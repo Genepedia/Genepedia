@@ -14,6 +14,12 @@ const PROFILE_TABLE_ROW_LABELS = {
   'table-aka': 'Also known as',
   'table-gender': 'Gender',
   'table-occupation': 'Occupation',
+  // Animal (pet) profile rows.
+  'table-species': 'Species',
+  'table-breed': 'Breed',
+  'table-color': 'Color / Coat',
+  'table-microchip': 'Microchip ID',
+  'table-owner': 'Owner',
   'table-birth': 'Birth',
   'table-baptism': 'Baptism',
   'table-death': 'Death',
@@ -407,19 +413,22 @@ body.theme-dark .gp-pop__cta { color: #6b9eff; }
     return personPop;
   }
 
-  function loadPersonInfo(id) {
-    if (personPromises.has(id)) {
-      return personPromises.get(id);
+  function loadPersonInfo(id, isPet) {
+    // Pets and people can share an id, so cache/resolve them separately.
+    const cacheKey = (isPet ? 'pet:' : '') + id;
+    if (personPromises.has(cacheKey)) {
+      return personPromises.get(cacheKey);
     }
     const api = window.PeopleDB;
-    const source = api && typeof api.getPersonCardInfo === 'function'
-      ? Promise.resolve().then(() => api.getPersonCardInfo(id))
+    const fn = isPet ? api?.getPetCardInfo : api?.getPersonCardInfo;
+    const source = typeof fn === 'function'
+      ? Promise.resolve().then(() => fn.call(api, id))
       : Promise.resolve(null);
     const promise = source.catch(() => null).then((info) => {
-      personValues.set(id, info);
+      personValues.set(cacheKey, info);
       return info;
     });
-    personPromises.set(id, promise);
+    personPromises.set(cacheKey, promise);
     return promise;
   }
 
@@ -510,13 +519,16 @@ body.theme-dark .gp-pop__cta { color: #6b9eff; }
     if (activeTrigger !== trigger) {
       activeTrigger = trigger;
       const seq = ++renderSeq;
-      const id = trigger.dataset.personId;
-      if (id && personValues.has(id)) {
-        el.innerHTML = buildPersonCard(personValues.get(id), trigger);
+      const petId = trigger.dataset.petId;
+      const id = petId || trigger.dataset.personId;
+      const isPet = Boolean(petId);
+      const cacheKey = (isPet ? 'pet:' : '') + id;
+      if (id && personValues.has(cacheKey)) {
+        el.innerHTML = buildPersonCard(personValues.get(cacheKey), trigger);
       } else {
         el.innerHTML = buildPersonLoading(trigger);
         if (id) {
-          loadPersonInfo(id).then((info) => {
+          loadPersonInfo(id, isPet).then((info) => {
             if (seq !== renderSeq) return;
             el.innerHTML = buildPersonCard(info, trigger);
             revealPop(el, trigger);
