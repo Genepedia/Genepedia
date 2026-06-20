@@ -1635,6 +1635,9 @@ class PeoplePage extends HTMLElement {
       .then((access) => {
         this.#privacyAccess = access;
         this.#syncEditAccess();
+        if (access && (!access.isPrivate || access.canViewDetails)) {
+          this.#recordProfileView();
+        }
       })
       .catch(() => {
         // Leave access unresolved; the edit button stays hidden (fail closed).
@@ -2808,6 +2811,53 @@ class PeoplePage extends HTMLElement {
     }
 
     return new URL(fileName, `${apiBase}/`).href;
+  }
+
+  #recordProfileView() {
+    const personId = this.#resolvePersonId();
+    if (!personId) {
+      return;
+    }
+
+    const kind = this.#isPetRoute() ? 'pet' : 'person';
+
+    if (window.SiteStatistics?.recordProfileView) {
+      void window.SiteStatistics.recordProfileView(personId, kind);
+      return;
+    }
+
+    const sessionKey = `profile-view:${kind}:${personId}`;
+
+    try {
+      if (sessionStorage.getItem(sessionKey)) {
+        return;
+      }
+      sessionStorage.setItem(sessionKey, '1');
+    } catch (error) {
+      // ignore storage failures
+    }
+
+    const url = this.#resolveGitHubApiUrl('github-profile-views.php');
+    if (!url) {
+      return;
+    }
+
+    void fetch(url, this.#gitHubFetchInit({
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        person_id: personId,
+        kind,
+      }),
+    })).catch(() => {
+      try {
+        sessionStorage.removeItem(sessionKey);
+      } catch (error) {
+        // ignore
+      }
+    });
   }
 
   #gitHubFetchInit(init) {

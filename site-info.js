@@ -46,6 +46,7 @@
     };
     const PEOPLE_DB_SUBMODULE_ROOT = 'data/Genepedia-Database';
     const PEOPLE_DB_ROOT = `${PEOPLE_DB_SUBMODULE_ROOT}/people`;
+    const STATISTICS_DB_ROOT = `${PEOPLE_DB_SUBMODULE_ROOT}/statistics`;
     const LEGACY_PEOPLE_DB_ROOT = 'data/people';
     const PERSON_MEDIA_ROOT = 'data/Genepedia-Media/people';
     const LOCAL_MEDIA_PROFILE_IDS = new Set(['1', '2', '3', '15']);
@@ -113,6 +114,27 @@
 
     function resolvePeopleDbUrl(dbPath = '') {
         return resolveSiteUrl(resolvePeopleDbPath(dbPath));
+    }
+
+    function resolveStatisticsDbPath(dbPath = '') {
+        const normalized = normalizeSitePath(dbPath);
+        if (!normalized || normalized === STATISTICS_DB_ROOT) {
+            return STATISTICS_DB_ROOT;
+        }
+
+        if (normalized.startsWith(`${STATISTICS_DB_ROOT}/`)) {
+            return normalized;
+        }
+
+        if (normalized.startsWith(`${PEOPLE_DB_SUBMODULE_ROOT}/statistics/`)) {
+            return normalized;
+        }
+
+        return `${STATISTICS_DB_ROOT}/${normalized}`;
+    }
+
+    function resolveStatisticsDbUrl(dbPath = '') {
+        return resolveSiteUrl(resolveStatisticsDbPath(dbPath));
     }
 
     function hasAbsoluteUrlScheme(value) {
@@ -816,6 +838,8 @@
     app.resolveProfileUrl = resolveProfileUrl;
     app.resolvePeopleDbPath = resolvePeopleDbPath;
     app.resolvePeopleDbUrl = resolvePeopleDbUrl;
+    app.resolveStatisticsDbPath = resolveStatisticsDbPath;
+    app.resolveStatisticsDbUrl = resolveStatisticsDbUrl;
     app.resolvePersonMediaPath = resolvePersonMediaPath;
     app.resolvePersonMediaUrl = resolvePersonMediaUrl;
     app.prefersLocalPersonMedia = prefersLocalPersonMedia;

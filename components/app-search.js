@@ -336,12 +336,9 @@ body.theme-dark .search-page__bar:focus-within {
 .search-page__chip-avatar {
     width: 24px;
     height: 24px;
-    border-radius: 50%;
-    overflow: hidden;
-    display: inline-block;
+    flex: 0 0 24px;
+    font-size: 0.7rem;
 }
-
-.search-page__chip-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .search-page__results-root {
   min-height: 0;
@@ -599,6 +596,87 @@ body.theme-dark .search-page__result-link {
         return '/assets/default-profile-photo.svg';
     }
 
+    async function loadPersonCardForAvatar(personId) {
+        const pid = String(personId || '').trim();
+        if (!pid) {
+            return null;
+        }
+
+        if (window.App && typeof window.App.loadPersonCard === 'function') {
+            return window.App.loadPersonCard(pid);
+        }
+
+        if (window.PeopleRegistry && typeof window.PeopleRegistry.loadPeopleRegistry === 'function') {
+            const people = await window.PeopleRegistry.loadPeopleRegistry();
+            const entry = people.find((person) => String(person?.id) === pid);
+            if (entry) {
+                return {
+                    name: getPersonDisplayName(entry),
+                    photoUrl: String(entry.photoUrl || '').trim(),
+                };
+            }
+        }
+
+        return null;
+    }
+
+    function populatePersonAvatar(avatarEl, personId, displayName = '') {
+        const defaultUrl = defaultProfileImageUrl();
+        let img = avatarEl.querySelector('img');
+        if (!img) {
+            avatarEl.textContent = '';
+            img = document.createElement('img');
+            img.alt = '';
+            img.loading = 'lazy';
+            avatarEl.append(img);
+        }
+
+        img.onerror = () => {
+            img.onerror = null;
+            img.src = defaultUrl;
+        };
+        img.src = defaultUrl;
+
+        const pid = String(personId || '').trim();
+        if (!pid) {
+            return;
+        }
+
+        void (async () => {
+            try {
+                const card = await loadPersonCardForAvatar(pid);
+                if (card?.photoUrl) {
+                    img.src = card.photoUrl;
+                }
+            } catch (e) {
+                // keep default image
+            }
+        })();
+    }
+
+    async function resolveChipPersonMatch(chip) {
+        const personId = chip.dataset.personId?.trim();
+        if (personId) {
+            await ensurePeopleRegistryScript();
+            const people = await window.PeopleRegistry.loadPeopleRegistry();
+            const entry = people.find((person) => String(person?.id) === personId);
+            if (entry) {
+                return {
+                    entry,
+                    url: resolvePersonProfileUrl(entry.id, entry.kind),
+                };
+            }
+        }
+
+        const query = chip.dataset.query?.trim() || chip.textContent.trim();
+        if (!query) {
+            return null;
+        }
+
+        const matches = await findPersonMatches(query, { limit: 1 });
+        return matches[0] || null;
+    }
+
     function scorePersonEntry(query, entry) {
         const normalizedQuery = normalizeSearchText(query);
         if (!normalizedQuery) {
@@ -755,53 +833,7 @@ body.theme-dark .search-page__result-link {
             item.append(link);
             dropdown.append(item);
 
-            // Fill avatar asynchronously when person card is available.
-            (async () => {
-                try {
-                    const pid = String(match.entry?.id || '').trim();
-                    let card = null;
-                    if (window.App && typeof window.App.loadPersonCard === 'function') {
-                        card = await window.App.loadPersonCard(pid);
-                    } else if (window.PeopleRegistry && typeof window.PeopleRegistry.loadPeopleRegistry === 'function') {
-                        const people = await window.PeopleRegistry.loadPeopleRegistry();
-                        const entry = people.find((p) => String(p?.id) === pid);
-                        if (entry) {
-                            card = { name: getPersonDisplayName(entry), photoUrl: String(entry.photoUrl || '').trim() };
-                        }
-                    }
-
-                    if (card && card.photoUrl) {
-                        const existing = avatar.querySelector('img');
-                        if (existing) existing.src = card.photoUrl;
-                        else {
-                            const img = document.createElement('img');
-                            img.src = card.photoUrl;
-                            img.alt = '';
-                            img.loading = 'lazy';
-                            avatar.textContent = '';
-                            avatar.append(img);
-                        }
-                        // Only fall back to the card name if no display name was resolved;
-                        // never override the display name already shown in the title.
-                        if (card.name && !title.textContent.trim()) {
-                            title.textContent = card.name;
-                        }
-                    } else {
-                        // keep default image; if we have a resolved name, keep that
-                        const existing = avatar.querySelector('img');
-                        if (!existing) {
-                            const img = document.createElement('img');
-                            img.alt = '';
-                            img.loading = 'lazy';
-                            img.src = defaultProfileImageUrl();
-                            avatar.textContent = '';
-                            avatar.append(img);
-                        }
-                    }
-                } catch (e) {
-                    // ignore avatar failures
-                }
-            })();
+            populatePersonAvatar(avatar, match.entry?.id, displayName);
         });
 
         const footer = document.createElement('li');
@@ -1005,7 +1037,7 @@ body.theme-dark .search-page__result-link {
     }
 
     function initSearchPageChips() {
-        const chips = Array.from(document.querySelectorAll('.search-page__chip[data-query]'));
+        const chips = Array.from(document.querySelectorAll('.search-page__chip[data-query], .search-page__chip[data-person-id]'));
         if (!chips.length) return;
 
         // Set a sensible default (search page) so links work immediately,
@@ -1026,52 +1058,22 @@ body.theme-dark .search-page__result-link {
                         const query = chip.dataset.query?.trim() || chip.textContent.trim();
                         if (!query) continue;
 
-                        const matches = await findPersonMatches(query, { limit: 1 });
-                        if (matches && matches.length) {
-                            const match = matches[0];
-                            chip.href = match.url || resolvePersonProfileUrl(match.entry.id);
-                            const name = getPersonDisplayName(match.entry);
-                            if (name) {
-                                // replace text with a small chip that includes avatar
-                                chip.textContent = '';
-                                const avatarWrap = document.createElement('span');
-                                avatarWrap.className = 'search-page__chip-avatar';
-                                const avatarImg = document.createElement('img');
-                                avatarImg.alt = '';
-                                avatarImg.loading = 'lazy';
-                                avatarWrap.append(avatarImg);
-
-                                const label = document.createElement('span');
-                                label.textContent = name;
-
-                                chip.append(avatarWrap, label);
-
-                                // async populate avatar
-                                (async () => {
-                                    try {
-                                        const pid = String(match.entry?.id || '').trim();
-                                        let card = null;
-                                        if (window.App && typeof window.App.loadPersonCard === 'function') {
-                                            card = await window.App.loadPersonCard(pid);
-                                        } else if (window.PeopleRegistry && typeof window.PeopleRegistry.loadPeopleRegistry === 'function') {
-                                            const people = await window.PeopleRegistry.loadPeopleRegistry();
-                                            const entry = people.find((p) => String(p?.id) === pid);
-                                            if (entry) {
-                                                card = { name: getPersonDisplayName(entry), photoUrl: String(entry.photoUrl || '').trim() };
-                                            }
-                                        }
-
-                                        if (card && card.photoUrl) {
-                                            avatarImg.src = card.photoUrl;
-                                        } else {
-                                            avatarWrap.textContent = (name || '').trim().slice(0, 1).toUpperCase();
-                                        }
-                                    } catch (e) {
-                                        // ignore
-                                    }
-                                })();
-                            }
+                        const match = await resolveChipPersonMatch(chip);
+                        const name = match ? getPersonDisplayName(match.entry) : query;
+                        if (match) {
+                            chip.href = match.url || resolvePersonProfileUrl(match.entry.id, match.entry.kind);
                         }
+
+                        chip.textContent = '';
+                        const avatarWrap = document.createElement('span');
+                        avatarWrap.className = 'app-search__option-avatar search-page__chip-avatar';
+                        avatarWrap.setAttribute('aria-hidden', 'true');
+
+                        const label = document.createElement('span');
+                        label.textContent = name;
+
+                        chip.append(avatarWrap, label);
+                        populatePersonAvatar(avatarWrap, match?.entry?.id, name);
                     } catch (err) {
                         // If anything fails, leave the chip as a search link.
                         // Swallow errors to avoid breaking the rest of the page.
@@ -1093,7 +1095,7 @@ body.theme-dark .search-page__result-link {
         initSearchPageChips();
 
         const params = new URLSearchParams(window.location.search);
-        const query = (params.get('q') || params.get('search') || '').trim();
+        const query = (params.get('q') || params.get('query') || params.get('search') || '').trim();
         const metaEl = document.getElementById('app-search-page-meta');
         const suggestionsEl = document.getElementById('app-search-suggestions');
         const toolbar = document.querySelector('full-page-toolbar');
@@ -1128,6 +1130,10 @@ body.theme-dark .search-page__result-link {
         }
 
         const matches = await findPersonMatches(query, { limit: 100 });
+
+        if (window.SiteStatistics?.recordSearchQuery) {
+            void window.SiteStatistics.recordSearchQuery(query, matches.length);
+        }
 
         if (metaEl) {
             metaEl.textContent = matches.length === 1
@@ -1164,7 +1170,6 @@ body.theme-dark .search-page__result-link {
             resultAvatar.className = 'app-search__option-avatar';
             resultAvatar.setAttribute('aria-hidden', 'true');
             const displayName = getPersonDisplayName(match.entry) || '';
-            resultAvatar.textContent = (displayName.trim().slice(0, 1) || '').toUpperCase();
 
             const title = document.createElement('span');
             title.className = 'search-page__result-title';
@@ -1181,36 +1186,7 @@ body.theme-dark .search-page__result-link {
             }
 
             link.append(resultContent);
-
-            // populate avatar async
-            (async () => {
-                try {
-                    const pid = String(match.entry?.id || '').trim();
-                    let card = null;
-                    if (window.App && typeof window.App.loadPersonCard === 'function') {
-                        card = await window.App.loadPersonCard(pid);
-                    } else if (window.PeopleRegistry && typeof window.PeopleRegistry.loadPeopleRegistry === 'function') {
-                        const people = await window.PeopleRegistry.loadPeopleRegistry();
-                        const entry = people.find((p) => String(p?.id) === pid);
-                        if (entry) {
-                            card = { name: getPersonDisplayName(entry), photoUrl: String(entry.photoUrl || '').trim() };
-                        }
-                    }
-
-                    if (card && card.photoUrl) {
-                        const img = document.createElement('img');
-                        img.src = card.photoUrl;
-                        img.alt = '';
-                        img.loading = 'lazy';
-                        resultAvatar.textContent = '';
-                        resultAvatar.append(img);
-                    } else if (card && card.name) {
-                        resultAvatar.textContent = (String(card.name || '').trim().slice(0, 1) || '').toUpperCase();
-                    }
-                } catch (e) {
-                    // ignore
-                }
-            })();
+            populatePersonAvatar(resultAvatar, match.entry?.id, displayName);
 
             item.append(link);
             list.append(item);

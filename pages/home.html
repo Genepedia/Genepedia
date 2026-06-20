@@ -23,32 +23,16 @@
                         explore people, families, histories, and contribute your knowledge.</p>
                     <div class="home-page__actions">
                         <a class="pure-button" href="../pages/search.html">Search Profiles</a>
-                        <a class="pure-button" href="../people/15/profile.html">Featured: Nelson Mandela</a>
+                        <a class="pure-button" href="../people/15/profile.html">Popular: Nelson Mandela</a>
                         <a class="pure-button" href="../pages/settings.html">App Settings</a>
                     </div>
                 </div>
             </section>
 
             <section class="card home-page__section">
-                <h2 class="home-page__section-title">Featured Profiles</h2>
-                <div class="home-page__grid">
-                    <article class="card home-page__tile">
-                        <h3 class="home-page__tile-title"><a href="../people/15/profile.html">Nelson Mandela</a></h3>
-                        <p class="home-page__tile-text">South African anti-apartheid revolutionary and
-                            statesman.</p>
-                    </article>
-                    <article class="card home-page__tile">
-                        <h3 class="home-page__tile-title"><a href="../people/1/profile.html">Profile 1</a></h3>
-                        <p class="home-page__tile-text">Sample profile listing.</p>
-                    </article>
-                    <article class="card home-page__tile">
-                        <h3 class="home-page__tile-title"><a href="../people/2/profile.html">Profile 2</a></h3>
-                        <p class="home-page__tile-text">Another recent profile.</p>
-                    </article>
-                    <article class="card home-page__tile">
-                        <h3 class="home-page__tile-title"><a href="../people/3/profile.html">Profile 3</a></h3>
-                        <p class="home-page__tile-text">Explore family connections and records.</p>
-                    </article>
+                <h2 class="home-page__section-title">Popular Profiles</h2>
+                <div class="home-page__grid home-page__grid--profiles" id="home-popular-profiles" aria-live="polite">
+                    <p class="home-page__section-text">Loading popular profiles…</p>
                 </div>
             </section>
 
@@ -79,10 +63,8 @@
 
             <section class="card home-page__section">
                 <h2 class="home-page__section-title">Popular Searches</h2>
-                <div class="home-page__chips">
-                    <a href="../pages/search.html?query=mandela" class="site-chip">Mandela</a>
-                    <a href="../pages/search.html?query=smith" class="site-chip">Smith</a>
-                    <a href="../pages/search.html?query=2026" class="site-chip">Census 2026</a>
+                <div class="home-page__chips" id="home-popular-searches" aria-live="polite">
+                    <span class="home-page__section-text">Loading popular searches…</span>
                 </div>
             </section>
 
@@ -102,24 +84,20 @@
                 <h2 class="home-page__section-title">About &amp; Contribute</h2>
                 <p class="home-page__section-text">{{APP_NAME}} is maintained by community
                     contributions. Add sources, photos, or correct records to improve the historical record.</p>
-                <p style="margin:0;">
-                    <a href="../pages/privacy_policy.html">Privacy Policy</a> · <a
-                        href="../pages/terms_of_use.html">Terms of Use</a> · <a
-                        href="../pages/cookie_statement.html">Cookie Statement</a> · <a
-                        href="../pages/code_of_conduct.html">Code of Conduct</a> · <a
-                        href="../pages/settings.html">App Settings</a>
-                </p>
             </section>
 
         </main>
         <full-footer></full-footer>
     </article>
 
-<script src="../lib/Web-Framework/components/mini-header.js"></script>
+<script src="../lib/people-registry.js"></script>
+    <script src="../lib/Web-Framework/components/mini-header.js"></script>
     <script src="../lib/Web-Framework/components/full-header.js"></script>
     <script src="../lib/Web-Framework/components/full-page-toolbar.js"></script>
     <script src="../lib/Web-Framework/components/full-footer.js"></script>
     <script src="../lib/page-tabs.js"></script>
+    <script src="../components/site-statistics.js"></script>
+    <script src="../components/home-page.js"></script>
     <script src="../index.js"></script>
 </body>
 
