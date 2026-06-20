@@ -16,6 +16,9 @@
         { query: 'census 2026', label: 'Census 2026' },
     ];
 
+    const STATISTICS_WINDOWS = ['24h', '3d', '7d', '30d', '60d', '90d', '6m', '1y', 'all'];
+    const STATISTICS_LEADERBOARD_LIMIT = 24;
+
     function resolveStatisticsDbUrl(dbPath = '') {
         if (window.App?.resolveStatisticsDbUrl) {
             return window.App.resolveStatisticsDbUrl(dbPath);
@@ -138,7 +141,7 @@
         return DEFAULT_POPULAR_SEARCHES.slice(0, limit);
     }
 
-    async function fetchStatisticsMetric(metric, limit) {
+    async function fetchStatisticsMetric(metric, limit, window = 'all') {
         const apiUrl = resolveGitHubApiUrl('github-statistics.php');
         if (!apiUrl) {
             return null;
@@ -148,6 +151,9 @@
             const url = new URL(apiUrl);
             url.searchParams.set('metric', metric);
             url.searchParams.set('limit', String(limit));
+            if (window && window !== 'all') {
+                url.searchParams.set('window', window);
+            }
             const response = await fetch(url.href, gitHubFetchInit());
             if (!response.ok) {
                 return null;
@@ -160,10 +166,64 @@
         }
     }
 
-    async function fetchPopularProfiles(limit = 4) {
-        const apiPayload = await fetchStatisticsMetric('popular_profiles', limit);
+    function readLeaderboardFromStatic(data, type, window, limit) {
+        const boards = data?.[type] && typeof data[type] === 'object' ? data[type] : null;
+        const entries = boards?.[window];
+        if (!Array.isArray(entries) || !entries.length) {
+            return null;
+        }
+
+        return type === 'profiles'
+            ? normalizePopularProfiles(entries, limit)
+            : normalizePopularSearches(entries, limit);
+    }
+
+    async function fetchLeaderboards() {
+        const apiPayload = await fetchStatisticsMetric('leaderboards', STATISTICS_LEADERBOARD_LIMIT);
+        if (apiPayload?.leaderboards) {
+            return apiPayload.leaderboards;
+        }
+
+        try {
+            const response = await fetch(resolveStatisticsDbUrl('leaderboards.json'), { cache: 'no-store' });
+            if (response.ok) {
+                return await response.json();
+            }
+        } catch (error) {
+            // ignore
+        }
+
+        try {
+            const response = await fetch(resolveStatisticsDbUrl('summary.json'), { cache: 'no-store' });
+            if (response.ok) {
+                const summary = await response.json();
+                if (summary?.leaderboards) {
+                    return summary.leaderboards;
+                }
+            }
+        } catch (error) {
+            // ignore
+        }
+
+        return null;
+    }
+
+    async function fetchPopularProfiles(limit = 4, window = 'all') {
+        const apiPayload = await fetchStatisticsMetric('popular_profiles', limit, window);
         if (apiPayload?.profiles) {
             return normalizePopularProfiles(apiPayload.profiles, limit);
+        }
+
+        if (window !== 'all') {
+            try {
+                const leaderboards = await fetchLeaderboards();
+                const fromBoard = readLeaderboardFromStatic(leaderboards, 'profiles', window, limit);
+                if (fromBoard?.length) {
+                    return fromBoard;
+                }
+            } catch (error) {
+                // ignore
+            }
         }
 
         const legacyUrl = resolveGitHubApiUrl('github-profile-views.php');
@@ -171,6 +231,9 @@
             try {
                 const url = new URL(legacyUrl);
                 url.searchParams.set('limit', String(limit));
+                if (window && window !== 'all') {
+                    url.searchParams.set('window', window);
+                }
                 const response = await fetch(url.href, gitHubFetchInit());
                 if (response.ok) {
                     const payload = await response.json();
@@ -196,7 +259,10 @@
             const response = await fetch(resolveStatisticsDbUrl('summary.json'), { cache: 'no-store' });
             if (response.ok) {
                 const summary = await response.json();
-                if (summary?.popularProfiles) {
+                if (summary?.leaderboards?.profiles?.[window]) {
+                    return normalizePopularProfiles(summary.leaderboards.profiles[window], limit);
+                }
+                if (window === 'all' && summary?.popularProfiles) {
                     return normalizePopularProfiles(summary.popularProfiles, limit);
                 }
             }
@@ -207,10 +273,22 @@
         return DEFAULT_POPULAR_PROFILES.slice(0, limit);
     }
 
-    async function fetchPopularSearches(limit = 8) {
-        const apiPayload = await fetchStatisticsMetric('popular_searches', limit);
+    async function fetchPopularSearches(limit = 8, window = 'all') {
+        const apiPayload = await fetchStatisticsMetric('popular_searches', limit, window);
         if (apiPayload?.searches) {
             return normalizePopularSearches(apiPayload.searches, limit);
+        }
+
+        if (window !== 'all') {
+            try {
+                const leaderboards = await fetchLeaderboards();
+                const fromBoard = readLeaderboardFromStatic(leaderboards, 'searches', window, limit);
+                if (fromBoard?.length) {
+                    return fromBoard;
+                }
+            } catch (error) {
+                // ignore
+            }
         }
 
         try {
@@ -226,7 +304,10 @@
             const response = await fetch(resolveStatisticsDbUrl('summary.json'), { cache: 'no-store' });
             if (response.ok) {
                 const summary = await response.json();
-                if (summary?.popularSearches) {
+                if (summary?.leaderboards?.searches?.[window]) {
+                    return normalizePopularSearches(summary.leaderboards.searches[window], limit);
+                }
+                if (window === 'all' && summary?.popularSearches) {
                     return normalizePopularSearches(summary.popularSearches, limit);
                 }
             }
@@ -342,10 +423,12 @@
     }
 
     window.SiteStatistics = {
+        STATISTICS_WINDOWS,
         DEFAULT_POPULAR_PROFILES,
         DEFAULT_POPULAR_SEARCHES,
         fetchPopularProfiles,
         fetchPopularSearches,
+        fetchLeaderboards,
         fetchSummary,
         recordProfileView,
         recordSearchQuery,
