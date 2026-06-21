@@ -375,6 +375,10 @@
 		// `_HASFAM` marks a pet that has its own animal family elsewhere (the pets
 		// DB) that isn't drawn in this tree — so a Tree button is worth offering.
 		const hasOwnTree = Boolean(firstChild(record, "_HASFAM"));
+		// `_MORE` (emitted by the people database when it builds the neighbourhood)
+		// counts immediate relatives that exist in the DB but aren't drawn in this
+		// tree, so the node can offer a Tree button that re-centres on that person.
+		const moreFamilyCount = Number(childValue(record, "_MORE")) || 0;
 
 		return {
 			genepediaId: genepediaId || undefined,
@@ -395,6 +399,7 @@
 			ownerName: ownerName || undefined,
 			ownerId: ownerId || undefined,
 			hasOwnTree,
+			moreFamilyCount,
 			name: gedcomDisplayName(primaryName) || id,
 			photoUrl: gedcomIndividualPhotoUrl(record, rootGedcom) || undefined,
 			sex,
@@ -933,6 +938,40 @@
 		const unionsByPartner = new Map();
 		const parentUnionsByChild = new Map();
 
+		// Order each union's children by birth — youngest (left) to oldest (right)
+		// in the tree. Sorting per-union keeps each distinct set of parents grouped
+		// and ordered on its own; undated children fall to the end (right).
+		const BIRTH_ORDER_MONTHS = {
+			JAN: 1, FEB: 2, MAR: 3, APR: 4, MAY: 5, JUN: 6,
+			JUL: 7, AUG: 8, SEP: 9, OCT: 10, NOV: 11, DEC: 12,
+		};
+		const birthOrderKey = (personId) => {
+			const person = peopleById.get(personId);
+			if (!person) return null;
+			const year = typeof person.born === "number"
+				? person.born
+				: extractYearFromGedcomDate(person.birthDate);
+			if (!Number.isFinite(year)) return null;
+			const raw = String(person.birthDate ?? "").toUpperCase();
+			const monthMatch = raw.match(/\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\b/);
+			const dayMatch = raw.match(/\b(\d{1,2})\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\b/);
+			const month = monthMatch ? BIRTH_ORDER_MONTHS[monthMatch[1]] : 0;
+			const day = dayMatch ? Number(dayMatch[1]) : 0;
+			return year * 10000 + month * 100 + day;
+		};
+		for (const union of data.unions) {
+			if (Array.isArray(union.children) && union.children.length > 1) {
+				union.children.sort((a, b) => {
+					const ka = birthOrderKey(a);
+					const kb = birthOrderKey(b);
+					if (ka == null && kb == null) return 0;
+					if (ka == null) return 1;
+					if (kb == null) return -1;
+					return kb - ka; // later birth (younger) first => leftmost
+				});
+			}
+		}
+
 		for (const union of data.unions) {
 			for (const partnerId of union.partners) {
 				if (!unionsByPartner.has(partnerId)) unionsByPartner.set(partnerId, []);
@@ -1089,6 +1128,123 @@
 			return Math.max(CONFIG.nodeWidth, partnersWidth, childrenWidth);
 		}
 
+		// Build a focus-anchored descriptor for the ROOT cluster so the focus
+		// person sits centred directly below their parents (matching Geni) instead
+		// of being pushed to the far-left edge. Returns null when the focus person
+		// isn't a child of the root union (e.g. the tree is rooted on their own
+		// marriage), in which case the ordinary centred layout is used.
+		function buildRootFocus(rootUnionId, rootCluster, focusPersonId) {
+			const focusUnion = indexes.unionsById.get(rootUnionId);
+			if (!focusUnion) return null;
+			if (!(focusUnion.children ?? []).includes(focusPersonId)) return null;
+
+			const partners = (focusUnion.partners ?? []).filter(Boolean);
+			const leftPartnerId = partners[0] ?? null;
+			const rightPartnerId = partners[1] ?? null;
+
+			const inCluster = new Set(rootCluster.unionIds);
+			const otherUnionsOf = (pid) =>
+				(indexes.unionsByPartner.get(pid) ?? []).filter(
+					(uid) => uid !== rootUnionId && inCluster.has(uid),
+				);
+
+			const leftUnionIds = leftPartnerId ? otherUnionsOf(leftPartnerId) : [];
+			const usedLeft = new Set(leftUnionIds);
+			const rightUnionIds = rightPartnerId
+				? otherUnionsOf(rightPartnerId).filter((uid) => !usedLeft.has(uid))
+				: [];
+
+			// Children left-to-right: the left partner's other families, then the
+			// focus family, then the right partner's other families — so each parent
+			// ends up above their own children. Each family's children are already
+			// ordered youngest→oldest (left→right) by buildIndexes; the focus person
+			// keeps their birth-order slot and their parents are centred above them.
+			const orderedChildIds = [];
+			const seen = new Set();
+			const pushKid = (cid) => {
+				if (cid && !seen.has(cid)) {
+					seen.add(cid);
+					orderedChildIds.push(cid);
+				}
+			};
+			const pushKids = (uid) => {
+				for (const cid of indexes.unionsById.get(uid)?.children ?? []) pushKid(cid);
+			};
+			for (const uid of leftUnionIds) pushKids(uid);
+			pushKids(rootUnionId);
+			for (const uid of rightUnionIds) pushKids(uid);
+			for (const cid of rootCluster.childIds) pushKid(cid);
+
+			return {
+				focusUnionId: rootUnionId,
+				focusPersonId,
+				leftPartnerId,
+				rightPartnerId,
+				leftUnionIds,
+				rightUnionIds,
+				orderedChildIds,
+			};
+		}
+
+		// Work out each root partner's x so they sit above their own children: the
+		// focus couple straddle the focus child, and every other spouse fans out to
+		// their side, centred over their kids and spaced so nobody overlaps.
+		function focusAnchoredPartnerXs(rootFocus, unionCenterXs, fallbackCenterX, focusPersonCenter) {
+			const minGap = CONFIG.nodeWidth + CONFIG.partnerGap;
+			const xs = new Map();
+			const centerOfUnion = (uid) => {
+				const cs = unionCenterXs.get(uid);
+				if (!cs || cs.length === 0) return fallbackCenterX;
+				return (Math.min(...cs) + Math.max(...cs)) / 2;
+			};
+			const otherSpouseOf = (uid, partnerId) =>
+				(indexes.unionsById.get(uid)?.partners ?? []).find((p) => p && p !== partnerId) ?? null;
+
+			const { focusUnionId, leftPartnerId, rightPartnerId, leftUnionIds, rightUnionIds } =
+				rootFocus;
+
+			// Centre the couple straight above the focus PERSON (not the midpoint of
+			// all their siblings) so the selected person's parents sit right on top.
+			const focusCenter =
+				focusPersonCenter != null ? focusPersonCenter : centerOfUnion(focusUnionId);
+			if (leftPartnerId && rightPartnerId) {
+				xs.set(leftPartnerId, focusCenter - minGap / 2);
+				xs.set(rightPartnerId, focusCenter + minGap / 2);
+			} else if (leftPartnerId) {
+				xs.set(leftPartnerId, focusCenter);
+			}
+
+			// Left spouses: place nearest-to-focus first, then keep stepping left.
+			const leftEntries = [];
+			for (const uid of leftUnionIds) {
+				const spouse = otherSpouseOf(uid, leftPartnerId);
+				if (spouse && !xs.has(spouse)) leftEntries.push({ spouse, x: centerOfUnion(uid) });
+			}
+			leftEntries.sort((a, b) => a.x - b.x);
+			let leftLimit = (xs.get(leftPartnerId) ?? focusCenter) - minGap;
+			for (let i = leftEntries.length - 1; i >= 0; i -= 1) {
+				const x = Math.min(leftEntries[i].x, leftLimit);
+				xs.set(leftEntries[i].spouse, x);
+				leftLimit = x - minGap;
+			}
+
+			// Right spouses: mirror of the left side.
+			const rightEntries = [];
+			for (const uid of rightUnionIds) {
+				const spouse = otherSpouseOf(uid, rightPartnerId);
+				if (spouse && !xs.has(spouse)) rightEntries.push({ spouse, x: centerOfUnion(uid) });
+			}
+			rightEntries.sort((a, b) => a.x - b.x);
+			let rightLimit = (xs.get(rightPartnerId) ?? focusCenter) + minGap;
+			for (let i = 0; i < rightEntries.length; i += 1) {
+				const x = Math.max(rightEntries[i].x, rightLimit);
+				xs.set(rightEntries[i].spouse, x);
+				rightLimit = x + minGap;
+			}
+
+			return xs;
+		}
+
 		function layout(rootUnionId, opts = {}) {
 			// `positions` keep a single FIRST-WINS coordinate per person/union — used
 			// by focus-centring, the branch switcher, the sidebar and visibility
@@ -1119,7 +1275,7 @@
 			// and recurse each child as its OWN hub so every person shows all their
 			// marriages and children. Returns the placement rec of `anchorPersonId`
 			// (used to connect a parent union down to this child).
-			function layoutCluster(cluster, xLeft, depth, stack, anchorPersonId = null) {
+			function layoutCluster(cluster, xLeft, depth, stack, anchorPersonId = null, rootFocus = null) {
 				const clusterWidth = measureCluster(cluster, stack);
 				const centerX = xLeft + clusterWidth / 2;
 				const y = CONFIG.padding + depth * CONFIG.generationGap;
@@ -1128,16 +1284,6 @@
 					cluster.partnerIds.length * CONFIG.nodeWidth +
 					Math.max(0, cluster.partnerIds.length - 1) * CONFIG.partnerGap;
 				const partnersLeft = centerX - partnersWidth / 2;
-
-				const localPos = new Map();
-				const anchorRecs = new Map();
-				for (let idx = 0; idx < cluster.partnerIds.length; idx += 1) {
-					const personId = cluster.partnerIds[idx];
-					const x =
-						partnersLeft + idx * (CONFIG.nodeWidth + CONFIG.partnerGap) + CONFIG.nodeWidth / 2;
-					localPos.set(personId, { x, y });
-					anchorRecs.set(personId, recordPerson(personId, x, y));
-				}
 
 				const unionLineY = y + CONFIG.nodeHeight / 2 + 18;
 				const childTopY = y + CONFIG.generationGap - CONFIG.nodeHeight / 2;
@@ -1152,26 +1298,79 @@
 					}
 				}
 
-				// Lay the children out (each as its own hub) and remember where each
-				// landed, grouped by the union it belongs to.
-				const unionChildRecs = new Map();
-				if (cluster.childIds.length > 0) {
+				// A focus-anchored root re-orders children so the focus family sits in
+				// the middle; everywhere else keeps the natural order.
+				const orderedChildIds =
+					rootFocus && rootFocus.orderedChildIds.length
+						? rootFocus.orderedChildIds
+						: cluster.childIds;
+
+				// First pass: measure each child's hub and work out where it will sit
+				// (without recursing yet) so partners can be centred above them.
+				const childGroups = [];
+				const unionCenterXs = new Map();
+				if (orderedChildIds.length > 0) {
 					for (const uid of cluster.unionIds) stack.add(uid);
-					const childGroups = cluster.childIds.map((cid) => {
+					for (const cid of orderedChildIds) {
 						const hub = getPersonHubCluster(cid, stack);
-						return { childId: cid, hub, width: measureCluster(hub, stack) };
-					});
+						childGroups.push({
+							childId: cid,
+							hub,
+							width: measureCluster(hub, stack),
+							left: 0,
+							center: 0,
+						});
+					}
 					const totalChildrenWidth =
 						childGroups.reduce((sum, g) => sum + g.width, 0) +
 						Math.max(0, childGroups.length - 1) * CONFIG.siblingGap;
 					let cursorX = centerX - totalChildrenWidth / 2;
 					for (const group of childGroups) {
-						const childRec = layoutCluster(group.hub, cursorX, depth + 1, stack, group.childId);
+						group.left = cursorX;
+						group.center = cursorX + group.width / 2;
+						for (const parentUnionId of childToParentUnionIds.get(group.childId) ?? []) {
+							if (!unionCenterXs.has(parentUnionId)) unionCenterXs.set(parentUnionId, []);
+							unionCenterXs.get(parentUnionId).push(group.center);
+						}
+						cursorX += group.width + CONFIG.siblingGap;
+					}
+					for (const uid of cluster.unionIds) stack.delete(uid);
+				}
+
+				// Place partners. Normally an evenly spaced, centred row; for a
+				// focus-anchored root, centre each partner above their own children so
+				// the connectors run (near) straight down and the focus couple sits
+				// directly above the focus person.
+				const localPos = new Map();
+				const anchorRecs = new Map();
+				const focusPersonCenter = rootFocus
+					? childGroups.find((g) => g.childId === rootFocus.focusPersonId)?.center ?? null
+					: null;
+				const focusXs = rootFocus
+					? focusAnchoredPartnerXs(rootFocus, unionCenterXs, centerX, focusPersonCenter)
+					: null;
+				for (let idx = 0; idx < cluster.partnerIds.length; idx += 1) {
+					const personId = cluster.partnerIds[idx];
+					const x = focusXs
+						? focusXs.has(personId)
+							? focusXs.get(personId)
+							: centerX
+						: partnersLeft + idx * (CONFIG.nodeWidth + CONFIG.partnerGap) + CONFIG.nodeWidth / 2;
+					localPos.set(personId, { x, y });
+					anchorRecs.set(personId, recordPerson(personId, x, y));
+				}
+
+				// Second pass: lay the children out for real (recurse) now that the
+				// partners are placed, remembering where each landed by union.
+				const unionChildRecs = new Map();
+				if (childGroups.length > 0) {
+					for (const uid of cluster.unionIds) stack.add(uid);
+					for (const group of childGroups) {
+						const childRec = layoutCluster(group.hub, group.left, depth + 1, stack, group.childId);
 						for (const parentUnionId of childToParentUnionIds.get(group.childId) ?? []) {
 							if (!unionChildRecs.has(parentUnionId)) unionChildRecs.set(parentUnionId, []);
 							if (childRec) unionChildRecs.get(parentUnionId).push(childRec);
 						}
-						cursorX += group.width + CONFIG.siblingGap;
 					}
 					for (const uid of cluster.unionIds) stack.delete(uid);
 				}
@@ -1285,7 +1484,11 @@
 			} else if (rootUnion) {
 				const rootCluster = getUnionCluster(rootUnionId, true);
 				rootWidth = measureCluster(rootCluster, new Set());
-				layoutCluster(rootCluster, CONFIG.padding, 0, new Set());
+				const rootFocus =
+					opts.focusPersonId != null
+						? buildRootFocus(rootUnionId, rootCluster, opts.focusPersonId)
+						: null;
+				layoutCluster(rootCluster, CONFIG.padding, 0, new Set(), null, rootFocus);
 			} else {
 				// No valid union to root on — e.g. a lone individual whose GEDCOM has
 				// no family records yet. Still place the focused person's own node so
@@ -1556,18 +1759,35 @@
 			// people with hidden immediate relatives, or a pet whose own animal
 			// family (in the pets DB) isn't drawn in this tree (`hasOwnTree`). Never
 			// on the node we're already centred on — that tree is already open.
-			const hasMoreTree = isPet ? (Boolean(person.hasOwnTree) || hasImmediateFamilyToShow) : hasImmediateFamilyToShow;
+			const hasHiddenRelatives = (person.moreFamilyCount ?? 0) > 0;
+			const hasMoreTree = isPet
+				? (Boolean(person.hasOwnTree) || hasImmediateFamilyToShow)
+				: (hasImmediateFamilyToShow || hasHiddenRelatives);
 			const isFocusNode = focusPersonId != null && personId === focusPersonId;
 			if (!isFocusNode && hasMoreTree) {
-				treeAction = makeNodeButton("diagram-3", "Open tree");
+				const treeLabel = hasHiddenRelatives
+					? `Open tree (${person.moreFamilyCount} more ${person.moreFamilyCount === 1 ? "relative" : "relatives"})`
+					: "Open tree";
+				treeAction = makeNodeButton("diagram-3", treeLabel);
 				treeAction.classList.add("node__tree-action");
+				if (hasHiddenRelatives) {
+					const treeBadge = el("span", "node__tree-badge");
+					const treeBadgeCount = el("span", "node__tree-badge__count");
+					treeBadgeCount.textContent =
+						person.moreFamilyCount > 99 ? "99+" : String(person.moreFamilyCount);
+					treeBadge.appendChild(treeBadgeCount);
+					treeBadge.setAttribute("aria-hidden", "true");
+					treeAction.appendChild(treeBadge);
+				}
 				treeAction.addEventListener("click", (e) => {
 					e.preventDefault();
 					e.stopPropagation();
 					if (isPet) {
 						window.location.assign(petProfileUrl("#tree"));
 					} else {
-						onTree?.({ personId });
+						// Re-centre the tree on this person in place — same page, same
+						// profile/tab — just swap the tree to their neighbourhood.
+						onTree?.({ personId, genepediaId, hasHiddenRelatives });
 					}
 				});
 			}
@@ -2013,9 +2233,15 @@
 	   the header notification button and search box exactly. Dark is the default;
 	   :host([data-theme="light"]) flips to light. */
 	--tree-chrome-fg: #eaecf0;
-	--tree-chrome-btn-border: rgba(255, 255, 255, 0.2);
-	--tree-chrome-btn-bg: rgba(255, 255, 255, 0.04);
-	--tree-chrome-btn-hover: rgba(255, 255, 255, 0.08);
+	/* Toolbar + node-action buttons mirror the web framework's canonical
+	   action-button surface colours (see action-button.js) so every button across
+	   the site matches. These are keyed to the tree's OWN data-theme rather than
+	   referencing --action-button-bg (which tracks the site <body>), so the tree's
+	   buttons stay consistent with its cards even if the site theme is toggled
+	   before the tree re-reads it. Dark values here; light overrides below. */
+	--tree-chrome-btn-border: #525457;
+	--tree-chrome-btn-bg: #303235;
+	--tree-chrome-btn-hover: #3d3e42;
 	--tree-chrome-search-bg: #1e2125;
 	--tree-chrome-search-border: rgba(255, 255, 255, 0.08);
 	--tree-chrome-search-icon: #c8ccd1;
@@ -2031,9 +2257,9 @@
 
 :host([data-theme="light"]) {
 	--tree-chrome-fg: #202122;
-	--tree-chrome-btn-border: rgba(0, 0, 0, 0.14);
-	--tree-chrome-btn-bg: rgba(0, 0, 0, 0.03);
-	--tree-chrome-btn-hover: rgba(0, 0, 0, 0.06);
+	--tree-chrome-btn-border: #dbdbdb;
+	--tree-chrome-btn-bg: #f7f7f7;
+	--tree-chrome-btn-hover: #ededed;
 	--tree-chrome-search-bg: #f8f9fa;
 	--tree-chrome-search-border: rgba(0, 0, 0, 0.12);
 	--tree-chrome-search-icon: #72777d;
@@ -2046,27 +2272,45 @@
 #app {
 	height: 100%;
 	display: grid;
+	grid-template-columns: 1fr;
 	grid-template-rows: auto 1fr;
+	grid-template-areas:
+		"toolbar"
+		"main";
 	min-height: 0;
 	min-width: 0;
 }
 
+/* When the Details sidebar is open it becomes a full-height column down the
+   right edge (spanning the toolbar row too); the toolbar and tree sit in the
+   remaining space to its left. */
+#app.app--sidebar {
+	grid-template-columns: 1fr var(--sidebar-w);
+	grid-template-areas:
+		"toolbar sidebar"
+		"main    sidebar";
+}
+
 .main {
+	grid-area: main;
 	height: 100%;
 	min-height: 0;
 	min-width: 0;
 	display: grid;
 	grid-template-columns: 1fr;
 	align-items: stretch;
-}
-
-.main--sidebar {
-	grid-template-columns: 1fr var(--sidebar-w);
+	/* Inset the tree viewport so the canvas keeps the same left/right gutter as the
+	   toolbar's search box (which sits 12px in from the edge via the toolbar's
+	   horizontal padding), instead of the tree running flush to the frame edges.
+	   Padding lives here on .main (not .viewport) because .scene is absolutely
+	   positioned and would ignore the viewport's own padding. */
+	padding: 0 12px;
 }
 
 .toolbar {
+	grid-area: toolbar;
 	display: flex;
-	justify-content: flex-end;
+	justify-content: flex-start;
 	align-items: center;
 	gap: 12px;
 	padding: 8px 12px;
@@ -2077,7 +2321,7 @@
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
-	justify-content: flex-end;
+	justify-content: flex-start;
 	gap: 8px;
 }
 
@@ -2204,27 +2448,55 @@ button {
 	width: 32px;
 	height: 32px;
 	padding: 0;
-	display: inline-grid;
-	place-items: center;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	box-sizing: border-box;
 	font-size: 0;
+	line-height: 0;
+	/* Same surface as the web framework's action-button (header & footer buttons),
+	   via the shared --action-button-* tokens, so all buttons match site-wide. */
+	border: 1px solid var(--tree-chrome-btn-border);
+	border-radius: 2px;
+	background: var(--tree-chrome-btn-bg);
+	color: var(--tree-chrome-fg);
+}
+
+.icon-button:hover {
+	background: var(--tree-chrome-btn-hover);
 }
 
 .icon-button i {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 16px;
 	height: 16px;
-	display: grid;
-	place-items: center;
 	font-size: 16px;
 	line-height: 1;
 	margin: 0;
 	padding: 0;
 	font-style: normal;
+	/* The bootstrap-icons glyph carries a -0.125em vertical-align nudge intended
+	   for inline text; neutralise it so the glyph sits dead-centre in the button
+	   (flex centring is baseline-independent, so this is just belt-and-braces). */
+	vertical-align: middle;
 }
 
 .icon-button i::before {
 	display: block;
 	line-height: 1;
+	vertical-align: middle;
+}
+
+/* Every bootstrap-icons glyph sits a hair high within the flex-centred line box
+   (the font's ascent/descent metrics place it above the box centre), so the node
+   action icons read as slightly top-heavy. Nudge them all down by the same amount
+   — they share identical metrics, so one value centres every glyph — making tree,
+   edit (pencil) and add (plus) sit optically dead-centre. (Scoped to node actions;
+   the larger toolbar buttons are left as-is.) */
+.node__actions .icon-button i::before {
+	transform: translateY(0.07em);
 }
 
 button:disabled {
@@ -2411,6 +2683,44 @@ button:focus-visible {
 .node__actions .icon-button {
 	width: 28px;
 	height: 28px;
+}
+
+.node__tree-action {
+	position: relative;
+	overflow: visible;
+}
+
+/* Red count badge on the Tree button — mirrors the header notifications badge —
+   showing how many more relatives opening that person's tree would reveal. */
+.node__tree-badge {
+	position: absolute;
+	top: -7px;
+	right: -7px;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 4px;
+	border-radius: 999px;
+	background: #ff3b30;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	border: 1.5px solid Canvas;
+	pointer-events: none;
+	z-index: 4;
+}
+
+/* A single digit centred by the flex box still looks high because its line box
+   leaves empty descent space below the baseline; nudge the number down a hair so
+   it sits optically dead-centre in the circle. */
+.node__tree-badge__count {
+	display: block;
+	line-height: 1;
+	transform: translateY(0.12em);
 }
 
 .node:focus-visible {
@@ -2656,6 +2966,7 @@ a.node__owner-name:hover {
 }
 
 .sidebar {
+	grid-area: sidebar;
 	height: 100%;
 	align-self: stretch;
 	border-left: 1px solid GrayText;
@@ -3003,17 +3314,17 @@ a.node__name:focus-visible {
 				<div id="nodes" class="nodes"></div>
 			</div>
 		</main>
-
-		<aside id="sidebar" class="sidebar sidebar--hidden" aria-label="Selected person details">
-			<div class="sidebar__header">
-				<div class="sidebar__title">Details</div>
-				<button id="closeSidebarBtn" class="icon-button sidebar__close" type="button" aria-label="Close sidebar">
-					<i class="bi bi-x-lg" aria-hidden="true"></i>
-				</button>
-			</div>
-			<div id="sidebarContent" class="sidebar__content"></div>
-		</aside>
 	</div>
+
+	<aside id="sidebar" class="sidebar sidebar--hidden" aria-label="Selected person details">
+		<div class="sidebar__header">
+			<div class="sidebar__title">Details</div>
+			<button id="closeSidebarBtn" class="icon-button sidebar__close" type="button" aria-label="Close sidebar">
+				<i class="bi bi-x-lg" aria-hidden="true"></i>
+			</button>
+		</div>
+		<div id="sidebarContent" class="sidebar__content"></div>
+	</aside>
 
 	<div id="relationMenu" class="menu menu--hidden" role="menu" aria-label="Add relative menu"></div>
 </div>
@@ -3092,7 +3403,7 @@ a.node__name:focus-visible {
 		}
 
 		async #init(root) {
-			const mainLayout = root.getElementById("mainLayout");
+			const appEl = root.getElementById("app");
 			const viewport = root.getElementById("viewport");
 			const scene = root.getElementById("scene");
 			const svg = root.getElementById("links");
@@ -3112,6 +3423,22 @@ a.node__name:focus-visible {
 			const personRef = (this.getAttribute("person") || "").trim();
 			const includeDisconnected = this.hasAttribute("whole-tree");
 			const isReadOnly = this.hasAttribute("readonly");
+
+			// Tree-tab state persisted in the page URL so a refresh (or shared link)
+			// reopens the same parent branch and Children/Pets choice. Scoped with a
+			// `tree-` prefix; only ever read/written for the initial focus person.
+			const TREE_PARAM_PARENTS = "tree-parents";
+			const TREE_PARAM_PETS = "tree-pets";
+			const readTreeParam = (name) => {
+				try {
+					return new URL(window.location.href).searchParams.get(name);
+				} catch {
+					return null;
+				}
+			};
+			const urlParentsPref =
+				String(readTreeParam(TREE_PARAM_PARENTS) || "").trim().toLowerCase() || null;
+			const urlPetsWanted = readTreeParam(TREE_PARAM_PETS) === "1";
 			this.dataset.minScale = includeDisconnected ? "0.01" : String(CONFIG.minScale);
 			const gedUrl = gedAttr
 				? new URL(gedAttr, window.location.href).href
@@ -3119,7 +3446,7 @@ a.node__name:focus-visible {
 
 			await ensureGedcomLibrary();
 
-			const fullData = await loadTreeData(gedUrl);
+			let fullData = await loadTreeData(gedUrl);
 			await enrichPeopleWithPhotos(fullData.people);
 			// Pets are hidden by default. `petsVisibleFor` holds the person ids whose
 			// pets are currently shown — driven by the per-person "Children / Pets"
@@ -3563,12 +3890,12 @@ a.node__name:focus-visible {
 				sidebarContent.replaceChildren();
 				if (!personId) {
 					sidebar.classList.add("sidebar--hidden");
-					mainLayout?.classList.remove("main--sidebar");
+					appEl?.classList.remove("app--sidebar");
 					return;
 				}
 
 				sidebar.classList.remove("sidebar--hidden");
-				mainLayout?.classList.add("main--sidebar");
+				appEl?.classList.add("app--sidebar");
 
 				const person = personById(personId);
 				const gender = normalizeGender(person.gender);
@@ -3789,6 +4116,33 @@ a.node__name:focus-visible {
 					.filter(Boolean);
 			};
 
+			// Persist the profile person's current parent-branch and Children/Pets
+			// choice into the page URL (no reload) so a refresh restores them. Only
+			// the initial focus person is tracked; navigating the tree never rewrites
+			// the URL, and switching tabs keeps the params (the tab hash is separate).
+			const syncTreeUrlParams = () => {
+				if (!initialPersonId || currentFocusPersonId !== initialPersonId) return;
+				try {
+					const url = new URL(window.location.href);
+					const params = url.searchParams;
+
+					const branches = focusParentBranches(initialPersonId);
+					const active = branches.find((b) => b.unionId === currentRootUnionId);
+					const isDefaultBranch =
+						!active || branches.length < 2 || active.unionId === branches[0]?.unionId;
+					const pedi = active ? String(active.pedi || "").trim().toLowerCase() : "";
+					if (!isDefaultBranch && pedi) params.set(TREE_PARAM_PARENTS, pedi);
+					else params.delete(TREE_PARAM_PARENTS);
+
+					if (petsVisibleFor.has(initialPersonId)) params.set(TREE_PARAM_PETS, "1");
+					else params.delete(TREE_PARAM_PETS);
+
+					history.replaceState(null, "", url.toString());
+				} catch {
+					// ignore URL/history failures (e.g. sandboxed documents)
+				}
+			};
+
 			// A clear, on-canvas segmented control that sits on the connector between
 			// the focus person and their parents, letting you see at a glance — and
 			// instantly switch — which parent branch (biological vs adopted, etc.)
@@ -3844,6 +4198,7 @@ a.node__name:focus-visible {
 						if (branch.unionId === currentRootUnionId) return;
 						currentRootUnionId = branch.unionId;
 						renderTree({ selectPersonId: focusId, source: "branch-switch", transformMode: "pan" });
+						syncTreeUrlParams();
 					});
 					chipsWrap.append(chip);
 				}
@@ -3907,6 +4262,7 @@ a.node__name:focus-visible {
 						else petsVisibleFor.delete(focusId);
 						applyPetVisibility();
 						renderTree({ selectPersonId: focusId, source: "pets-switch", transformMode: "pan" });
+						syncTreeUrlParams();
 					});
 					return chip;
 				};
@@ -3922,6 +4278,7 @@ a.node__name:focus-visible {
 				layoutResult = engine.layout(currentRootUnionId, {
 					fallbackPersonId: opts.selectPersonId || initialPersonId || null,
 					includeDisconnected,
+					focusPersonId: currentFocusPersonId,
 				});
 				rendered = render({
 					data,
@@ -3946,7 +4303,7 @@ a.node__name:focus-visible {
 						}
 						openRelationMenu({ personId, anchorEl });
 					},
-					onTree: ({ personId }) => openTreeForPerson(personId),
+					onTree: (info) => handleTreeButton(info),
 					focusPersonId: currentFocusPersonId,
 					readOnly: isReadOnly,
 				});
@@ -4006,12 +4363,80 @@ a.node__name:focus-visible {
 				return null;
 			};
 
+			// Re-centre the tree ON THIS PAGE: pull the clicked person's own
+			// neighbourhood from the people database, swap it in, and re-render around
+			// them — no navigation, so we stay on the current profile's Tree tab and
+			// just change what the tree shows. Falls back to an in-place re-root of the
+			// already-loaded data when the database isn't available.
+			let recenteringInFlight = false;
+			async function recenterTreeOnPerson(genepediaId, fallbackPersonId) {
+				if (recenteringInFlight) return;
+				const ref = String(genepediaId ?? "").trim();
+				if (!ref || typeof window.PeopleDB?.buildTreeGedcomUrl !== "function") {
+					if (fallbackPersonId) openTreeForPerson(fallbackPersonId);
+					return;
+				}
+				recenteringInFlight = true;
+				let nextUrl = null;
+				try {
+					nextUrl = await window.PeopleDB.buildTreeGedcomUrl(ref);
+					if (!nextUrl) throw new Error(`No tree data for person ${ref}`);
+					const nextData = await loadTreeData(nextUrl);
+					await enrichPeopleWithPhotos(nextData.people);
+					fullData = nextData;
+					applyPetVisibility();
+					const newFocusId = findPersonIdByRef(ref) ?? fallbackPersonId ?? data.people[0]?.id ?? null;
+					currentFocusPersonId = newFocusId;
+					currentRootUnionId = newFocusId
+						? getPreferredRootUnionIdForPerson(newFocusId)
+						: data.rootUnionId;
+					renderTree({
+						selectPersonId: newFocusId,
+						source: "tree-recenter",
+						transformMode: "pan",
+						scale: SITE_BUTTON_PX / NODE_ACTION_BUTTON_PX,
+					});
+				} catch (err) {
+					console.warn("Could not re-centre the tree on person", ref, err);
+					if (fallbackPersonId) openTreeForPerson(fallbackPersonId);
+				} finally {
+					recenteringInFlight = false;
+					if (nextUrl) {
+						try { URL.revokeObjectURL(nextUrl); } catch { /* ignore */ }
+					}
+				}
+			}
+
+			// A node's Tree button: re-centre on someone with family beyond the current
+			// view by loading their neighbourhood; otherwise just re-root in place.
+			function handleTreeButton({ personId, genepediaId, hasHiddenRelatives } = {}) {
+				if (genepediaId && hasHiddenRelatives) {
+					void recenterTreeOnPerson(genepediaId, personId);
+				} else {
+					openTreeForPerson(personId);
+				}
+			}
+
 			const shouldFocusFirstPerson = isReadOnly && !includeDisconnected && !personRef;
 			const initialPersonId = findPersonIdByRef(personRef) ||
 				(shouldFocusFirstPerson ? data.people[0]?.id ?? null : null);
 			if (initialPersonId) {
 				currentFocusPersonId = initialPersonId;
+				// Restore the Children/Pets choice from the URL before the first
+				// layout so chosen pets are present in the very first render.
+				if (urlPetsWanted && petUnionsForOwner(fullData, initialPersonId).length > 0) {
+					petsVisibleFor.add(initialPersonId);
+					applyPetVisibility();
+				}
 				currentRootUnionId = getPreferredRootUnionIdForPerson(initialPersonId);
+				// Restore the selected parent branch (biological / adopted / …) so a
+				// refreshed or shared link reopens the same set of parents.
+				if (urlParentsPref) {
+					const branch = focusParentBranches(initialPersonId).find(
+						(b) => String(b.pedi || "").trim().toLowerCase() === urlParentsPref,
+					);
+					if (branch) currentRootUnionId = branch.unionId;
+				}
 				// Open zoomed in on the selected person so the node's Edit/Add
 				// buttons render at the same size as the standard site buttons
 				// (footer social = 36px, header notifications = 39px). The node
