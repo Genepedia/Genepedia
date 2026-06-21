@@ -10,3 +10,6 @@
 [submodule "data/Genepedia-Database"]
 	path = data/Genepedia-Database
 	url = https://github.com/Genepedia/Genepedia-Database.git
+[submodule "lib/API"]
+	path = lib/API
+	url = https://github.com/Genepedia/API.git
