@@ -142,7 +142,66 @@
         return '';
     }
 
-    function buildProfileSummary(record) {
+    function buildPetSummary(record, registryEntry) {
+        const species = String(record?.species || registryEntry?.species || '').trim();
+        const breed = String(record?.breed || registryEntry?.breed || '').trim();
+        if (species && breed) {
+            return `${species} · ${breed}`;
+        }
+        if (species) {
+            return species;
+        }
+        if (breed) {
+            return breed;
+        }
+        return 'Explore this pet profile on Genepedia.';
+    }
+
+    function resolveProfileTileUrl(personId, kind = 'person') {
+        const id = String(personId || '').trim();
+        if (!id) {
+            return '';
+        }
+
+        const normalizedKind = normalizeProfileKind(kind);
+        if (window.PeopleRegistry?.resolvePersonProfileUrl) {
+            return window.PeopleRegistry.resolvePersonProfileUrl(id, normalizedKind);
+        }
+
+        if (window.App?.resolveProfileUrl) {
+            return window.App.resolveProfileUrl(id, normalizedKind, 'profile.html');
+        }
+
+        const base = normalizedKind === 'pet' ? 'pages/pets' : 'pages/people';
+        return new URL(`../${base}/${id}/profile.html`, window.location.href).href;
+    }
+
+    function resolveProfileTilePhotoUrl(personId, kind = 'person', record = null, card = null) {
+        const normalizedKind = normalizeProfileKind(kind);
+        if (normalizedKind === 'pet') {
+            const primary = record?.media?.primary;
+            if (primary && window.App?.resolvePreferredPersonMediaUrl) {
+                return String(window.App.resolvePreferredPersonMediaUrl(personId, primary)?.url || '').trim();
+            }
+            return '';
+        }
+
+        return String(card?.photoUrl || '').trim();
+    }
+
+    async function loadProfileCard(personId, kind = 'person') {
+        if (normalizeProfileKind(kind) === 'pet') {
+            return null;
+        }
+
+        return window.App?.loadPersonCard ? window.App.loadPersonCard(personId) : null;
+    }
+
+    function buildProfileSummary(record, kind = 'person', registryEntry = null) {
+        if (normalizeProfileKind(kind) === 'pet') {
+            return buildPetSummary(record, registryEntry);
+        }
+
         const occupation = String(record?.occupation || '').trim();
         if (occupation) {
             return occupation;
@@ -218,29 +277,22 @@
 
         try {
             const [card, record, registryEntry] = await Promise.all([
-                window.App?.loadPersonCard ? window.App.loadPersonCard(personId) : null,
+                loadProfileCard(personId, kind),
                 fetchPersonRecord(personId, kind),
                 loadRegistryEntry(personId, kind),
             ]);
 
             const name = String(
-                card?.name
-                || record?.names?.display
+                record?.names?.display
                 || registryEntry?.displayName
                 || [registryEntry?.firstName, registryEntry?.lastName].filter(Boolean).join(' ')
-                || `Profile ${personId}`,
+                || card?.name
+                || `${normalizeProfileKind(kind) === 'pet' ? 'Pet' : 'Profile'} ${personId}`,
             ).trim();
-            const profileUrl = String(
-                card?.profileUrl
-                || (window.PeopleRegistry?.resolvePersonProfileUrl
-                    ? window.PeopleRegistry.resolvePersonProfileUrl(personId, kind)
-                    : (window.App?.resolveProfileUrl
-                        ? window.App.resolveProfileUrl(personId, kind, 'profile.html')
-                        : '')),
-            ).trim();
+            const profileUrl = resolveProfileTileUrl(personId, kind);
             const defaultPhoto = defaultProfileImageUrl();
-            const photoUrl = String(card?.photoUrl || '').trim() || defaultPhoto;
-            const summary = buildProfileSummary(record);
+            const photoUrl = resolveProfileTilePhotoUrl(personId, kind, record, card) || defaultPhoto;
+            const summary = buildProfileSummary(record, kind, registryEntry);
             const meta = formatLifespan(record, registryEntry);
 
             tile.innerHTML = `

@@ -51,13 +51,24 @@
     }
 
     function normalizePopularProfiles(payloadProfiles, limit = 4) {
+        const seen = new Set();
         const profiles = (Array.isArray(payloadProfiles) ? payloadProfiles : [])
             .map((entry) => ({
                 personId: String(entry?.person_id || entry?.personId || '').trim(),
                 kind: normalizeProfileKind(entry?.kind),
                 views: Number(entry?.views || 0),
             }))
-            .filter((entry) => entry.personId)
+            .filter((entry) => {
+                if (!entry.personId) {
+                    return false;
+                }
+                const key = `${entry.kind}:${entry.personId}`;
+                if (seen.has(key)) {
+                    return false;
+                }
+                seen.add(key);
+                return true;
+            })
             .slice(0, limit);
 
         return profiles.length ? profiles : DEFAULT_POPULAR_PROFILES.slice(0, limit);
