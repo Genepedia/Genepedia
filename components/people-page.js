@@ -46,6 +46,14 @@ body:not(.theme-dark) people-page {
   font: 1rem/1.65 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
 }
 
+/* The Tree tab is an interactive pan/zoom canvas — give it the full page width
+   instead of the 90rem reading column, which otherwise boxes it in and clips
+   the wider branches off the right edge. */
+.people-page__content:has(> family-tree) {
+  max-width: none;
+  padding: 0;
+}
+
 body.theme-dark .people-page__content {
   color: #eaecf0;
 }
