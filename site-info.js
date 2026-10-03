@@ -40,7 +40,7 @@
         Version: '1.0.0',
         ReleaseDate: '2026-07-01',
         Description: `${BRANDING_SOURCE_NAME} is a home for family stories, a place to discover, document, and share your family history.`,
-        GitHubApiBase: 'https://api.shaunroselt.com/genepedia',
+        GitHubApiBase: 'https://api.genepedia.org/genepedia',
         Slogan: 'Free Geneology Encyclopedia',
         PageEditPath: 'pages/edit.html',
     };
@@ -49,6 +49,16 @@
     const STATISTICS_DB_ROOT = `${PEOPLE_DB_SUBMODULE_ROOT}/statistics`;
     const LEGACY_PEOPLE_DB_ROOT = 'data/people';
     const PERSON_MEDIA_ROOT = 'data/Genepedia-Media/people';
+    const PUBLIC_DATA_REPOSITORIES = [
+        {
+            path: `${PEOPLE_DB_SUBMODULE_ROOT}/`,
+            root: 'https://raw.githubusercontent.com/Genepedia/Genepedia-Database/main/',
+        },
+        {
+            path: 'data/Genepedia-Media/',
+            root: 'https://raw.githubusercontent.com/Genepedia/Genepedia-Media/main/',
+        },
+    ];
     const LOCAL_MEDIA_PROFILE_IDS = new Set(['1', '2', '3', '15']);
 
     function getSiteBaseUrl() {
@@ -62,7 +72,19 @@
     function resolveSiteUrl(relativePath) {
         const cleanPath = String(relativePath || '').replace(/^\//, '');
         try {
-            return new URL(cleanPath, getSiteBaseUrl()).href;
+            const siteBaseUrl = getSiteBaseUrl();
+            const resolved = new URL(cleanPath, siteBaseUrl);
+            if (resolved.origin === siteBaseUrl.origin) {
+                const siteRelativePath = resolved.pathname.startsWith(siteBaseUrl.pathname)
+                    ? resolved.pathname.slice(siteBaseUrl.pathname.length)
+                    : resolved.pathname.replace(/^\/+/, '');
+                const repository = PUBLIC_DATA_REPOSITORIES.find(({ path }) => siteRelativePath.startsWith(path));
+                if (repository) {
+                    const relative = siteRelativePath.slice(repository.path.length);
+                    return new URL(`${relative}${resolved.search}${resolved.hash}`, repository.root).href;
+                }
+            }
+            return resolved.href;
         } catch (e) {
             return cleanPath;
         }

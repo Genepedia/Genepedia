@@ -95,10 +95,10 @@
                 const bucket = Math.floor((Math.max(1, Number(id.replace(/[^0-9]/g, '')) || 1) - 1) / 1000);
                 const collection = normalizeProfileKind(kind) === 'pet' ? 'pets' : 'people';
                 const basePath = collection === 'pets'
-                    ? `../../data/Genepedia-Database/pets/persons/${bucket}/${id}.json`
+                    ? `data/Genepedia-Database/pets/persons/${bucket}/${id}.json`
                     : `persons/${bucket}/${id}.json`;
                 const url = collection === 'pets'
-                    ? new URL(basePath, window.location.href).href
+                    ? (window.App?.resolveSiteUrl?.(basePath) || new URL(basePath, window.location.origin).href)
                     : resolvePeopleDbUrl(basePath);
                 const response = await fetch(url, { cache: 'no-store' });
                 if (!response.ok) {
