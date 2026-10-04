@@ -35,7 +35,7 @@ function createTableRowFromElement(doc, rowEl) {
     const image = rowEl.querySelector('img');
     if (image && image.dataset.defaultPhotoFallbackBound !== 'true') {
       image.dataset.defaultPhotoFallbackBound = 'true';
-      const fallbackUrl = new URL('/assets/default-profile-photo.svg', doc.baseURI).href;
+      const fallbackUrl = new URL('/assets/default-profile-photo.svg', window.location.href).href;
       const useFallback = () => {
         if (image.dataset.defaultPhotoFallbackUsed === 'true' || image.currentSrc === fallbackUrl || image.src === fallbackUrl) return;
         image.dataset.defaultPhotoFallbackUsed = 'true';
@@ -49,9 +49,9 @@ function createTableRowFromElement(doc, rowEl) {
           if (image.naturalWidth === 0) useFallback();
           return;
         }
-        if (checks++ < 40) doc.defaultView?.setTimeout(checkForUnavailableImage, 250);
+        if (checks++ < 40) window.setTimeout(checkForUnavailableImage, 250);
       };
-      doc.defaultView?.setTimeout(checkForUnavailableImage, 0);
+      window.setTimeout(checkForUnavailableImage, 0);
     }
     const tr = doc.createElement('tr');
     const td = doc.createElement('td');
