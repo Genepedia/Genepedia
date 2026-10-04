@@ -59,80 +59,6 @@
 			font-size: 0.9rem;
 		}
 
-		.login-card label {
-			display: block;
-			font-size: 0.82rem;
-			font-weight: 600;
-			margin-bottom: 6px;
-			color: var(--color-emphasized, var(--color-base, #1f2329));
-		}
-
-		.login-card input[type="text"],
-		.login-card input[type="password"] {
-			width: 100%;
-			box-sizing: border-box;
-			padding: 11px 12px;
-			margin-bottom: 16px;
-			font-size: 0.95rem;
-			color: var(--color-base, #1f2329);
-			background: var(--background-color-base, #ffffff);
-			border: 1px solid var(--border-color-base, #cbd2dc);
-			border-radius: var(--border-radius-base, 2px);
-			transition: border-color 0.15s ease, box-shadow 0.15s ease;
-		}
-
-		.login-card input[type="text"]:focus,
-		.login-card input[type="password"]:focus {
-			outline: none;
-			border-color: var(--border-color-progressive, #2f6feb);
-			box-shadow: 0 0 0 3px rgba(47, 111, 235, 0.20);
-		}
-
-		.login-card__button {
-			width: 100%;
-			box-sizing: border-box;
-			padding: 11px 14px;
-			font-size: 0.95rem;
-			font-weight: 600;
-			border: none;
-			border-radius: var(--border-radius-base, 2px);
-			cursor: pointer;
-			transition: background-color 0.15s ease, opacity 0.15s ease;
-		}
-
-		.login-card__button--primary {
-			background: var(--background-color-progressive, #2f6feb);
-			color: var(--color-inverted-fixed, #ffffff);
-		}
-
-		.login-card__button--primary:hover {
-			background: var(--background-color-progressive--hover, #275fd0);
-		}
-
-		.login-card__button[disabled] {
-			opacity: 0.6;
-			cursor: progress;
-		}
-
-		.login-card__divider {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			margin: 22px 0;
-			color: var(--color-subtle, #6b7280);
-			font-size: 0.78rem;
-			text-transform: uppercase;
-			letter-spacing: 0.04em;
-		}
-
-		.login-card__divider::before,
-		.login-card__divider::after {
-			content: "";
-			flex: 1;
-			height: 1px;
-			background: var(--border-color-subtle, #e2e4e9);
-		}
-
 		.login-card__github {
 			display: flex;
 			align-items: center;
@@ -206,22 +132,9 @@
 	<main class="login-main">
 		<div class="login-card">
 		<h1 class="login-card__brand">{{APP_NAME}}</h1>
-		<p class="login-card__subtitle">Sign in to continue</p>
+		<p class="login-card__subtitle">Continue securely with your GitHub account.</p>
 
 		<div class="login-card__error" id="login-error" role="alert" hidden></div>
-
-		<form id="login-form" autocomplete="off" novalidate>
-			<label for="login-username">Username</label>
-			<input type="text" id="login-username" name="username" autocapitalize="none" autocomplete="username"
-				spellcheck="false" required>
-
-			<label for="login-password">Password</label>
-			<input type="password" id="login-password" name="password" autocomplete="current-password" required>
-
-			<button type="submit" class="login-card__button login-card__button--primary" id="login-submit">Log in</button>
-		</form>
-
-		<div class="login-card__divider">or</div>
 
 		<a class="login-card__github" id="login-github" href="#">
 			<svg viewBox="0 0 16 16" aria-hidden="true">
@@ -240,10 +153,6 @@
 		(function () {
 			'use strict';
 
-			var form = document.getElementById('login-form');
-			var usernameInput = document.getElementById('login-username');
-			var passwordInput = document.getElementById('login-password');
-			var submitButton = document.getElementById('login-submit');
 			var errorBox = document.getElementById('login-error');
 			var githubButton = document.getElementById('login-github');
 
@@ -278,16 +187,6 @@
 				}
 			}
 
-			function getFetchInit(init) {
-				if (window.App && window.App.getGitHubFetchInit) {
-					return window.App.getGitHubFetchInit(init);
-				}
-				return Object.assign({}, init, {
-					credentials: 'include',
-					headers: Object.assign({ Accept: 'application/json' }, (init && init.headers) || {}),
-				});
-			}
-
 			function showError(message) {
 				errorBox.textContent = message;
 				errorBox.hidden = false;
@@ -298,15 +197,11 @@
 				errorBox.hidden = true;
 			}
 
-			function setBusy(busy) {
-				submitButton.disabled = busy;
-				submitButton.textContent = busy ? 'Signing in…' : 'Log in';
-			}
-
 			// "Continue with GitHub" uses the normal GitHub OAuth entry point and
 			// returns to the post-login destination, exactly like the header button.
 			githubButton.addEventListener('click', function (event) {
 				event.preventDefault();
+				clearError();
 				var loginEndpoint = resolveApiUrl('github-login.php');
 				if (!loginEndpoint) {
 					showError('GitHub sign-in is not configured.');
@@ -319,54 +214,6 @@
 				} catch (e) {
 					showError('GitHub sign-in is not configured.');
 				}
-			});
-
-			form.addEventListener('submit', function (event) {
-				event.preventDefault();
-				clearError();
-
-				var username = usernameInput.value.trim();
-				var password = passwordInput.value;
-				if (!username || !password) {
-					showError('Enter a username and password.');
-					return;
-				}
-
-				var endpoint = resolveApiUrl('local-login.php');
-				if (!endpoint) {
-					showError('Login is not configured.');
-					return;
-				}
-
-				setBusy(true);
-
-				fetch(endpoint, getFetchInit({
-					method: 'POST',
-					cache: 'no-store',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ username: username, password: password }),
-				}))
-					.then(function (response) {
-						return response.json().catch(function () { return null; }).then(function (payload) {
-							return { response: response, payload: payload };
-						});
-					})
-					.then(function (result) {
-						var payload = result.payload;
-						if (!result.response.ok || !payload || !payload.ok || !payload.handoff) {
-							throw new Error((payload && payload.message) || 'Invalid username or password.');
-						}
-
-						// Hand the one-time code to the front-end on the destination
-						// page, which redeems it and establishes the session — the
-						// same path GitHub login uses.
-						nextUrl.searchParams.set('github_handoff', payload.handoff);
-						window.location.assign(nextUrl.href);
-					})
-					.catch(function (error) {
-						showError(error && error.message ? error.message : 'Login failed. Please try again.');
-						setBusy(false);
-					});
 			});
 		})();
 	</script>
