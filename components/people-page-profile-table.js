@@ -42,7 +42,16 @@ function createTableRowFromElement(doc, rowEl) {
         image.src = fallbackUrl;
       };
       image.addEventListener('error', useFallback, { once: true });
-      if (image.complete && image.naturalWidth === 0) queueMicrotask(useFallback);
+      let checks = 0;
+      const checkForUnavailableImage = () => {
+        if (image.dataset.defaultPhotoFallbackUsed === 'true' || image.currentSrc === fallbackUrl || image.src === fallbackUrl) return;
+        if (image.complete) {
+          if (image.naturalWidth === 0) useFallback();
+          return;
+        }
+        if (checks++ < 40) doc.defaultView?.setTimeout(checkForUnavailableImage, 250);
+      };
+      doc.defaultView?.setTimeout(checkForUnavailableImage, 0);
     }
     const tr = doc.createElement('tr');
     const td = doc.createElement('td');
