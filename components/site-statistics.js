@@ -153,7 +153,7 @@
     }
 
     async function fetchStatisticsMetric(metric, limit, window = 'all') {
-        const apiUrl = resolveGitHubApiUrl('github-statistics.php');
+        const apiUrl = resolveGitHubApiUrl('statistics');
         if (!apiUrl) {
             return null;
         }
@@ -237,7 +237,7 @@
             }
         }
 
-        const legacyUrl = resolveGitHubApiUrl('github-profile-views.php');
+        const legacyUrl = resolveGitHubApiUrl('statistics/profile-views');
         if (legacyUrl) {
             try {
                 const url = new URL(legacyUrl);
@@ -348,8 +348,8 @@
     }
 
     async function postStatisticsEvent(body) {
-        const apiUrl = resolveGitHubApiUrl('github-statistics.php')
-            || resolveGitHubApiUrl('github-profile-views.php');
+        const apiUrl = resolveGitHubApiUrl('statistics')
+            || resolveGitHubApiUrl('statistics/profile-views');
         if (!apiUrl) {
             return false;
         }

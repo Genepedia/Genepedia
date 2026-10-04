@@ -710,7 +710,7 @@
                 .trim()
                 .replace(/\/+$/, "");
             if (!apiBase) return "";
-            return new URL("location-search.php", `${apiBase}/`).href;
+            return new URL("search/locations", `${apiBase}/`).href;
         })();
         if (!apiUrl) {
             return manualMatch ? [manualMatch] : [];

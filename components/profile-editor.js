@@ -2457,7 +2457,7 @@ body.theme-dark .pie__date-preview {
 				return stored;
 			}
 
-			const endpoint = resolveGitHubApiUrl("github-session.php");
+			const endpoint = resolveGitHubApiUrl("auth/session");
 			if (!endpoint) {
 				return null;
 			}
@@ -2682,7 +2682,7 @@ body.theme-dark .pie__date-preview {
 		}
 
 		async #claimExistingSelfProfile(personId) {
-			const endpoint = resolveGitHubApiUrl("github-self-profile.php");
+			const endpoint = resolveGitHubApiUrl("profiles/self");
 			if (!endpoint) {
 				this.#setStatus("The profile service is not configured.", "error");
 				return;
@@ -2725,7 +2725,7 @@ body.theme-dark .pie__date-preview {
 		}
 
 		async #commitNewSelfProfile(files, profileData, user) {
-			const endpoint = resolveGitHubApiUrl("github-self-profile.php");
+			const endpoint = resolveGitHubApiUrl("profiles/self");
 			if (!endpoint) {
 				this.#setStatus("The profile service is not configured.", "error");
 				return;
@@ -2839,7 +2839,7 @@ body.theme-dark .pie__date-preview {
 				return;
 			}
 
-			const endpoint = resolveGitHubApiUrl("github-self-profile.php");
+			const endpoint = resolveGitHubApiUrl("profiles/self");
 			if (!endpoint) {
 				this.#setStatus("The profile service is not configured.", "error");
 				return;
@@ -2930,7 +2930,7 @@ body.theme-dark .pie__date-preview {
 					: { href: resolveSiteUrl(`pages/people/${PERSON_ID}/index.html`) });
 			}
 
-			const endpoint = SELF_PROFILE_MODE ? "" : resolveGitHubApiUrl("github-submit-page-edit.php");
+			const endpoint = SELF_PROFILE_MODE ? "" : resolveGitHubApiUrl("page-edits");
 			if (!SELF_PROFILE_MODE && !endpoint) {
 				this.#setStatus("The publishing service is not configured.", "error");
 				return;

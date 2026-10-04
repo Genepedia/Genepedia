@@ -1,8 +1,9 @@
 # People Database (file-based)
 
-Genepedia stores family-tree data as plain files so it can scale to millions of
-profiles on static hosting (GitHub Pages) with no server database. There are
-three layers:
+Genepedia stores family-tree data as plain files so it can scale to millions
+of profiles on static Site hosting. GitHub remains the source of record for
+genealogy content; the API's D1 database is used for session state and queued
+statistics, not as the people database. There are three layers:
 
 1. **Canonical JSON database** — structured, sharded, machine-readable.
 2. **Per-person profile folders** — SEO-friendly pages served at `/pages/people/<id>/`.
@@ -50,14 +51,14 @@ Ownership/claims live in the database at `data/people/ownership/<bucket>/<id>.js
 `profile-table.html`, `family-tree.ged`, `media.html`, or `tree.html` — those were
 redundant with the database and have been removed.
 
-Routes are clean directories (`/pages/people/<id>/` and `/pages/pets/<id>/`) because GitHub Pages has no URL
-rewrites; every route maps to a real `index.html`.
+Routes are clean directories (`/pages/people/<id>/` and `/pages/pets/<id>/`);
+each route maps to a real `index.html` in the static Site build.
 
 ## How editing and adding work (write path)
 
-The frontend reads from the database; edits write canonical files back through the
-PHP commit API (`API/github-submit-page-edit.php`), which commits directly for
-managed profiles or opens a pull request otherwise.
+The frontend reads the database files from GitHub. Edits submit changes through
+the versioned Sites Worker API (`POST /v1/genepedia/page-edits`) and create a
+review pull request before published files change.
 
 - **Edit infobox** (`profile-infobox-editor.js`): loads `persons/<id>.json`, merges
   the edited identity fields back into the record (preserving relationships), and
@@ -86,8 +87,11 @@ managed profiles or opens a pull request otherwise.
   `data/profile.html`, the person record, and the ownership record (plus a
   `people.json` registry entry).
 
-The API path allowlist accepts `pages/people/<id>/index.html`, `people/<id>/data/*.html`,
-`data/people/**.json`, `people/people.json`, and `sitemap.xml`.
+The API path allowlist accepts site pages under `pages/` ending in `.html`, the profile talk file
+`pages/people/<id>/data/talk.json`, legacy `people/<id>/*.html` profile paths, the supported
+`data/Genepedia-Database/people|pets|statistics/**` records, `data/people/**` records, and
+`sitemap.xml`. Profile directory URLs such as `pages/people/<id>/` resolve to the profile's
+`index.html` for history lookups.
 
 Derived indexes (summary/search shards, `all-ids.json`, `people.json`, `sitemap.xml`,
 manifest counts) are regenerated from the per-person records with:
@@ -143,9 +147,8 @@ deathYear }`) so existing search/profile lookups keep working while the sharded
 
 ## Deployment note
 
-The PHP API (`API/`) has been updated to the database model: `github-submit-page-edit.php`
-accepts the new paths, and ownership reads/writes (`github-self-profile.php`,
-`github-auth.php`, `github-maintainers.php`) use `data/people/ownership/...`.
-Because the commit API needs GitHub OAuth, the end-to-end **write** path (edit, claim,
-add-person) should be verified once against a deployed API; the **read** path runs
-fully client-side from the static database and is verified locally.
+The Sites Worker API is the production write path. Its versioned operations
+create review requests, and its ownership routes use the database ownership
+ledger. The local route-validation suite uses mocked GitHub requests for the
+write paths; production checks should verify permissions and the review gates
+without creating test records.

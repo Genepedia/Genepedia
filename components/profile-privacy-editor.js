@@ -243,7 +243,7 @@
             }
 
             try {
-                const response = await fetch(new URL("github-session.php", `${apiBase}/`).href, window.App?.getGitHubFetchInit?.({ cache: "no-store" }) || { credentials: "include" });
+                const response = await fetch(new URL("auth/session", `${apiBase}/`).href, window.App?.getGitHubFetchInit?.({ cache: "no-store" }) || { credentials: "include" });
                 const payload = await response.json().catch(() => null);
                 if (response.ok && payload?.authenticated && payload.user) {
                     return normalizeUser(payload.user);

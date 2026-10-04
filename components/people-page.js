@@ -1893,7 +1893,7 @@ class PeoplePage extends HTMLElement {
       return storedLogin;
     }
 
-    const endpoint = this.#resolveGitHubApiUrl('github-session.php');
+    const endpoint = this.#resolveGitHubApiUrl('auth/session');
     if (!endpoint) {
       return '';
     }
@@ -2037,8 +2037,8 @@ class PeoplePage extends HTMLElement {
 
   async #loadContributorLogins(personId) {
     const logins = new Set();
-    const apiBase = this.#resolveGitHubApiUrl('github-file-commits.php');
-    const pullRequestsBase = this.#resolveGitHubApiUrl('github-pull-requests.php');
+    const apiBase = this.#resolveGitHubApiUrl('files/commits');
+    const pullRequestsBase = this.#resolveGitHubApiUrl('pull-requests');
 
     if (!apiBase || !pullRequestsBase) {
       return logins;
@@ -2845,7 +2845,7 @@ class PeoplePage extends HTMLElement {
       // ignore storage failures
     }
 
-    const url = this.#resolveGitHubApiUrl('github-profile-views.php');
+    const url = this.#resolveGitHubApiUrl('statistics/profile-views');
     if (!url) {
       return;
     }
@@ -3076,7 +3076,7 @@ class PeoplePage extends HTMLElement {
   }
 
   async #fetchMediaList(personId) {
-    const url = this.#resolveGitHubApiUrl('github-media.php');
+    const url = this.#resolveGitHubApiUrl('profiles/media');
     if (!url) {
       throw new Error('GitHub API base is not configured.');
     }
@@ -3883,7 +3883,7 @@ class PeoplePage extends HTMLElement {
   }
 
   async #submitMediaAction(personId, body) {
-    const url = this.#resolveGitHubApiUrl('github-media.php');
+    const url = this.#resolveGitHubApiUrl('profiles/media');
     if (!url) {
       throw new Error('GitHub API base is not configured.');
     }
@@ -3917,7 +3917,7 @@ class PeoplePage extends HTMLElement {
   }
 
   async #submitPageEditFiles(files, { commitMessage, prTitle, prBody = '' } = {}) {
-    const url = this.#resolveGitHubApiUrl('github-submit-page-edit.php');
+    const url = this.#resolveGitHubApiUrl('page-edits');
     if (!url) {
       throw new Error('GitHub API base is not configured.');
     }
@@ -4160,7 +4160,7 @@ class PeoplePage extends HTMLElement {
   }
 
   async #fetchTalk(personId) {
-    const url = this.#resolveGitHubApiUrl('github-talk.php');
+    const url = this.#resolveGitHubApiUrl('talk');
     if (!url) {
       throw new Error('GitHub API base is not configured.');
     }
@@ -4458,7 +4458,7 @@ class PeoplePage extends HTMLElement {
   }
 
   async #submitTalkAction(personId, body) {
-    const url = this.#resolveGitHubApiUrl('github-talk.php');
+    const url = this.#resolveGitHubApiUrl('talk');
     if (!url) {
       throw new Error('GitHub API base is not configured.');
     }

@@ -9,7 +9,7 @@
  * <script type="application/json" class="profile-infobox-data"> element, next to
  * the rendered <table-*> rows used by the live page. The immediate-family block
  * is generated from the family tree, so it is preserved verbatim and never
- * edited here. Saving is handled by github-submit-page-edit.php, which commits
+ * edited here. Saving is handled by page-edits, which commits
  * directly for managed profiles and opens a pull request otherwise.
  */
 (function () {
@@ -278,7 +278,7 @@
 			return manualMatch ? [manualMatch] : [];
 		}
 
-		const apiUrl = resolveApiUrl("location-search.php");
+		const apiUrl = resolveApiUrl("search/locations");
 		if (!apiUrl) {
 			return manualMatch ? [manualMatch] : [];
 		}
@@ -1751,7 +1751,7 @@
 			}
 
 			// Try the GitHub-backed API first
-			const apiUrl = resolveApiUrl('github-media.php');
+			const apiUrl = resolveApiUrl('profiles/media');
 			if (apiUrl) {
 				try {
 					const url = new URL(apiUrl);
@@ -1838,7 +1838,7 @@
 
 		async #submitPhotoUpload(file) {
 			if (!file) throw new Error('No file selected');
-			const apiUrl = resolveApiUrl('github-media.php');
+			const apiUrl = resolveApiUrl('profiles/media');
 			if (!apiUrl) throw new Error('Site API is not configured for uploads.');
 			this.#setStatus('Preparing image for upload…');
 			const dataUrl = await this.#readFileAsDataUrl(file);
@@ -2064,7 +2064,7 @@
 
 		async #save() {
 			const { save } = this.#els();
-			const submitUrl = resolveApiUrl("github-submit-page-edit.php");
+			const submitUrl = resolveApiUrl("page-edits");
 			if (!submitUrl) {
 				this.#setStatus("The site API is not configured.", "error");
 				return;

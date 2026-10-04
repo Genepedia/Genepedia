@@ -40,7 +40,7 @@
         Version: '1.0.0',
         ReleaseDate: '2026-07-01',
         Description: `${BRANDING_SOURCE_NAME} is a home for family stories, a place to discover, document, and share your family history.`,
-        GitHubApiBase: 'https://api.genepedia.org/genepedia',
+        GitHubApiBase: 'https://api.genepedia.org/v1/genepedia',
         Slogan: 'Free Geneology Encyclopedia',
         PageEditPath: 'pages/edit.html',
     };

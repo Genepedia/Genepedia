@@ -5657,7 +5657,7 @@ body.theme-dark .ppe__media-divider::after {
 		}
 
 		async #fetchProfileImages() {
-			const apiUrl = resolveGitHubApiUrl("github-media.php");
+			const apiUrl = resolveGitHubApiUrl("profiles/media");
 			if (!apiUrl) return [];
 			try {
 				const url = new URL(apiUrl);
@@ -5704,7 +5704,7 @@ body.theme-dark .ppe__media-divider::after {
 		}
 
 		async #submitImageUpload(file) {
-			const apiUrl = resolveGitHubApiUrl("github-media.php");
+			const apiUrl = resolveGitHubApiUrl("profiles/media");
 			if (!apiUrl) throw new Error("Sign in with GitHub from the site header to upload images.");
 
 			this.#setMediaModalStatus("Preparing image…");
