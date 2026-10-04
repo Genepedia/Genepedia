@@ -2681,6 +2681,10 @@ class PeoplePage extends HTMLElement {
       return;
     }
 
+    if (tab === 'profile') {
+      this.#bindProfilePhotoFallback(contentEl);
+    }
+
     // Claim this load. Any earlier in-flight load becomes stale and will skip
     // its DOM writes, so rapidly switching tabs always settles on the last one.
     const token = ++this.#tabLoadSeq;
@@ -2739,6 +2743,9 @@ class PeoplePage extends HTMLElement {
         return;
       }
       contentEl.innerHTML = html;
+      if (tab === 'profile') {
+        this.#fallbackUnavailableProfilePhotos(contentEl);
+      }
 
       this.#notifyTabLoaded(tab, { url });
     } catch (error) {
@@ -2752,6 +2759,43 @@ class PeoplePage extends HTMLElement {
         contentEl.removeAttribute('aria-busy');
       }
     }
+  }
+
+  #bindProfilePhotoFallback(contentEl) {
+    if (contentEl.dataset.profilePhotoFallbackBound === 'true') {
+      return;
+    }
+
+    contentEl.dataset.profilePhotoFallbackBound = 'true';
+    contentEl.addEventListener('error', (event) => {
+      const image = event.target;
+      if (image?.tagName?.toLowerCase() !== 'img' || !image.closest('aside[aria-label="Identity"]')) {
+        return;
+      }
+      this.#useDefaultProfilePhoto(image);
+    }, true);
+  }
+
+  #fallbackUnavailableProfilePhotos(contentEl) {
+    contentEl.querySelectorAll('aside[aria-label="Identity"] img[src]').forEach((image) => {
+      if (image.complete && image.naturalWidth === 0) {
+        this.#useDefaultProfilePhoto(image);
+      }
+    });
+  }
+
+  #useDefaultProfilePhoto(image) {
+    if (image.dataset.defaultPhotoFallbackUsed === 'true') {
+      return;
+    }
+
+    const fallbackUrl = this.#resolveSiteUrl('assets/default-profile-photo.svg');
+    if (!fallbackUrl || image.src === fallbackUrl) {
+      return;
+    }
+
+    image.dataset.defaultPhotoFallbackUsed = 'true';
+    image.src = fallbackUrl;
   }
 
   #notifyTabLoaded(tab, detail = {}) {
