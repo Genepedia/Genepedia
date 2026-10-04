@@ -32,6 +32,18 @@ function createTableRowFromElement(doc, rowEl) {
   const tag = rowEl.tagName.toLowerCase();
 
   if (tag === 'table-photo') {
+    const image = rowEl.querySelector('img');
+    if (image && image.dataset.defaultPhotoFallbackBound !== 'true') {
+      image.dataset.defaultPhotoFallbackBound = 'true';
+      const fallbackUrl = new URL('/assets/default-profile-photo.svg', doc.baseURI).href;
+      const useFallback = () => {
+        if (image.dataset.defaultPhotoFallbackUsed === 'true' || image.currentSrc === fallbackUrl || image.src === fallbackUrl) return;
+        image.dataset.defaultPhotoFallbackUsed = 'true';
+        image.src = fallbackUrl;
+      };
+      image.addEventListener('error', useFallback, { once: true });
+      if (image.complete && image.naturalWidth === 0) queueMicrotask(useFallback);
+    }
     const tr = doc.createElement('tr');
     const td = doc.createElement('td');
     td.colSpan = 2;
